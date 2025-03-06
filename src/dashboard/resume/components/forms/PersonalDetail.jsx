@@ -1,26 +1,28 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ResumeInfoContext } from '@/context/ResumeInfoContext';
+import { LoaderCircle } from 'lucide-react';
 import React, { useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import GlobalApi from '../../../../../service/GlobalApi';
-import { LoaderCircle } from 'lucide-react';
+import GlobalApi from './../../../../../service/GlobalApi';
 import { toast } from 'sonner';
 
-function PersonalDetail({ enableNext, isBack }) {
+function PersonalDetail({ enableNext }) {
   const params = useParams();
   const { resumeInfo, setResumeInfo } = useContext(ResumeInfoContext);
+
   const [formData, setFormData] = useState();
   const [loading, setLoading] = useState(false);
-
   useEffect(() => {
-    console.log(params);
-    enableNext(isBack ? true : false);
-  }, [isBack]);
+    console.log('---', resumeInfo);
+  }, []);
 
   const handleInputChange = (e) => {
     enableNext(false);
     const { name, value } = e.target;
+
+    console.log(name, value);
+
     setFormData({
       ...formData,
       [name]: value,
@@ -44,12 +46,13 @@ function PersonalDetail({ enableNext, isBack }) {
         setLoading(false);
         toast('Details updated');
       },
-      () => setLoading(false)
+      () => {
+        setLoading(false);
+      }
     );
   };
-
   return (
-    <div className="p-5 shadow-lg border-t-primary border-t-4 mt-10 rounded-lg">
+    <div className="p-5 shadow-lg rounded-lg border-t-primary border-t-4 mt-10">
       <h2 className="font-bold text-lg">Personal Detail</h2>
       <p>Get Started with the basic information</p>
 
@@ -59,9 +62,9 @@ function PersonalDetail({ enableNext, isBack }) {
             <label className="text-sm">First Name</label>
             <Input
               name="firstName"
+              defaultValue={resumeInfo?.firstName}
               required
               onChange={handleInputChange}
-              defaultValue={resumeInfo?.firstName}
             />
           </div>
           <div>
@@ -78,8 +81,8 @@ function PersonalDetail({ enableNext, isBack }) {
             <Input
               name="jobTitle"
               required
-              onChange={handleInputChange}
               defaultValue={resumeInfo?.jobTitle}
+              onChange={handleInputChange}
             />
           </div>
           <div className="col-span-2">
@@ -87,8 +90,8 @@ function PersonalDetail({ enableNext, isBack }) {
             <Input
               name="address"
               required
-              onChange={handleInputChange}
               defaultValue={resumeInfo?.address}
+              onChange={handleInputChange}
             />
           </div>
           <div>
@@ -96,8 +99,8 @@ function PersonalDetail({ enableNext, isBack }) {
             <Input
               name="phone"
               required
-              onChange={handleInputChange}
               defaultValue={resumeInfo?.phone}
+              onChange={handleInputChange}
             />
           </div>
           <div>
@@ -105,15 +108,14 @@ function PersonalDetail({ enableNext, isBack }) {
             <Input
               name="email"
               required
-              onChange={handleInputChange}
               defaultValue={resumeInfo?.email}
+              onChange={handleInputChange}
             />
           </div>
         </div>
         <div className="mt-3 flex justify-end">
-          <Button disabled={loading} type="submit">
-            {loading ? <LoaderCircle className="animate-spin" /> : null}
-            Save
+          <Button type="submit" disabled={loading}>
+            {loading ? <LoaderCircle className="animate-spin" /> : 'Save'}
           </Button>
         </div>
       </form>

@@ -4,6 +4,33 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@media print {
+  @page {
+    size: auto;
+    margin: 0;
+  }
+
+  div,
+  p,
+  table {
+    page-break-inside: avoid;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    box-shadow: none;
+  }
+
+  #no-print {
+    display: none;
+  }
+
+  #print-area {
+    display: block;
+  }
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

@@ -19,12 +19,14 @@ function Summary({ enableNext }) {
   const [aiGeneratedSummeryList, setAiGenerateSummaryList] = useState(null);
 
   useEffect(() => {
-    enableNext(false);
     if (summary) {
       setResumeInfo({
         ...resumeInfo,
         summary,
       });
+      enableNext(true);
+    } else {
+      enableNext(false);
     }
   }, [summary]);
 

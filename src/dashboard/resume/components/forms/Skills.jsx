@@ -81,7 +81,10 @@ function Skills() {
 
       <div>
         {skillsList?.map((item, index) => (
-          <div className="flex justify-between mb-2 border rounded-lg p-3 ">
+          <div
+            key={index}
+            className="flex justify-between mb-2 border rounded-lg p-3 "
+          >
             <div>
               <label className="text-xs">Name</label>
               <Input

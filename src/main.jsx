@@ -1,6 +1,5 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import './index.css';
 import App from './App.jsx';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import SignInPage from './auth/sign-in';
@@ -8,6 +7,8 @@ import Home from './home';
 import Dashboard from './dashboard';
 import { ClerkProvider } from '@clerk/clerk-react';
 import EditResume from './dashboard/resume/[resumeId]/edit';
+import MyResume from './my-resume/[resumeId]/view';
+import './index.css';
 
 // Import your Publishable Key
 const PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
@@ -37,6 +38,11 @@ const router = createBrowserRouter([
   {
     path: '/auth/sign-in',
     element: <SignInPage />,
+  },
+
+  {
+    path: '/my-resume/:resumeId/view',
+    element: <MyResume />,
   },
 ]);
 
