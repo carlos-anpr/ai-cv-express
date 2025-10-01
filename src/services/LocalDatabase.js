@@ -461,6 +461,141 @@ class LocalDatabase {
       throw new Error('Error en la búsqueda: ' + error.message);
     }
   }
+
+  // ===============================================
+  // COVER LETTERS CRUD OPERATIONS
+  // ===============================================
+
+  // CREATE - Crear nueva carta de recomendación
+  async CreateCoverLetter(data) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log('💌 Creando carta de recomendación:', data);
+
+      const coverLetterData = {
+        resumeId: data.resumeId,
+        userEmail: data.userEmail,
+        companyName: data.companyName,
+        jobTitle: data.jobTitle,
+        content: data.content,
+      };
+
+      const id = await db.coverLetters.add(coverLetterData);
+      const result = await db.coverLetters.get(id);
+
+      console.log('✅ Carta de recomendación creada con ID:', id);
+      return result;
+    } catch (error) {
+      console.error('❌ Error creando carta de recomendación:', error);
+      throw new Error(
+        'Error al crear carta de recomendación: ' + error.message
+      );
+    }
+  }
+
+  // READ - Obtener cartas de recomendación por CV
+  async GetCoverLettersByResume(resumeId) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log('📋 Obteniendo cartas de recomendación para CV:', resumeId);
+
+      const coverLetters = await db.coverLetters
+        .where('resumeId')
+        .equals(resumeId)
+        .toArray();
+
+      // Ordenar por fecha de creación (más reciente primero)
+      const sortedCoverLetters = coverLetters.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+
+      console.log('✅ Cartas encontradas:', sortedCoverLetters.length);
+      return sortedCoverLetters;
+    } catch (error) {
+      console.error('❌ Error obteniendo cartas de recomendación:', error);
+      throw new Error('Error al obtener cartas: ' + error.message);
+    }
+  }
+
+  // READ - Obtener carta de recomendación por ID
+  async GetCoverLetterById(id) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log('📄 Obteniendo carta de recomendación ID:', id);
+
+      const coverLetter = await db.coverLetters.get(id);
+      if (!coverLetter) {
+        throw new Error('Carta de recomendación no encontrada');
+      }
+
+      console.log('✅ Carta encontrada:', coverLetter.companyName);
+      return coverLetter;
+    } catch (error) {
+      console.error('❌ Error obteniendo carta de recomendación:', error);
+      throw new Error('Error al obtener carta: ' + error.message);
+    }
+  }
+
+  // UPDATE - Actualizar carta de recomendación
+  async UpdateCoverLetter(id, updates) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log('📝 Actualizando carta de recomendación ID:', id, updates);
+
+      await db.coverLetters.update(id, updates);
+      const updatedCoverLetter = await db.coverLetters.get(id);
+
+      console.log('✅ Carta actualizada exitosamente');
+      return updatedCoverLetter;
+    } catch (error) {
+      console.error('❌ Error actualizando carta de recomendación:', error);
+      throw new Error('Error al actualizar carta: ' + error.message);
+    }
+  }
+
+  // DELETE - Eliminar carta de recomendación
+  async DeleteCoverLetter(id) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log('🗑️ Eliminando carta de recomendación ID:', id);
+
+      const coverLetter = await db.coverLetters.get(id);
+      if (!coverLetter) {
+        throw new Error('Carta de recomendación no encontrada');
+      }
+
+      await db.coverLetters.delete(id);
+      console.log('✅ Carta eliminada exitosamente');
+      return { success: true, message: 'Carta eliminada correctamente' };
+    } catch (error) {
+      console.error('❌ Error eliminando carta de recomendación:', error);
+      throw new Error('Error al eliminar carta: ' + error.message);
+    }
+  }
+
+  // READ - Obtener todas las cartas de un usuario
+  async GetUserCoverLetters(userEmail) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log('📚 Obteniendo todas las cartas del usuario:', userEmail);
+
+      const coverLetters = await db.coverLetters
+        .where('userEmail')
+        .equals(userEmail)
+        .toArray();
+
+      // Ordenar por fecha de creación (más reciente primero)
+      const sortedCoverLetters = coverLetters.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+
+      console.log('✅ Total cartas del usuario:', sortedCoverLetters.length);
+      return sortedCoverLetters;
+    } catch (error) {
+      console.error('❌ Error obteniendo cartas del usuario:', error);
+      throw new Error('Error al obtener cartas del usuario: ' + error.message);
+    }
+  }
 }
 
 // Instancia global del servicio

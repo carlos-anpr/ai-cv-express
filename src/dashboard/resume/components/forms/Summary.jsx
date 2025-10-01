@@ -18,17 +18,19 @@ function Summary({ enableNext }) {
   const [loading, setLoading] = useState(false);
   const [aiGeneratedSummeryList, setAiGenerateSummaryList] = useState(null);
 
+  // Actualizar resumeInfo y enableNext cuando cambie el summary
   useEffect(() => {
-    if (summary) {
-      setResumeInfo((prevResumeInfo) => ({
-        ...prevResumeInfo,
-        summary,
-      }));
-      enableNext(true);
-    } else {
-      enableNext(false);
-    }
-  }, [summary, setResumeInfo, enableNext]);
+    // Actualizar el contexto del resumen
+    setResumeInfo((prevResumeInfo) => ({
+      ...prevResumeInfo,
+      summary,
+    }));
+
+    // Controlar el estado del botón Next
+    const hasValidSummary = summary && summary.trim().length > 0;
+    enableNext(hasValidSummary);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [summary]); // Solo summary como dependencia para evitar loop infinito
 
   const GenerateSummaryFromAI = async () => {
     setLoading(true);

@@ -24,6 +24,12 @@ function FormSection() {
               <Home />
             </Button>
           </Link>
+          <Link to={`/dashboard/resume/${params.resumeId}/cover-letters`}>
+            <Button variant="outline">
+              <LayoutGrid className="h-4 w-4 mr-2" />
+              Cartas
+            </Button>
+          </Link>
           <ThemeColor />
         </div>
         <div className="flex gap-2">

@@ -10,6 +10,8 @@ export class ResumeDatabase extends Dexie {
       resumes:
         '++id, documentId, userEmail, createdAt, updatedAt, title, firstName, lastName',
       userData: '++id, userEmail, preferences, lastLogin, totalResumes',
+      coverLetters:
+        '++id, resumeId, userEmail, companyName, jobTitle, jobDetails, content, createdAt, updatedAt',
     });
 
     // Hooks para auto-generar timestamps
@@ -20,6 +22,20 @@ export class ResumeDatabase extends Dexie {
     });
 
     this.resumes.hook('updating', function (modifications, primKey, obj) {
+      modifications.updatedAt = new Date();
+      if (obj.version) {
+        modifications.version = obj.version + 1;
+      }
+    });
+
+    // Hooks para cartas de recomendación
+    this.coverLetters.hook('creating', function (primKey, obj) {
+      obj.createdAt = new Date();
+      obj.updatedAt = new Date();
+      obj.version = 1;
+    });
+
+    this.coverLetters.hook('updating', function (modifications, primKey, obj) {
       modifications.updatedAt = new Date();
       if (obj.version) {
         modifications.version = obj.version + 1;

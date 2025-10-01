@@ -27,3 +27,17 @@ export const AIChatSession = model.startChat({
   // See https://ai.google.dev/gemini-api/docs/safety-settings
   history: [],
 });
+
+// Configuración específica para cartas de recomendación (texto plano)
+const textGenerationConfig = {
+  temperature: 0.8,
+  topP: 0.95,
+  topK: 64,
+  maxOutputTokens: 8192,
+  responseMimeType: 'text/plain',
+};
+
+export const AIChatSessionText = model.startChat({
+  generationConfig: textGenerationConfig,
+  history: [],
+});

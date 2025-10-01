@@ -7,6 +7,7 @@ import Home from './home';
 import Dashboard from './dashboard';
 import { ClerkProvider } from '@clerk/clerk-react';
 import EditResume from './dashboard/resume/[resumeId]/edit';
+import CoverLettersManager from './dashboard/resume/[resumeId]/cover-letters';
 import MyResume from './my-resume/[resumeId]/view';
 import { initializeDatabase } from './services/IndexedDBService';
 import './index.css';
@@ -29,6 +30,10 @@ const router = createBrowserRouter([
       {
         path: '/dashboard/resume/:resumeId/edit',
         element: <EditResume />,
+      },
+      {
+        path: '/dashboard/resume/:resumeId/cover-letters',
+        element: <CoverLettersManager />,
       },
     ],
   },
