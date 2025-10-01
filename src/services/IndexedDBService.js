@@ -42,6 +42,17 @@ export const initializeDatabase = async () => {
       throw new Error('IndexedDB no está soportado en este navegador');
     }
 
+    // Debug: Verificar que las tablas se crearon
+    console.log(
+      '📋 Tablas disponibles:',
+      db.tables.map((t) => t.name)
+    );
+    console.log('🔍 Esquema de resumes:', db.resumes.schema);
+
+    // Test básico de creación y lectura
+    const testCount = await db.resumes.count();
+    console.log('📊 CVs existentes en la DB:', testCount);
+
     return true;
   } catch (error) {
     console.error('❌ Error al inicializar IndexedDB:', error);

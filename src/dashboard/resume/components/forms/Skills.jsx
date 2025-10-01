@@ -6,7 +6,7 @@ import '@smastrom/react-rating/style.css';
 import { Button } from '@/components/ui/button';
 import { LoaderCircle } from 'lucide-react';
 import { ResumeInfoContext } from '@/context/ResumeInfoContext';
-import GlobalApi from './../../../../../service/GlobalApi';
+import LocalDatabase from '../../../../services/LocalDatabase';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 function Skills() {
@@ -46,34 +46,39 @@ function Skills() {
     setSkillsList((skillsList) => skillsList.slice(0, -1));
   };
 
-  const onSave = () => {
-    setLoading(true);
-    const data = {
-      data: {
-        // eslint-disable-next-line no-unused-vars
-        skills: skillsList?.map(({ id, ...rest }) => rest),
-      },
-    };
+  const onSave = async () => {
+    if (!resumeId) {
+      toast.error('ID del CV no válido');
+      return;
+    }
 
-    GlobalApi.UpdateResumeDetail(resumeId, data).then(
-      (resp) => {
-        console.log(resp);
-        setLoading(false);
-        toast('Details updated !');
-      },
-      () => {
-        setLoading(false);
-        toast('Server Error, Try again!');
-      }
-    );
+    setLoading(true);
+
+    try {
+      // Limpiar IDs temporales antes de guardar
+      // eslint-disable-next-line no-unused-vars
+      const cleanSkills = skillsList?.map(({ id, ...rest }) => rest) || [];
+
+      const response = await LocalDatabase.UpdateResumeDetail(resumeId, {
+        skills: cleanSkills,
+      });
+
+      console.log('✅ Habilidades actualizadas:', response);
+      toast.success('Habilidades actualizadas correctamente');
+    } catch (error) {
+      console.error('❌ Error actualizando habilidades:', error);
+      toast.error('Error al actualizar habilidades: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    setResumeInfo({
-      ...resumeInfo,
+    setResumeInfo((prevResumeInfo) => ({
+      ...prevResumeInfo,
       skills: skillsList,
-    });
-  }, [skillsList]);
+    }));
+  }, [skillsList, setResumeInfo]);
   return (
     <div className="p-5 shadow-lg rounded-lg border-t-primary border-t-4 mt-10">
       <h2 className="font-bold text-lg">Skills</h2>

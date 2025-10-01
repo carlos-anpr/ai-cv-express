@@ -7,7 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { LayoutGrid } from 'lucide-react';
 import { ResumeInfoContext } from '@/context/ResumeInfoContext';
-import GlobalApi from './../../../../service/GlobalApi';
+import LocalDatabase from '../../../services/LocalDatabase';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -39,25 +39,31 @@ function ThemeColor() {
   const { resumeInfo, setResumeInfo } = useContext(ResumeInfoContext);
   const [selectedColor, setSelectedColor] = useState();
   const { resumeId } = useParams();
-  const onColorSelect = (color) => {
+  const onColorSelect = async (color) => {
     setSelectedColor(color);
     setResumeInfo({
       ...resumeInfo,
       themeColor: color,
     });
-    const data = {
-      data: {
+
+    if (!resumeId) {
+      toast.error('ID del CV no válido');
+      return;
+    }
+
+    try {
+      const response = await LocalDatabase.UpdateResumeDetail(resumeId, {
         themeColor: color,
-      },
-    };
-    GlobalApi.UpdateResumeDetail(resumeId, data).then(
-      (resp) => {
-        console.log(resp);
-        toast('Theme Color Updated');
-        setIsOpen(false);
-      },
-      () => setIsOpen(false)
-    );
+      });
+
+      console.log('✅ Color de tema actualizado:', response);
+      toast.success('Color de tema actualizado');
+      setIsOpen(false);
+    } catch (error) {
+      console.error('❌ Error actualizando color:', error);
+      toast.error('Error al actualizar color: ' + error.message);
+      setIsOpen(false);
+    }
   };
 
   return (

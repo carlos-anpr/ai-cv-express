@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ResumeInfoContext } from '@/context/ResumeInfoContext';
 import React, { useContext, useState, useEffect } from 'react';
-import GlobalApi from '../../../../../service/GlobalApi';
+import LocalDatabase from '../../../../services/LocalDatabase';
 import { useParams } from 'react-router-dom';
 import { LoaderCircle, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
@@ -45,25 +45,29 @@ function Summary({ enableNext }) {
     }
   };
 
-  const onSave = (e) => {
+  const onSave = async (e) => {
     e.preventDefault();
+
+    if (!params?.resumeId) {
+      toast.error('ID del CV no válido');
+      return;
+    }
+
     setLoading(true);
 
-    const data = {
-      data: {
+    try {
+      const response = await LocalDatabase.UpdateResumeDetail(params.resumeId, {
         summary,
-      },
-    };
-
-    GlobalApi.UpdateResumeDetail(params?.resumeId, data).then(
-      (resp) => {
-        console.log(resp);
-        setLoading(false);
-        enableNext(true);
-        toast('Details updated');
-      },
-      () => setLoading(false)
-    );
+      });
+      console.log('✅ Resumen actualizado:', response);
+      enableNext(true);
+      toast.success('Resumen actualizado correctamente');
+    } catch (error) {
+      console.error('❌ Error actualizando resumen:', error);
+      toast.error('Error al actualizar resumen: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

@@ -4,7 +4,7 @@ import { ResumeInfoContext } from '@/context/ResumeInfoContext';
 import { LoaderCircle } from 'lucide-react';
 import React, { useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import GlobalApi from './../../../../../service/GlobalApi';
+import LocalDatabase from '../../../../services/LocalDatabase';
 import { toast } from 'sonner';
 
 function PersonalDetail({ enableNext }) {
@@ -33,23 +33,30 @@ function PersonalDetail({ enableNext }) {
     });
   };
 
-  const onSave = (e) => {
+  const onSave = async (e) => {
     e.preventDefault();
+
+    if (!params?.resumeId || !formData) {
+      toast.error('Datos incompletos para guardar');
+      return;
+    }
+
     setLoading(true);
-    const data = {
-      data: formData,
-    };
-    GlobalApi.UpdateResumeDetail(params?.resumeId, data).then(
-      (resp) => {
-        console.log(resp);
-        enableNext(true);
-        setLoading(false);
-        toast('Details updated');
-      },
-      () => {
-        setLoading(false);
-      }
-    );
+
+    try {
+      const response = await LocalDatabase.UpdateResumeDetail(
+        params.resumeId,
+        formData
+      );
+      console.log('✅ Detalles personales actualizados:', response);
+      enableNext(true);
+      toast.success('Detalles actualizados correctamente');
+    } catch (error) {
+      console.error('❌ Error actualizando detalles:', error);
+      toast.error('Error al actualizar: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <div className="p-5 shadow-lg rounded-lg border-t-primary border-t-4 mt-10">

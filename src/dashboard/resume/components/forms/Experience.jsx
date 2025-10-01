@@ -4,7 +4,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import RichTextEditor from '../RichTextEditor';
 import { ResumeInfoContext } from '@/context/ResumeInfoContext';
 import { useParams } from 'react-router-dom';
-import GlobalApi from './../../../../../service/GlobalApi';
+import LocalDatabase from '../../../../services/LocalDatabase';
 import { toast } from 'sonner';
 import { LoaderCircle } from 'lucide-react';
 
@@ -74,25 +74,32 @@ function Experience() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [experinceList]);
 
-  const onSave = () => {
-    setLoading(true);
-    const data = {
-      data: {
-        // eslint-disable-next-line no-unused-vars
-        experience: experinceList?.map(({ id, ...rest }) => rest),
-      },
-    };
+  const onSave = async () => {
+    if (!params?.resumeId) {
+      toast.error('ID del CV no válido');
+      return;
+    }
 
-    GlobalApi.UpdateResumeDetail(params?.resumeId, data).then(
-      (res) => {
-        console.log(res);
-        setLoading(false);
-        toast('Details updated !');
-      },
-      () => {
-        setLoading(false);
-      }
-    );
+    setLoading(true);
+
+    try {
+      // Limpiar IDs temporales antes de guardar
+      // eslint-disable-next-line no-unused-vars
+      const cleanExperience =
+        experinceList?.map(({ id, ...rest }) => rest) || [];
+
+      const response = await LocalDatabase.UpdateResumeDetail(params.resumeId, {
+        experience: cleanExperience,
+      });
+
+      console.log('✅ Experiencia actualizada:', response);
+      toast.success('Experiencia actualizada correctamente');
+    } catch (error) {
+      console.error('❌ Error actualizando experiencia:', error);
+      toast.error('Error al actualizar experiencia: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <div>

@@ -5,7 +5,7 @@ import { ResumeInfoContext } from '@/context/ResumeInfoContext';
 import { LoaderCircle } from 'lucide-react';
 import React, { useContext, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import GlobalApi from './../../../../../service/GlobalApi';
+import LocalDatabase from '../../../../services/LocalDatabase';
 import { toast } from 'sonner';
 
 function Education() {
@@ -50,26 +50,32 @@ function Education() {
   const RemoveEducation = () => {
     setEducationalList((educationalList) => educationalList.slice(0, -1));
   };
-  const onSave = () => {
-    setLoading(true);
-    const data = {
-      data: {
-        // eslint-disable-next-line no-unused-vars
-        education: educationalList?.map(({ id, ...rest }) => rest),
-      },
-    };
+  const onSave = async () => {
+    if (!params?.resumeId) {
+      toast.error('ID del CV no válido');
+      return;
+    }
 
-    GlobalApi.UpdateResumeDetail(params.resumeId, data).then(
-      (resp) => {
-        console.log(resp);
-        setLoading(false);
-        toast('Details updated !');
-      },
-      () => {
-        setLoading(false);
-        toast('Server Error, Please try again!');
-      }
-    );
+    setLoading(true);
+
+    try {
+      // Limpiar IDs temporales antes de guardar
+      // eslint-disable-next-line no-unused-vars
+      const cleanEducation =
+        educationalList?.map(({ id, ...rest }) => rest) || [];
+
+      const response = await LocalDatabase.UpdateResumeDetail(params.resumeId, {
+        education: cleanEducation,
+      });
+
+      console.log('✅ Educación actualizada:', response);
+      toast.success('Educación actualizada correctamente');
+    } catch (error) {
+      console.error('❌ Error actualizando educación:', error);
+      toast.error('Error al actualizar educación: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {

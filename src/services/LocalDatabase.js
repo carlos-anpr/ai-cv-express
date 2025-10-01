@@ -3,8 +3,23 @@ import { db } from './IndexedDBService.js';
 import { v4 as uuidv4 } from 'uuid';
 
 class LocalDatabase {
+  // UTILITY - Verificar que la DB esté inicializada
+  async ensureDatabaseReady() {
+    try {
+      if (!db.isOpen()) {
+        console.log('🔄 Base de datos no abierta, inicializando...');
+        await db.open();
+      }
+      return true;
+    } catch (error) {
+      console.error('❌ Error inicializando base de datos:', error);
+      throw new Error('Base de datos no disponible: ' + error.message);
+    }
+  }
+
   // CREATE - Crear nuevo CV
   async CreateNewResume(data) {
+    await this.ensureDatabaseReady();
     try {
       const documentId = uuidv4();
       const now = new Date();
@@ -29,13 +44,17 @@ class LocalDatabase {
         version: 1,
       };
 
+      console.log('💾 Guardando CV:', resumeData);
+
       const id = await db.resumes.add(resumeData);
+
+      console.log('✅ CV guardado con ID:', id);
 
       // Actualizar contador de usuario
       await this.updateUserStats(data.userEmail);
 
       // Retornar en formato compatible con la API anterior
-      return {
+      const result = {
         data: {
           ...resumeData,
           id,
@@ -44,6 +63,9 @@ class LocalDatabase {
           skills: JSON.parse(resumeData.skills),
         },
       };
+
+      console.log('📋 CV creado exitosamente:', result);
+      return result;
     } catch (error) {
       console.error('Error creating resume:', error);
       throw new Error('No se pudo crear el CV: ' + error.message);
@@ -52,22 +74,35 @@ class LocalDatabase {
 
   // READ - Obtener CVs del usuario
   async GetUserResumes(userEmail) {
+    await this.ensureDatabaseReady();
     try {
+      console.log('🔍 GetUserResumes - userEmail:', userEmail);
+
+      // Verificar que la base de datos esté disponible
+      if (!db || !db.resumes) {
+        throw new Error('Base de datos no disponible');
+      } // Obtener todos los CVs del usuario y ordenar en memoria
       const resumes = await db.resumes
         .where('userEmail')
         .equals(userEmail)
-        .orderBy('updatedAt')
-        .reverse()
         .toArray();
 
+      console.log('📊 CVs encontrados:', resumes.length, resumes);
+
+      // Ordenar por fecha de actualización (más reciente primero)
+      const sortedResumes = resumes.sort(
+        (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
+      );
+
       // Parsear JSON fields para compatibilidad
-      const processedResumes = resumes.map((resume) => ({
+      const processedResumes = sortedResumes.map((resume) => ({
         ...resume,
         experience: this.safeJsonParse(resume.experience, []),
         education: this.safeJsonParse(resume.education, []),
         skills: this.safeJsonParse(resume.skills, []),
       }));
 
+      console.log('✅ CVs procesados:', processedResumes.length);
       return { data: processedResumes };
     } catch (error) {
       console.error('Error getting user resumes:', error);
@@ -77,6 +112,7 @@ class LocalDatabase {
 
   // READ - Obtener CV por ID
   async GetResumeById(documentId) {
+    await this.ensureDatabaseReady();
     try {
       const resume = await db.resumes
         .where('documentId')
@@ -103,6 +139,7 @@ class LocalDatabase {
 
   // UPDATE - Actualizar CV
   async UpdateResumeDetail(documentId, updateData) {
+    await this.ensureDatabaseReady();
     try {
       const existingResume = await db.resumes
         .where('documentId')
@@ -348,6 +385,42 @@ class LocalDatabase {
     } catch (error) {
       console.error('Error importing data:', error);
       throw new Error('No se pudieron importar los datos: ' + error.message);
+    }
+  }
+
+  // UTILITY - Debug: Listar todos los CVs en la base de datos
+  async DebugListAllResumes() {
+    try {
+      const allResumes = await db.resumes.toArray();
+      console.log('🔍 DEBUG - Total de CVs en la DB:', allResumes.length);
+      console.log('📋 DEBUG - Todos los CVs:', allResumes);
+      return allResumes;
+    } catch (error) {
+      console.error('❌ DEBUG - Error listando CVs:', error);
+      return [];
+    }
+  }
+
+  // UTILITY - Debug: Verificar estado de la base de datos
+  async DebugDatabaseStatus() {
+    try {
+      await db.open();
+      const totalResumes = await db.resumes.count();
+      const totalUsers = await db.userData.count();
+
+      const status = {
+        isOpen: db.isOpen(),
+        version: db.verno,
+        totalResumes,
+        totalUsers,
+        tables: db.tables.map((t) => t.name),
+      };
+
+      console.log('🔍 DEBUG - Base de datos:', status);
+      return status;
+    } catch (error) {
+      console.error('❌ DEBUG - Error verificando DB:', error);
+      return null;
     }
   }
 

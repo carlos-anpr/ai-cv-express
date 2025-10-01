@@ -42,25 +42,19 @@ function SkillsPreview({ resumeInfo }) {
         {resumeInfo?.skills?.map((skill, index) => {
           const normalizedRating = normalizeRating(skill?.rating);
           const ratingText = getRatingText(skill?.rating);
-          const skillLevel = Math.ceil(normalizedRating / 20);
-
-          // Debug log temporal
-          console.log(
-            `🎯 Skill: ${skill.name}, Rating: ${skill?.rating}, Normalized: ${normalizedRating}%, Level: ${skillLevel}/5`
-          );
 
           return (
             <div key={index} className="skill-item">
-              {/* Encabezado limpio con nombre y nivel */}
+              {/* Encabezado con nombre y nivel */}
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-gray-800">
                   {skill.name}
                 </span>
                 <div className="flex items-center gap-2">
                   <span
-                    className="text-xs font-bold px-2 py-1 rounded-full border"
+                    className="text-xs font-bold px-2 py-1 rounded-full"
                     style={{
-                      borderColor: resumeInfo?.themeColor,
+                      backgroundColor: resumeInfo?.themeColor + '15',
                       color: resumeInfo?.themeColor,
                     }}
                   >
@@ -75,10 +69,10 @@ function SkillsPreview({ resumeInfo }) {
                 </div>
               </div>
 
-              {/* Barra de progreso principal - Compatible con PDF */}
+              {/* Barra de progreso principal */}
               <div className="w-full h-2 bg-gray-200 rounded-full mb-2">
                 <div
-                  className="h-2 rounded-full"
+                  className="h-2 rounded-full transition-all"
                   style={{
                     backgroundColor: resumeInfo?.themeColor,
                     width: normalizedRating + '%',
@@ -86,38 +80,36 @@ function SkillsPreview({ resumeInfo }) {
                 ></div>
               </div>
 
-              {/* Indicador visual de nivel - Sistema de círculos sólidos CORREGIDO */}
+              {/* Indicador visual adicional - Bloques de nivel */}
               <div className="flex items-center justify-between">
-                <div className="flex gap-1.5">
-                  {Array.from({ length: 5 }, (_, i) => {
-                    const level = i + 1;
-                    const isActive = level <= skillLevel;
-                    const circleColor = isActive
-                      ? resumeInfo?.themeColor || '#3b82f6'
-                      : '#e5e7eb';
-
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((level) => {
+                    const isActive = level <= Math.ceil(normalizedRating / 20);
                     return (
                       <div
                         key={level}
+                        className="w-4 h-1.5 rounded-sm"
                         style={{
-                          width: '12px',
-                          height: '12px',
-                          borderRadius: '50%',
-                          backgroundColor: circleColor,
-                          display: 'inline-block',
+                          backgroundColor: isActive
+                            ? resumeInfo?.themeColor
+                            : '#e5e7eb',
                         }}
                       />
                     );
                   })}
                 </div>
 
-                {/* Nivel numérico simple */}
-                <span className="text-xs text-gray-500 font-medium">
-                  Level {skillLevel}/5
-                </span>
+                {/* Escala visual textual */}
+                <div className="flex items-center gap-1 text-xs text-gray-400">
+                  <span>●</span>
+                  <span>●</span>
+                  <span>●</span>
+                  <span>●</span>
+                  <span>●</span>
+                </div>
               </div>
 
-              {/* Separador entre skills */}
+              {/* Línea separadora sutil */}
               {index < (resumeInfo?.skills?.length || 0) - 1 && (
                 <div className="mt-3 border-b border-gray-100"></div>
               )}

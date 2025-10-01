@@ -17,6 +17,10 @@ function Dashboard() {
 
     setLoading(true);
     try {
+      // Debug: Verificar estado de la base de datos
+      await LocalDatabase.DebugDatabaseStatus();
+      await LocalDatabase.DebugListAllResumes();
+
       const response = await LocalDatabase.GetUserResumes(
         user.primaryEmailAddress.emailAddress
       );
