@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import GlobalApi from './../../../service/GlobalApi';
+import LocalDatabase from '../../services/LocalDatabase';
 import { toast } from 'sonner';
 
 function ResumeCardItem({ resume, refreshData }) {
@@ -31,18 +31,21 @@ function ResumeCardItem({ resume, refreshData }) {
   //   navigation(url)
   // }
 
-  const onDelete = () => {
+  const onDelete = async () => {
     setLoading(true);
-    GlobalApi.DeleteResumeById(resume.documentId).then(
-      (resp) => {
-        console.log(resp);
-        toast('Resume Deleted!');
-        refreshData();
-        setLoading(false);
-        setOpenAlert(false);
-      },
-      () => setLoading(false)
-    );
+
+    try {
+      const response = await LocalDatabase.DeleteResumeById(resume.documentId);
+      console.log('✅ CV eliminado:', response);
+      toast.success('CV eliminado correctamente');
+      refreshData();
+      setOpenAlert(false);
+    } catch (error) {
+      console.error('❌ Error eliminando CV:', error);
+      toast.error(error.message || 'Error al eliminar el CV');
+    } finally {
+      setLoading(false);
+    }
   };
   return (
     <div className="">

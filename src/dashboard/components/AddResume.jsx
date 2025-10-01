@@ -1,6 +1,5 @@
 import { Loader2, PlusSquare } from 'lucide-react';
 import React, { useState } from 'react';
-import { v4 as uuidv4 } from 'uuid';
 import {
   Dialog,
   DialogContent,
@@ -11,9 +10,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import GlobalApi from '../../../service/GlobalApi';
+import LocalDatabase from '../../services/LocalDatabase';
 import { useUser } from '@clerk/clerk-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 function AddResume() {
   const [openDialog, setOpenDialog] = useState(false);
@@ -22,29 +22,39 @@ function AddResume() {
   const [loading, setLoading] = useState(false);
   const navigation = useNavigate();
 
-  const onCreate = () => {
-    const uuid = uuidv4();
+  const onCreate = async () => {
+    if (!resumeTitle || !user?.primaryEmailAddress?.emailAddress) {
+      toast.error('Título del CV y usuario son requeridos');
+      return;
+    }
+
     const data = {
-      data: {
-        title: resumeTitle,
-        resumeId: uuid,
-        userEmail: user?.primaryEmailAddress.emailAddress,
-        userName: user?.fullName,
-      },
+      title: resumeTitle,
+      userEmail: user.primaryEmailAddress.emailAddress,
+      userName: user.fullName,
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      jobTitle: '',
+      themeColor: '#3b82f6',
     };
+
     setLoading(true);
-    GlobalApi.CreateNewResume(data).then(
-      (resp) => {
-        console.log(resp.data.data.resumeId);
-        if (resp) {
-          setLoading(false);
-          navigation(`/dashboard/resume/${resp.data.data.documentId}/edit`);
-        }
-      },
-      () => {
-        setLoading(false);
+
+    try {
+      const response = await LocalDatabase.CreateNewResume(data);
+      console.log('✅ CV creado:', response.data);
+
+      if (response.data.documentId) {
+        toast.success('CV creado correctamente');
+        setOpenDialog(false);
+        navigation(`/dashboard/resume/${response.data.documentId}/edit`);
       }
-    );
+    } catch (error) {
+      console.error('❌ Error creando CV:', error);
+      toast.error(error.message || 'Error al crear el CV');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

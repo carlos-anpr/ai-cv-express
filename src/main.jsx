@@ -8,6 +8,7 @@ import Dashboard from './dashboard';
 import { ClerkProvider } from '@clerk/clerk-react';
 import EditResume from './dashboard/resume/[resumeId]/edit';
 import MyResume from './my-resume/[resumeId]/view';
+import { initializeDatabase } from './services/IndexedDBService';
 import './index.css';
 
 // Import your Publishable Key
@@ -45,6 +46,15 @@ const router = createBrowserRouter([
     element: <MyResume />,
   },
 ]);
+
+// Inicializar IndexedDB al cargar la aplicación
+initializeDatabase()
+  .then(() => {
+    console.log('✅ Base de datos local inicializada correctamente');
+  })
+  .catch((error) => {
+    console.error('❌ Error inicializando base de datos local:', error);
+  });
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
