@@ -84,9 +84,12 @@ function Experience() {
 
     try {
       // Limpiar IDs temporales antes de guardar
-      // eslint-disable-next-line no-unused-vars
       const cleanExperience =
-        experinceList?.map(({ id, ...rest }) => rest) || [];
+        experinceList?.map((item) => {
+          // eslint-disable-next-line no-unused-vars
+          const { id, ...rest } = item;
+          return rest;
+        }) || [];
 
       const response = await LocalDatabase.UpdateResumeDetail(params.resumeId, {
         experience: cleanExperience,

@@ -20,15 +20,15 @@ function Summary({ enableNext }) {
 
   useEffect(() => {
     if (summary) {
-      setResumeInfo({
-        ...resumeInfo,
+      setResumeInfo((prevResumeInfo) => ({
+        ...prevResumeInfo,
         summary,
-      });
+      }));
       enableNext(true);
     } else {
       enableNext(false);
     }
-  }, [summary]);
+  }, [summary, setResumeInfo, enableNext]);
 
   const GenerateSummaryFromAI = async () => {
     setLoading(true);

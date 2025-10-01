@@ -60,9 +60,12 @@ function Education() {
 
     try {
       // Limpiar IDs temporales antes de guardar
-      // eslint-disable-next-line no-unused-vars
       const cleanEducation =
-        educationalList?.map(({ id, ...rest }) => rest) || [];
+        educationalList?.map((item) => {
+          // eslint-disable-next-line no-unused-vars
+          const { id, ...rest } = item;
+          return rest;
+        }) || [];
 
       const response = await LocalDatabase.UpdateResumeDetail(params.resumeId, {
         education: cleanEducation,

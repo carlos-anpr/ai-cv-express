@@ -44,11 +44,6 @@ function SkillsPreview({ resumeInfo }) {
           const ratingText = getRatingText(skill?.rating);
           const skillLevel = Math.ceil(normalizedRating / 20);
 
-          // Debug log temporal
-          console.log(
-            `🎯 Skill: ${skill.name}, Rating: ${skill?.rating}, Normalized: ${normalizedRating}%, Level: ${skillLevel}/5`
-          );
-
           return (
             <div key={index} className="skill-item">
               {/* Encabezado limpio con nombre y nivel */}
