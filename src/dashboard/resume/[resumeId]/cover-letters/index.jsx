@@ -34,7 +34,7 @@ function CoverLettersManager() {
       setCoverLetters(letters);
     } catch (error) {
       console.error('Error cargando cartas:', error);
-      toast.error('Error al cargar las cartas de recomendación');
+      toast.error('Error al cargar las cartas de presentación');
     } finally {
       setLoading(false);
     }
@@ -52,7 +52,7 @@ function CoverLettersManager() {
   const handleDelete = async (letterId) => {
     if (
       !confirm(
-        '¿Estás seguro de que quieres eliminar esta carta de recomendación?'
+        '¿Estás seguro de que quieres eliminar esta carta de presentación?'
       )
     ) {
       return;
@@ -83,7 +83,7 @@ function CoverLettersManager() {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
-        <span className="ml-2">Cargando cartas de recomendación...</span>
+        <span className="ml-2">Cargando cartas de presentación...</span>
       </div>
     );
   }
@@ -98,7 +98,7 @@ function CoverLettersManager() {
             Volver
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Cartas de Recomendación</h1>
+            <h1 className="text-2xl font-bold">Cartas de Presentación</h1>
             <p className="text-gray-600">
               CV: {resumeInfo?.title || 'Sin título'} - {resumeInfo?.firstName}{' '}
               {resumeInfo?.lastName}
@@ -117,10 +117,10 @@ function CoverLettersManager() {
           <CardContent className="text-center py-12">
             <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">
-              No hay cartas de recomendación
+              No hay cartas de presentación
             </h3>
             <p className="text-gray-600 mb-4">
-              Crea tu primera carta de recomendación personalizada para una
+              Crea tu primera carta de presentación personalizada para una
               empresa específica.
             </p>
             <Button onClick={() => setShowForm(true)}>

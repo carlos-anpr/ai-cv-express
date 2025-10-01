@@ -103,7 +103,7 @@ function ResumeCardItem({ resume, refreshData }) {
                 )
               }
             >
-              Cartas de Recomendación
+              Cartas de Presentación
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() =>

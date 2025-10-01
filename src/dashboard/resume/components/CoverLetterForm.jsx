@@ -15,11 +15,11 @@ import LocalDatabase from '../../../services/LocalDatabase';
 import { useUser } from '@clerk/clerk-react';
 import { AIChatSessionText } from '../../../../service/AIModal';
 
-// Prompt para generar cartas de recomendación
+// Prompt para generar cartas de presentación
 const COVER_LETTER_PROMPT = `
-Actúa como un experto redactor de cartas de recomendación profesionales. 
+Actúa como un experto redactor de cartas de presentación profesionales. 
 
-Basándote en la siguiente información del candidato y el puesto solicitado, crea una carta de recomendación persuasiva y personalizada:
+Basándote en la siguiente información del candidato y el puesto solicitado, crea una carta de presentación persuasiva y personalizada:
 
 INFORMACIÓN DEL CANDIDATO:
 - Nombre: {candidateName}
@@ -34,12 +34,12 @@ INFORMACIÓN DEL PUESTO:
 - Puesto Solicitado: {jobTitle}
 
 INSTRUCCIONES:
-1. Crea una carta profesional en español dirigida al departamento de recursos humanos
-2. Destaca las cualidades más relevantes del candidato para el puesto específico
-3. Usa un tono profesional pero cercano
-4. Incluye ejemplos específicos basados en la experiencia del candidato
+1. Crea una carta de presentación en primera persona dirigida al departamento de recursos humanos
+2. El candidato se presenta a sí mismo para el puesto específico
+3. Usa un tono profesional pero cercano y personal
+4. Incluye ejemplos específicos de la experiencia del candidato
 5. La carta debe tener entre 300-500 palabras
-6. Estructura: Saludo, introducción, cuerpo (2-3 párrafos), cierre profesional
+6. Estructura: Saludo, introducción personal, cuerpo (2-3 párrafos), cierre con disponibilidad
 
 FORMATO REQUERIDO:
 Devuelve solo el contenido de la carta, sin encabezados adicionales ni metadatos.
@@ -79,7 +79,7 @@ function CoverLetterForm({ resumeId, resumeInfo, editingLetter, onClose }) {
   const generateTemplateCoverLetter = () => {
     const candidateName =
       `${resumeInfo?.firstName || ''} ${resumeInfo?.lastName || ''}`.trim() ||
-      'Candidato';
+      'mi nombre';
     const experience =
       Array.isArray(resumeInfo?.experience) && resumeInfo.experience.length > 0
         ? resumeInfo.experience[0] // Tomar la primera experiencia
@@ -97,39 +97,41 @@ function CoverLetterForm({ resumeId, resumeInfo, editingLetter, onClose }) {
       formData.companyName
     },
 
-Me dirijo a ustedes con el propósito de recomendar encarecidamente a ${candidateName} para el puesto de ${
+Mi nombre es ${candidateName} y me dirijo a ustedes para expresar mi interés en el puesto de ${
       formData.jobTitle
-    } en su prestigiosa empresa.
+    } en su empresa.
 
-Durante mi experiencia profesional, he tenido la oportunidad de conocer las capacidades y el desempeño de ${candidateName}, quien ha demostrado ser un profesional altamente competente y comprometido. ${
-      resumeInfo?.summary ||
-      'Su experiencia y dedicación lo convierten en un candidato ideal para este puesto.'
-    } 
+${
+  resumeInfo?.summary ||
+  'Soy un profesional comprometido con experiencia en desarrollo de software y tecnología.'
+} Me siento especialmente atraído por esta oportunidad porque considero que mis habilidades y experiencia se alinean bien con lo que buscan.
 
 ${
   experience
-    ? `En su rol como ${experience.title} en ${experience.companyName}, ${candidateName} ha desarrollado habilidades excepcionales que son directamente aplicables al puesto que solicita. Su experiencia incluye trabajo con ${skills}, lo cual es fundamental para el éxito en esta posición.`
-    : `${candidateName} posee las habilidades técnicas necesarias, incluyendo experiencia con ${skills}, que son fundamentales para destacar en el puesto de ${formData.jobTitle}.`
+    ? `Durante mi experiencia como ${experience.title} en ${
+        experience.companyName
+      }, he desarrollado habilidades sólidas en ${skills}, trabajando en proyectos que han fortalecido mi capacidad técnica y profesional. Esta experiencia me ha permitido entender la importancia de ${
+        experience.workSummery ||
+        'la colaboración en equipo y la entrega de resultados de calidad'
+      }.`
+    : `He desarrollado experiencia práctica con ${skills}, tecnologías que considero fundamentales para desempeñarme efectivamente en el puesto de ${formData.jobTitle}.`
 }
 
-Las cualidades que más destacan de ${candidateName} incluyen:
-• Excelente capacidad de resolución de problemas
-• Fuerte orientación a resultados
-• Habilidades de comunicación excepcionales  
-• Capacidad para trabajar efectivamente en equipo
-• Adaptabilidad a nuevos desafíos y tecnologías
+Entre mis principales fortalezas destacan:
+• Capacidad de resolución de problemas y análisis
+• Orientación a resultados y atención al detalle
+• Buenas habilidades de comunicación
+• Facilidad para trabajar en equipo
+• Disposición para aprender y adaptarme a nuevos desafíos
 
-Estoy convencido/a de que ${candidateName} será una valiosa adición a su equipo y contribuirá significativamente al éxito continuo de ${
+Estoy muy interesado en formar parte de su equipo y contribuir al crecimiento de ${
       formData.companyName
-    }. Su combinación de experiencia técnica, profesionalismo y dedicación lo convierten en el candidato ideal para esta oportunidad.
+    }. Creo que mi experiencia y actitud positiva pueden aportar valor a la posición.
 
-No duden en contactarme si requieren información adicional sobre esta recomendación.
+Quedo a su disposición para ampliar cualquier información sobre mi perfil profesional.
 
 Atentamente,
-
-[Nombre del Recomendador]
-[Título/Posición]
-[Información de Contacto]`;
+${candidateName}`;
 
     return templateContent;
   };
@@ -166,53 +168,78 @@ Atentamente,
           ? resumeInfo.education[0]
           : null;
 
-      const prompt = `Escribe una carta de recomendación profesional en español. Devuelve ÚNICAMENTE el texto de la carta, sin formato JSON, sin comentarios adicionales.
+      const prompt = `Escribe una carta de presentación profesional en primera persona en español con tono humano y honesto. El candidato se presenta a sí mismo. Devuelve ÚNICAMENTE el texto de la carta, sin formato JSON, sin comentarios adicionales.
 
-INFORMACIÓN DEL PUESTO:
-- Candidato: ${candidateName || 'el candidato'}
-- Empresa: ${formData.companyName}
-- Puesto: ${formData.jobTitle}
+INFORMACIÓN DEL CANDIDATO Y PUESTO:
+- Mi nombre: ${candidateName || 'el candidato'}
+- Empresa a la que me postulo: ${formData.companyName}
+- Puesto que solicito: ${formData.jobTitle}
 
-REQUISITOS DE LA OFERTA LABORAL:
+REQUISITOS Y TECNOLOGÍAS QUE BUSCAN:
 ${
   formData.jobDetails ||
   'Puesto de desarrollo de software con requisitos técnicos específicos'
 }
 
-PERFIL DEL CANDIDATO:
-- Experiencia: ${
+MI PERFIL PROFESIONAL:
+- Mi experiencia laboral: ${
         latestExperience
-          ? `${latestExperience.title} en ${latestExperience.companyName} (${
-              latestExperience.startDate
-            } - ${
-              latestExperience.endDate || 'Presente'
-            }). Responsabilidades: ${
+          ? `${latestExperience.title} en ${
+              latestExperience.companyName
+            } durante ${latestExperience.startDate} - ${
+              latestExperience.endDate || 'presente'
+            }. Mis responsabilidades incluyeron: ${
               latestExperience.workSummery ||
-              'Desarrollo y mantenimiento de aplicaciones'
+              'desarrollo y mantenimiento de aplicaciones'
             }`
-          : 'Experiencia en desarrollo de software'
+          : 'experiencia en desarrollo de software'
       }
-- Habilidades técnicas: ${skills || 'Tecnologías de desarrollo modernas'}
-- Educación: ${
+- Tecnologías que manejo: ${skills || 'tecnologías de desarrollo modernas'}
+- Mi formación: ${
         education
           ? `${education.degree} en ${education.universityName}`
-          : 'Formación técnica relevante'
+          : 'formación técnica relevante'
       }
-- Resumen: ${
+- Sobre mí: ${
         resumeInfo?.summary ||
-        'Profesional con experiencia en desarrollo de software'
+        'profesional con experiencia en desarrollo de software'
       }
 
-INSTRUCCIONES:
-- Comienza con "Estimado equipo de Recursos Humanos de ${formData.companyName},"
-- Menciona específicamente las tecnologías del candidato que coincidan con las requeridas en la oferta
-- Destaca cómo la experiencia del candidato se alinea con las responsabilidades del puesto
-- Incluye ejemplos concretos de logros o proyectos relevantes
-- Usa un tono profesional y convincente
-- Termina con una recomendación clara y datos de contacto genéricos
-- Extensión: 350-500 palabras
+ANÁLISIS REQUERIDO PARA MI PRESENTACIÓN:
+1. Compara las tecnologías que REALMENTE manejo con las que piden
+2. Para tecnologías que SÍ manejo: menciona mi experiencia práctica en primera persona
+3. Para tecnologías que NO manejo pero son similares: habla de mi capacidad de transferir conocimiento
+4. Para tecnologías completamente nuevas: menciona mi capacidad de aprendizaje sin exagerar
 
-Escribe la carta completa ahora:`;
+INSTRUCCIONES PARA UN TONO HUMANO Y REALISTA EN PRIMERA PERSONA:
+- Comienza con "Estimado equipo de Recursos Humanos de ${formData.companyName},"
+- Presenta mi nombre: "Mi nombre es ${
+        candidateName || '[nombre]'
+      } y me dirijo a ustedes..."
+- Sé honesto sobre mis habilidades: si tengo experiencia sólida en algo, menciónalo con confianza
+- Si NO tengo experiencia directa en algún requisito, habla de mi capacidad de adaptación y aprendizaje
+- Usa frases como "tengo experiencia práctica en...", "he trabajado con...", "estoy familiarizado con...", "he demostrado capacidad para aprender..."
+- Evita palabras como "excepcional", "extraordinario", "dominio completo", "experto absoluto"
+- Usa un lenguaje personal y cercano: "considero que puedo", "en mi experiencia", "he observado que"
+- Menciona tanto mis fortalezas como áreas donde puedo crecer
+- Si hay tecnologías que no domino pero son similares a las que conozco, menciónalo: "aunque no he trabajado directamente con X, mi experiencia con Y me dará una base sólida"
+- Sé específico pero modesto: "durante los 2 años que trabajé en...", "en los proyectos que desarrollé..."
+- Incluye una pequeña limitación honesta que no sea crítica: "aunque siempre estoy dispuesto a seguir aprendiendo" o "con ganas de seguir creciendo en..."
+- Termina con disponibilidad y interés genuine pero sin exagerar
+- Extensión: 300-450 palabras
+- Tono: profesional pero humano, honesto y equilibrado, en primera persona
+
+EJEMPLOS DE FRASES HUMANAS EN PRIMERA PERSONA EN LUGAR DE "IA":
+❌ Evitar: "Domino completamente", "Soy un experto absoluto", "Tengo conocimiento excepcional"
+✅ Usar: "Tengo buena experiencia con", "He trabajado efectivamente con", "Estoy familiarizado con"
+
+❌ Evitar: "Superaré todas las expectativas", "Soy el candidato perfecto"
+✅ Usar: "Creo que puedo ser una buena adición al equipo", "Considero que puedo encajar bien"
+
+❌ Evitar: "Domino absolutamente todas las tecnologías requeridas"
+✅ Usar: "Manejo bien las tecnologías principales y tengo capacidad para adaptarme a las nuevas"
+
+Escribe la carta completa de presentación en primera persona ahora, siendo honesto sobre lo que realmente sé y lo que puedo aprender:`;
 
       console.log('=== PROMPT GENERADO ===');
       console.log(prompt);
@@ -223,7 +250,7 @@ Escribe la carta completa ahora:`;
 
       if (generatedContent && generatedContent.trim()) {
         setFormData((prev) => ({ ...prev, content: generatedContent.trim() }));
-        toast.success('¡Carta de recomendación generada exitosamente con IA!');
+        toast.success('¡Carta de presentación generada exitosamente con IA!');
       } else {
         throw new Error('Respuesta vacía de la IA');
       }
@@ -295,8 +322,8 @@ Escribe la carta completa ahora:`;
           <DialogTitle className="flex items-center justify-between">
             <span>
               {editingLetter
-                ? 'Editar Carta de Recomendación'
-                : 'Nueva Carta de Recomendación'}
+                ? 'Editar Carta de Presentación'
+                : 'Nueva Carta de Presentación'}
             </span>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />
@@ -304,8 +331,8 @@ Escribe la carta completa ahora:`;
           </DialogTitle>
           <DialogDescription>
             {editingLetter
-              ? 'Modifica los datos de la carta de recomendación existente.'
-              : 'Crea una nueva carta de recomendación personalizada con ayuda de inteligencia artificial.'}
+              ? 'Modifica los datos de la carta de presentación existente.'
+              : 'Crea una nueva carta de presentación personalizada con ayuda de inteligencia artificial.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -406,7 +433,7 @@ Escribe la carta completa ahora:`;
               name="content"
               value={formData.content}
               onChange={handleInputChange}
-              placeholder="Escribe aquí el contenido de tu carta de recomendación o usa la IA para generarla automáticamente..."
+              placeholder="Escribe aquí el contenido de tu carta de presentación o usa la IA para generarla automáticamente..."
               rows={15}
               className="min-h-[400px]"
               required
