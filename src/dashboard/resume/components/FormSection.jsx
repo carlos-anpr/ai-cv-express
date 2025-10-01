@@ -62,12 +62,6 @@ function FormSection() {
       ) : activeFormIndex == 6 ? (
         <Navigate to={`/my-resume/${params.resumeId}/view`} />
       ) : null}
-
-      {/* Experience  */}
-
-      {/* Educational Detail  */}
-
-      {/* Skills  */}
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { AIChatSession } from '../../../../../service/AIModal';
 
 const prompt =
-  'Job Title: {jobTitle} , Depends on job title give me list of  summary for 3 experience level, Mid Level and Freasher level in 5-6 lines in array format, With summary and experience_level Field in JSON Format.';
+  'Job Title: {jobTitle} , Depends on job title give me list of  summary for 3 experience level, Mid Level and Freasher level in 5-6 lines in array format, With summary and experience_level Field in JSON Format.La respuesta que sea en castellano';
 
 function Summary({ enableNext }) {
   const params = useParams();

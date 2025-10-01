@@ -21,7 +21,7 @@ import {
 import { AIChatSession } from './../../../../service/AIModal';
 import { toast } from 'sonner';
 const PROMPT =
-  'position titile: {positionTitle} , Depends on position title give me 5-7 bullet points for my experience in resume (Please do not add experince level and No JSON array) , give me result JSOn containing the structure { jobTitle: {positionTitle}, points: ["point1","point2",....]}';
+  'position titile: {positionTitle} , Depends on position title give me 5-7 bullet points for my experience in resume (Please do not add experince level and No JSON array) , give me result JSOn containing the structure { jobTitle: {positionTitle}, points: ["point1","point2",....]}. La respuesta sea en castellano';
 function RichTextEditor({ onRichTextEditorChange, index, defaultValue }) {
   const [value, setValue] = useState(defaultValue);
   const { resumeInfo } = useContext(ResumeInfoContext);
