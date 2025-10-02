@@ -40,14 +40,11 @@ function JobApplications() {
     try {
       let coverLetterCount = 0;
 
-      // Verificar cada candidatura para ver si tiene cartas
+      // Verificar cada candidatura para ver si tiene carta
       for (const app of apps) {
-        const coverLettersResponse =
-          await LocalDatabase.GetCoverLettersByApplication(app.id);
-        if (
-          coverLettersResponse.success &&
-          coverLettersResponse.data.length > 0
-        ) {
+        const coverLetterResponse =
+          await LocalDatabase.GetCoverLetterByApplication(app.id);
+        if (coverLetterResponse.success && coverLetterResponse.data) {
           coverLetterCount++;
         }
       }

@@ -27,6 +27,19 @@ export class ResumeDatabase extends Dexie {
         '++id, jobApplicationId, resumeId, userEmail, candidateLevel, questions, createdAt, updatedAt',
     });
 
+    // Versión 3: Añadir campos de contacto adicionales a candidaturas
+    this.version(3).stores({
+      resumes:
+        '++id, documentId, userEmail, createdAt, updatedAt, title, firstName, lastName',
+      userData: '++id, userEmail, preferences, lastLogin, totalResumes',
+      coverLetters:
+        '++id, resumeId, userEmail, companyName, jobTitle, jobDetails, content, jobApplicationId, style, length, createdAt, updatedAt',
+      jobApplications:
+        '++id, resumeId, userEmail, companyName, jobTitle, jobDescription, requirements, responsibilities, companyWebsite, contactPerson, contactEmail, contactPhone, jobUrl, applicationDate, status, notes, createdAt, updatedAt',
+      interviewSimulations:
+        '++id, jobApplicationId, resumeId, userEmail, candidateLevel, questions, createdAt, updatedAt',
+    });
+
     // Hooks para auto-generar timestamps
     this.resumes.hook('creating', function (primKey, obj) {
       obj.createdAt = new Date();

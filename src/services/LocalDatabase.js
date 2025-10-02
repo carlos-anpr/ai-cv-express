@@ -499,49 +499,6 @@ class LocalDatabase {
     }
   }
 
-  // READ - Obtener cartas de recomendación por CV
-  async GetCoverLettersByResume(resumeId) {
-    await this.ensureDatabaseReady();
-    try {
-      console.log('📋 Obteniendo cartas de recomendación para CV:', resumeId);
-
-      const coverLetters = await db.coverLetters
-        .where('resumeId')
-        .equals(resumeId)
-        .toArray();
-
-      // Ordenar por fecha de creación (más reciente primero)
-      const sortedCoverLetters = coverLetters.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
-
-      console.log('✅ Cartas encontradas:', sortedCoverLetters.length);
-      return sortedCoverLetters;
-    } catch (error) {
-      console.error('❌ Error obteniendo cartas de recomendación:', error);
-      throw new Error('Error al obtener cartas: ' + error.message);
-    }
-  }
-
-  // READ - Obtener carta de recomendación por ID
-  async GetCoverLetterById(id) {
-    await this.ensureDatabaseReady();
-    try {
-      console.log('📄 Obteniendo carta de recomendación ID:', id);
-
-      const coverLetter = await db.coverLetters.get(id);
-      if (!coverLetter) {
-        throw new Error('Carta de recomendación no encontrada');
-      }
-
-      console.log('✅ Carta encontrada:', coverLetter.companyName);
-      return coverLetter;
-    } catch (error) {
-      console.error('❌ Error obteniendo carta de recomendación:', error);
-      throw new Error('Error al obtener carta: ' + error.message);
-    }
-  }
-
   // UPDATE - Actualizar carta de recomendación
   async UpdateCoverLetter(id, updates) {
     await this.ensureDatabaseReady();
@@ -582,62 +539,42 @@ class LocalDatabase {
     }
   }
 
-  // READ - Obtener todas las cartas de un usuario
-  async GetUserCoverLetters(userEmail) {
+  // READ - Obtener la carta actual de una candidatura específica
+  async GetCoverLetterByApplication(jobApplicationId) {
     await this.ensureDatabaseReady();
     try {
-      console.log('📚 Obteniendo todas las cartas del usuario:', userEmail);
-
-      const coverLetters = await db.coverLetters
-        .where('userEmail')
-        .equals(userEmail)
-        .toArray();
-
-      // Ordenar por fecha de creación (más reciente primero)
-      const sortedCoverLetters = coverLetters.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-      );
-
-      console.log('✅ Total cartas del usuario:', sortedCoverLetters.length);
-      return sortedCoverLetters;
-    } catch (error) {
-      console.error('❌ Error obteniendo cartas del usuario:', error);
-      throw new Error('Error al obtener cartas del usuario: ' + error.message);
-    }
-  }
-
-  // READ - Obtener cartas por candidatura específica
-  async GetCoverLettersByApplication(jobApplicationId) {
-    await this.ensureDatabaseReady();
-    try {
-      console.log(
-        '📚 Obteniendo cartas para candidatura ID:',
-        jobApplicationId
-      );
+      console.log('📄 Obteniendo carta para candidatura ID:', jobApplicationId);
 
       const coverLetters = await db.coverLetters
         .where('jobApplicationId')
         .equals(parseInt(jobApplicationId))
         .toArray();
 
-      // Ordenar por fecha de creación (más reciente primero)
+      if (coverLetters.length === 0) {
+        console.log('📄 No hay carta para esta candidatura');
+        return {
+          success: true,
+          data: null,
+          message: 'No hay carta para esta candidatura',
+        };
+      }
+
+      // Solo debería haber una carta por candidatura, pero por si acaso tomamos la más reciente
       const sortedCoverLetters = coverLetters.sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
 
-      console.log(
-        '✅ Total cartas para esta candidatura:',
-        sortedCoverLetters.length
-      );
+      const coverLetter = sortedCoverLetters[0];
+      console.log('✅ Carta encontrada para candidatura:', coverLetter.id);
       return {
         success: true,
-        data: sortedCoverLetters,
-        message: `${sortedCoverLetters.length} carta(s) encontrada(s)`,
+        data: coverLetter,
+        message: 'Carta encontrada',
       };
     } catch (error) {
-      console.error('❌ Error obteniendo cartas de la candidatura:', error);
+      console.error('❌ Error obteniendo carta de la candidatura:', error);
       throw new Error(
-        'Error al obtener cartas de la candidatura: ' + error.message
+        'Error al obtener carta de la candidatura: ' + error.message
       );
     }
   }
@@ -672,6 +609,9 @@ class LocalDatabase {
         responsibilities: data.responsibilities?.trim() || '',
         companyWebsite: data.companyWebsite?.trim() || '',
         contactPerson: data.contactPerson?.trim() || '',
+        contactEmail: data.contactEmail?.trim() || '',
+        contactPhone: data.contactPhone?.trim() || '',
+        jobUrl: data.jobUrl?.trim() || '',
         applicationDate:
           data.applicationDate || new Date().toISOString().split('T')[0],
         status: data.status || 'draft',
@@ -807,6 +747,12 @@ class LocalDatabase {
         updatedFields.companyWebsite = updateData.companyWebsite.trim();
       if (updateData.contactPerson !== undefined)
         updatedFields.contactPerson = updateData.contactPerson.trim();
+      if (updateData.contactEmail !== undefined)
+        updatedFields.contactEmail = updateData.contactEmail.trim();
+      if (updateData.contactPhone !== undefined)
+        updatedFields.contactPhone = updateData.contactPhone.trim();
+      if (updateData.jobUrl !== undefined)
+        updatedFields.jobUrl = updateData.jobUrl.trim();
       if (updateData.applicationDate !== undefined)
         updatedFields.applicationDate = updateData.applicationDate;
       if (updateData.status !== undefined)

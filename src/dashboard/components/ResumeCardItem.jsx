@@ -99,15 +99,6 @@ function ResumeCardItem({ resume, refreshData }) {
             <DropdownMenuItem
               onClick={() =>
                 navigation(
-                  '/dashboard/resume/' + resume.documentId + '/cover-letters'
-                )
-              }
-            >
-              Cartas de Presentación
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() =>
-                navigation(
                   '/dashboard/resume/' + resume.documentId + '/job-applications'
                 )
               }

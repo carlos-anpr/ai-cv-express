@@ -28,6 +28,7 @@ import {
   Eye,
   Edit,
   Download,
+  Trash2,
 } from 'lucide-react';
 import LocalDatabase from '@/services/LocalDatabase';
 import { AIChatSessionText } from '../../../../../../../service/AIModal';
@@ -54,6 +55,7 @@ function CoverLetterApplication() {
   const [generating, setGenerating] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editedContent, setEditedContent] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const loadData = React.useCallback(async () => {
     if (!user?.primaryEmailAddress?.emailAddress) return;
@@ -73,10 +75,10 @@ function CoverLetterApplication() {
       setApplicationData(applicationResponse.data);
 
       // Buscar carta existente
-      const coverLettersResponse =
-        await LocalDatabase.GetCoverLettersByApplication(applicationId);
-      if (coverLettersResponse.data && coverLettersResponse.data.length > 0) {
-        const existingLetter = coverLettersResponse.data[0];
+      const coverLetterResponse =
+        await LocalDatabase.GetCoverLetterByApplication(applicationId);
+      if (coverLetterResponse.data) {
+        const existingLetter = coverLetterResponse.data;
         setCoverLetter(existingLetter);
         setSelectedStyle(existingLetter.style || 'friendly');
         setSelectedLength(existingLetter.length || 'medium');
@@ -211,6 +213,39 @@ function CoverLetterApplication() {
 
   const handleGoBack = () => {
     navigate(`/dashboard/resume/${resumeId}/job-applications/${applicationId}`);
+  };
+
+  const deleteCoverLetter = async () => {
+    if (!coverLetter) return;
+
+    const confirmed = window.confirm(
+      '¿Estás seguro de que quieres eliminar esta carta de presentación?'
+    );
+    if (!confirmed) return;
+
+    try {
+      setDeleting(true);
+
+      await LocalDatabase.DeleteCoverLetter(coverLetter.id);
+
+      // Actualizar el estado de la candidatura para marcar que no tiene carta
+      await LocalDatabase.UpdateJobApplication(applicationId, {
+        coverLetterGenerated: false,
+        updatedAt: new Date().toISOString(),
+      });
+
+      // Limpiar el estado local
+      setCoverLetter(null);
+      setEditedContent('');
+      setEditing(false);
+
+      toast.success('Carta de presentación eliminada correctamente');
+    } catch (error) {
+      console.error('❌ Error eliminando carta:', error);
+      toast.error('Error al eliminar la carta: ' + error.message);
+    } finally {
+      setDeleting(false);
+    }
   };
 
   if (loading) {
@@ -396,24 +431,30 @@ function CoverLetterApplication() {
                         </Button>
                       </>
                     ) : (
-                      <Button
-                        variant="outline"
-                        onClick={() => setEditing(true)}
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Editar
-                      </Button>
+                      <>
+                        <Button
+                          variant="outline"
+                          onClick={() => setEditing(true)}
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          Editar
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={deleteCoverLetter}
+                          disabled={deleting}
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          {deleting ? 'Eliminando...' : 'Eliminar'}
+                        </Button>
+                      </>
                     )}
                   </div>
                 )}
               </div>
             </CardHeader>
             <CardContent>
-              {(() => {
-                console.log('🔍 Estado actual coverLetter:', coverLetter);
-                console.log('🔍 Evaluación !coverLetter:', !coverLetter);
-                return null;
-              })()}
               {!coverLetter ? (
                 <div className="text-center py-12">
                   <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />

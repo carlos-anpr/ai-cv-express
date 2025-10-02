@@ -26,6 +26,7 @@ import {
   User,
   Mail,
   Globe,
+  Phone,
 } from 'lucide-react';
 import { JOB_APPLICATION_STATUS } from '@/services/types';
 
@@ -301,6 +302,23 @@ const JobApplicationForm = ({
                     handleInputChange('contactEmail', e.target.value)
                   }
                   placeholder="rrhh@empresa.com"
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="contactPhone">Teléfono de Contacto</Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  id="contactPhone"
+                  type="tel"
+                  value={formData.contactPhone || ''}
+                  onChange={(e) =>
+                    handleInputChange('contactPhone', e.target.value)
+                  }
+                  placeholder="+34 600 123 456"
                   className="pl-10"
                 />
               </div>

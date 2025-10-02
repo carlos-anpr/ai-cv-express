@@ -7,7 +7,6 @@ import Home from './home';
 import Dashboard from './dashboard';
 import { ClerkProvider } from '@clerk/clerk-react';
 import EditResume from './dashboard/resume/[resumeId]/edit';
-import CoverLettersManager from './dashboard/resume/[resumeId]/cover-letters';
 import JobApplications from './dashboard/resume/[resumeId]/job-applications';
 import NewJobApplication from './dashboard/resume/[resumeId]/job-applications/new';
 import JobApplicationDetail from './dashboard/resume/[resumeId]/job-applications/[applicationId]';
@@ -36,10 +35,6 @@ const router = createBrowserRouter([
       {
         path: '/dashboard/resume/:resumeId/edit',
         element: <EditResume />,
-      },
-      {
-        path: '/dashboard/resume/:resumeId/cover-letters',
-        element: <CoverLettersManager />,
       },
       {
         path: '/dashboard/resume/:resumeId/job-applications',

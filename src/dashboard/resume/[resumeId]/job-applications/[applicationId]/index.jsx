@@ -23,6 +23,7 @@ import {
   Mail,
   Building,
   Briefcase,
+  Phone,
 } from 'lucide-react';
 import LocalDatabase from '@/services/LocalDatabase';
 import { getStatusLabel, getStatusColor } from '@/services/types';
@@ -295,6 +296,17 @@ function JobApplicationDetail() {
                   </a>
                 </div>
               )}
+              {application.contactPhone && (
+                <div className="flex items-center gap-3">
+                  <Phone className="w-4 h-4 text-gray-500" />
+                  <a
+                    href={`tel:${application.contactPhone}`}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    {application.contactPhone}
+                  </a>
+                </div>
+              )}
               {application.jobUrl && (
                 <div className="flex items-center gap-3">
                   <ExternalLink className="w-4 h-4 text-gray-500" />
@@ -310,6 +322,7 @@ function JobApplicationDetail() {
               )}
               {!application.contactPerson &&
                 !application.contactEmail &&
+                !application.contactPhone &&
                 !application.jobUrl && (
                   <p className="text-sm text-gray-500 italic">
                     No se ha añadido información de contacto
