@@ -30,6 +30,7 @@ function EditJobApplication() {
     notes: '',
     jobUrl: '',
     contactEmail: '',
+    contactPhone: '',
     contactPerson: '',
     requirements: '',
     benefits: '',
@@ -73,6 +74,7 @@ function EditJobApplication() {
             notes: app.notes || '',
             jobUrl: app.jobUrl || '',
             contactEmail: app.contactEmail || '',
+            contactPhone: app.contactPhone || '',
             contactPerson: app.contactPerson || '',
             requirements: app.requirements || '',
             benefits: app.benefits || '',
@@ -143,6 +145,7 @@ function EditJobApplication() {
         notes: formData.notes?.trim(),
         jobUrl: formData.jobUrl?.trim(),
         contactEmail: formData.contactEmail?.trim(),
+        contactPhone: formData.contactPhone?.trim(),
         contactPerson: formData.contactPerson?.trim(),
         requirements: formData.requirements?.trim(),
         benefits: formData.benefits?.trim(),
@@ -162,6 +165,7 @@ function EditJobApplication() {
       }
 
       console.log('📝 Actualizando candidatura:', updateData);
+      console.log('📱 Campo contactPhone:', updateData.contactPhone);
 
       const response = await LocalDatabase.UpdateJobApplication(
         applicationId,
