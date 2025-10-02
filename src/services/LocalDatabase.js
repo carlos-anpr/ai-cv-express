@@ -474,17 +474,23 @@ class LocalDatabase {
 
       const coverLetterData = {
         resumeId: data.resumeId,
+        jobApplicationId: data.jobApplicationId,
         userEmail: data.userEmail,
-        companyName: data.companyName,
-        jobTitle: data.jobTitle,
         content: data.content,
+        style: data.style,
+        length: data.length,
+        createdAt: data.createdAt,
+        updatedAt: data.updatedAt,
       };
 
       const id = await db.coverLetters.add(coverLetterData);
       const result = await db.coverLetters.get(id);
 
       console.log('✅ Carta de recomendación creada con ID:', id);
-      return result;
+      return {
+        success: true,
+        data: result,
+      };
     } catch (error) {
       console.error('❌ Error creando carta de recomendación:', error);
       throw new Error(
@@ -546,7 +552,10 @@ class LocalDatabase {
       const updatedCoverLetter = await db.coverLetters.get(id);
 
       console.log('✅ Carta actualizada exitosamente');
-      return updatedCoverLetter;
+      return {
+        success: true,
+        data: updatedCoverLetter,
+      };
     } catch (error) {
       console.error('❌ Error actualizando carta de recomendación:', error);
       throw new Error('Error al actualizar carta: ' + error.message);
@@ -594,6 +603,504 @@ class LocalDatabase {
     } catch (error) {
       console.error('❌ Error obteniendo cartas del usuario:', error);
       throw new Error('Error al obtener cartas del usuario: ' + error.message);
+    }
+  }
+
+  // READ - Obtener cartas por candidatura específica
+  async GetCoverLettersByApplication(jobApplicationId) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log(
+        '📚 Obteniendo cartas para candidatura ID:',
+        jobApplicationId
+      );
+
+      const coverLetters = await db.coverLetters
+        .where('jobApplicationId')
+        .equals(parseInt(jobApplicationId))
+        .toArray();
+
+      // Ordenar por fecha de creación (más reciente primero)
+      const sortedCoverLetters = coverLetters.sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+
+      console.log(
+        '✅ Total cartas para esta candidatura:',
+        sortedCoverLetters.length
+      );
+      return {
+        success: true,
+        data: sortedCoverLetters,
+        message: `${sortedCoverLetters.length} carta(s) encontrada(s)`,
+      };
+    } catch (error) {
+      console.error('❌ Error obteniendo cartas de la candidatura:', error);
+      throw new Error(
+        'Error al obtener cartas de la candidatura: ' + error.message
+      );
+    }
+  }
+
+  // ===== CANDIDATURAS (JOB APPLICATIONS) =====
+
+  // CREATE - Crear nueva candidatura
+  async CreateJobApplication(data) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log('📝 Creando nueva candidatura:', data);
+
+      // Validar datos requeridos
+      if (
+        !data.resumeId ||
+        !data.userEmail ||
+        !data.companyName ||
+        !data.jobTitle
+      ) {
+        throw new Error(
+          'Faltan campos obligatorios: resumeId, userEmail, companyName, jobTitle'
+        );
+      }
+
+      const jobApplicationData = {
+        resumeId: data.resumeId,
+        userEmail: data.userEmail,
+        companyName: data.companyName.trim(),
+        jobTitle: data.jobTitle.trim(),
+        jobDescription: data.jobDescription?.trim() || '',
+        requirements: data.requirements?.trim() || '',
+        responsibilities: data.responsibilities?.trim() || '',
+        companyWebsite: data.companyWebsite?.trim() || '',
+        contactPerson: data.contactPerson?.trim() || '',
+        applicationDate:
+          data.applicationDate || new Date().toISOString().split('T')[0],
+        status: data.status || 'draft',
+        notes: data.notes?.trim() || '',
+      };
+
+      const id = await db.jobApplications.add(jobApplicationData);
+      console.log('✅ Candidatura creada con ID:', id);
+
+      // Obtener el objeto completo creado
+      const createdApplication = await db.jobApplications.get(id);
+
+      return {
+        success: true,
+        data: createdApplication,
+      };
+    } catch (error) {
+      console.error('❌ Error creando candidatura:', error);
+      throw new Error('Error al crear candidatura: ' + error.message);
+    }
+  }
+
+  // READ - Obtener candidaturas por CV
+  async GetJobApplicationsByResume(resumeId, userEmail) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log('📚 Obteniendo candidaturas del CV:', resumeId);
+
+      const applications = await db.jobApplications
+        .where('resumeId')
+        .equals(resumeId)
+        .and((item) => item.userEmail === userEmail)
+        .toArray();
+
+      // Ordenar por fecha de actualización (más reciente primero)
+      const sortedApplications = applications.sort(
+        (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
+      );
+
+      console.log(
+        '✅ Total candidaturas encontradas:',
+        sortedApplications.length
+      );
+      return {
+        success: true,
+        data: sortedApplications,
+      };
+    } catch (error) {
+      console.error('❌ Error obteniendo candidaturas:', error);
+      throw new Error('Error al obtener candidaturas: ' + error.message);
+    }
+  }
+
+  // READ - Obtener candidatura por ID
+  async GetJobApplicationById(applicationId, userEmail) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log(
+        '🔍 Obteniendo candidatura por ID:',
+        applicationId,
+        'para usuario:',
+        userEmail
+      );
+
+      // Debug: ver todas las candidaturas existentes
+      const allApplications = await db.jobApplications.toArray();
+      console.log(
+        '📚 Todas las candidaturas en DB:',
+        allApplications.map((app) => ({
+          id: app.id,
+          userEmail: app.userEmail,
+          company: app.companyName,
+        }))
+      );
+
+      let application;
+      if (userEmail) {
+        application = await db.jobApplications
+          .where('id')
+          .equals(parseInt(applicationId))
+          .and((item) => {
+            console.log(
+              '📧 Comparando emails:',
+              item.userEmail,
+              '===',
+              userEmail,
+              '?',
+              item.userEmail === userEmail
+            );
+            return item.userEmail === userEmail;
+          })
+          .first();
+      } else {
+        // Si no se proporciona userEmail, buscar solo por ID
+        application = await db.jobApplications.get(parseInt(applicationId));
+      }
+
+      if (!application) {
+        throw new Error('Candidatura no encontrada');
+      }
+
+      console.log('✅ Candidatura encontrada:', application.companyName);
+      return {
+        success: true,
+        data: application,
+      };
+    } catch (error) {
+      console.error('❌ Error obteniendo candidatura:', error);
+      throw new Error('Error al obtener candidatura: ' + error.message);
+    }
+  }
+
+  // UPDATE - Actualizar candidatura
+  async UpdateJobApplication(applicationId, updateData) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log('📝 Actualizando candidatura ID:', applicationId, updateData);
+
+      const updatedFields = {};
+
+      // Solo actualizar campos que se proporcionan
+      if (updateData.companyName !== undefined)
+        updatedFields.companyName = updateData.companyName.trim();
+      if (updateData.jobTitle !== undefined)
+        updatedFields.jobTitle = updateData.jobTitle.trim();
+      if (updateData.jobDescription !== undefined)
+        updatedFields.jobDescription = updateData.jobDescription.trim();
+      if (updateData.requirements !== undefined)
+        updatedFields.requirements = updateData.requirements.trim();
+      if (updateData.responsibilities !== undefined)
+        updatedFields.responsibilities = updateData.responsibilities.trim();
+      if (updateData.companyWebsite !== undefined)
+        updatedFields.companyWebsite = updateData.companyWebsite.trim();
+      if (updateData.contactPerson !== undefined)
+        updatedFields.contactPerson = updateData.contactPerson.trim();
+      if (updateData.applicationDate !== undefined)
+        updatedFields.applicationDate = updateData.applicationDate;
+      if (updateData.status !== undefined)
+        updatedFields.status = updateData.status;
+      if (updateData.notes !== undefined)
+        updatedFields.notes = updateData.notes.trim();
+
+      const updated = await db.jobApplications.update(
+        parseInt(applicationId),
+        updatedFields
+      );
+
+      if (updated === 0) {
+        throw new Error('Candidatura no encontrada para actualizar');
+      }
+
+      // Obtener la candidatura actualizada
+      const updatedApplication = await db.jobApplications.get(
+        parseInt(applicationId)
+      );
+
+      console.log('✅ Candidatura actualizada correctamente');
+      return {
+        success: true,
+        data: updatedApplication,
+      };
+    } catch (error) {
+      console.error('❌ Error actualizando candidatura:', error);
+      throw new Error('Error al actualizar candidatura: ' + error.message);
+    }
+  }
+
+  // DELETE - Eliminar candidatura
+  async DeleteJobApplication(applicationId, userEmail) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log('🗑️ Eliminando candidatura ID:', applicationId);
+
+      // Verificar que la candidatura pertenece al usuario
+      const applicationResponse = await this.GetJobApplicationById(
+        applicationId,
+        userEmail
+      );
+      if (!applicationResponse.success || !applicationResponse.data) {
+        throw new Error('Candidatura no encontrada o no autorizada');
+      }
+
+      // Eliminar cartas de presentación asociadas
+      await db.coverLetters
+        .where('jobApplicationId')
+        .equals(parseInt(applicationId))
+        .delete();
+
+      // Eliminar simulaciones de entrevista asociadas
+      await db.interviewSimulations
+        .where('jobApplicationId')
+        .equals(parseInt(applicationId))
+        .delete();
+
+      // Eliminar la candidatura
+      const deleted = await db.jobApplications.delete(parseInt(applicationId));
+
+      console.log('✅ Candidatura y datos asociados eliminados');
+      return {
+        success: true,
+        data: { deleted: deleted > 0 },
+      };
+    } catch (error) {
+      console.error('❌ Error eliminando candidatura:', error);
+      throw new Error('Error al eliminar candidatura: ' + error.message);
+    }
+  }
+
+  // ===== SIMULACIONES DE ENTREVISTA =====
+
+  // CREATE - Crear simulación de entrevista
+  async CreateInterviewSimulation(data) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log('🎯 Creando simulación de entrevista:', data);
+
+      // Validar datos requeridos
+      if (
+        !data.jobApplicationId ||
+        !data.resumeId ||
+        !data.userEmail ||
+        !data.candidateLevel ||
+        !data.questions
+      ) {
+        throw new Error(
+          'Faltan campos obligatorios para simulación de entrevista'
+        );
+      }
+
+      const simulationData = {
+        jobApplicationId: parseInt(data.jobApplicationId),
+        resumeId: data.resumeId,
+        userEmail: data.userEmail,
+        candidateLevel: data.candidateLevel,
+        questions: JSON.stringify(data.questions), // Serializar array de preguntas
+      };
+
+      const id = await db.interviewSimulations.add(simulationData);
+      console.log('✅ Simulación de entrevista creada con ID:', id);
+
+      return id;
+    } catch (error) {
+      console.error('❌ Error creando simulación:', error);
+      throw new Error(
+        'Error al crear simulación de entrevista: ' + error.message
+      );
+    }
+  }
+
+  // READ - Obtener simulación de entrevista por candidatura
+  async GetInterviewSimulation(jobApplicationId, userEmail) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log(
+        '🎯 Obteniendo simulación para candidatura:',
+        jobApplicationId
+      );
+
+      const simulation = await db.interviewSimulations
+        .where('jobApplicationId')
+        .equals(parseInt(jobApplicationId))
+        .and((item) => item.userEmail === userEmail)
+        .first();
+
+      if (simulation) {
+        // Deserializar preguntas
+        simulation.questions = JSON.parse(simulation.questions);
+        console.log(
+          '✅ Simulación encontrada con',
+          simulation.questions.length,
+          'preguntas'
+        );
+      } else {
+        console.log('ℹ️ No se encontró simulación para esta candidatura');
+      }
+
+      return simulation;
+    } catch (error) {
+      console.error('❌ Error obteniendo simulación:', error);
+      throw new Error(
+        'Error al obtener simulación de entrevista: ' + error.message
+      );
+    }
+  }
+
+  // UPDATE - Actualizar simulación de entrevista
+  async UpdateInterviewSimulation(simulationId, updateData) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log('📝 Actualizando simulación ID:', simulationId);
+
+      const updatedFields = {};
+
+      if (updateData.candidateLevel !== undefined)
+        updatedFields.candidateLevel = updateData.candidateLevel;
+      if (updateData.questions !== undefined)
+        updatedFields.questions = JSON.stringify(updateData.questions);
+
+      const updated = await db.interviewSimulations.update(
+        parseInt(simulationId),
+        updatedFields
+      );
+
+      if (updated === 0) {
+        throw new Error('Simulación no encontrada para actualizar');
+      }
+
+      console.log('✅ Simulación actualizada correctamente');
+      return updated;
+    } catch (error) {
+      console.error('❌ Error actualizando simulación:', error);
+      throw new Error('Error al actualizar simulación: ' + error.message);
+    }
+  }
+
+  // DELETE - Eliminar simulación de entrevista
+  async DeleteInterviewSimulation(simulationId, userEmail) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log('🗑️ Eliminando simulación ID:', simulationId);
+
+      // Verificar que la simulación pertenece al usuario
+      const simulation = await db.interviewSimulations
+        .where('id')
+        .equals(parseInt(simulationId))
+        .and((item) => item.userEmail === userEmail)
+        .first();
+
+      if (!simulation) {
+        throw new Error('Simulación no encontrada o no autorizada');
+      }
+
+      const deleted = await db.interviewSimulations.delete(
+        parseInt(simulationId)
+      );
+
+      console.log('✅ Simulación eliminada correctamente');
+      return deleted;
+    } catch (error) {
+      console.error('❌ Error eliminando simulación:', error);
+      throw new Error('Error al eliminar simulación: ' + error.message);
+    }
+  }
+
+  // ===== MIGRACIÓN DE DATOS =====
+
+  // Migrar cartas existentes a candidaturas automáticas
+  async MigrateExistingCoverLetters() {
+    await this.ensureDatabaseReady();
+    try {
+      console.log('🔄 Iniciando migración de cartas existentes...');
+
+      // Obtener todas las cartas que no tienen jobApplicationId
+      const orphanLetters = await db.coverLetters
+        .where('jobApplicationId')
+        .equals(undefined)
+        .or('jobApplicationId')
+        .equals(null)
+        .toArray();
+
+      console.log(`📋 Encontradas ${orphanLetters.length} cartas para migrar`);
+
+      let migratedCount = 0;
+
+      for (const letter of orphanLetters) {
+        try {
+          // Crear candidatura automática para cada carta huérfana
+          const jobAppData = {
+            resumeId: letter.resumeId,
+            userEmail: letter.userEmail,
+            companyName: letter.companyName || 'Empresa no especificada',
+            jobTitle: letter.jobTitle || 'Puesto no especificado',
+            jobDescription: letter.jobDetails || '',
+            requirements: '',
+            responsibilities: '',
+            status: 'draft',
+          };
+
+          const jobAppId = await this.CreateJobApplication(jobAppData);
+
+          // Vincular carta a la nueva candidatura
+          await db.coverLetters.update(letter.id, {
+            jobApplicationId: jobAppId,
+            style: letter.style || 'formal',
+            length: letter.length || 'medium',
+          });
+
+          migratedCount++;
+          console.log(
+            `✅ Carta migrada: ${letter.companyName} - ${letter.jobTitle}`
+          );
+        } catch (error) {
+          console.error(`❌ Error migrando carta ID ${letter.id}:`, error);
+        }
+      }
+
+      console.log(
+        `🎉 Migración completada: ${migratedCount}/${orphanLetters.length} cartas migradas`
+      );
+      return { total: orphanLetters.length, migrated: migratedCount };
+    } catch (error) {
+      console.error('❌ Error en migración:', error);
+      throw new Error('Error en migración de datos: ' + error.message);
+    }
+  }
+
+  // Verificar estado de migración
+  async CheckMigrationStatus() {
+    await this.ensureDatabaseReady();
+    try {
+      const orphanLetters = await db.coverLetters
+        .where('jobApplicationId')
+        .equals(undefined)
+        .or('jobApplicationId')
+        .equals(null)
+        .count();
+
+      const totalApplications = await db.jobApplications.count();
+      const totalSimulations = await db.interviewSimulations.count();
+
+      return {
+        needsMigration: orphanLetters > 0,
+        orphanLetters,
+        totalApplications,
+        totalSimulations,
+      };
+    } catch (error) {
+      console.error('❌ Error verificando migración:', error);
+      return { needsMigration: false, error: error.message };
     }
   }
 }

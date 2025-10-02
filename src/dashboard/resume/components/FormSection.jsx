@@ -1,7 +1,13 @@
 import React, { useState } from 'react';
 import PersonalDetail from './forms/PersonalDetail';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ArrowRight, Home, LayoutGrid } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  Home,
+  LayoutGrid,
+  Briefcase,
+} from 'lucide-react';
 import Summery from './forms/Summary';
 import Experience from './forms/Experience';
 import Education from './forms/Education';
@@ -28,6 +34,12 @@ function FormSection() {
             <Button variant="outline">
               <LayoutGrid className="h-4 w-4 mr-2" />
               Cartas
+            </Button>
+          </Link>
+          <Link to={`/dashboard/resume/${params.resumeId}/job-applications`}>
+            <Button variant="outline">
+              <Briefcase className="h-4 w-4 mr-2" />
+              Candidaturas
             </Button>
           </Link>
           <ThemeColor />

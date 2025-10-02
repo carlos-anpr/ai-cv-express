@@ -38,7 +38,8 @@ function RichTextEditor({ onRichTextEditorChange, index, defaultValue }) {
       resumeInfo.experience[index].title
     );
 
-    const result = await AIChatSession.sendMessage(prompt);
+    const chatSession = AIChatSession();
+    const result = await chatSession.sendMessage(prompt);
     console.log(JSON.parse(result.response.text()).points);
     const resp = JSON.parse(result.response?.text());
 

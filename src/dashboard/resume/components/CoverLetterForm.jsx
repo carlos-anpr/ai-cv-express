@@ -245,7 +245,8 @@ Escribe la carta completa de presentación en primera persona ahora, siendo hone
       console.log(prompt);
       console.log('=== FIN PROMPT ===');
 
-      const result = await AIChatSessionText.sendMessage(prompt);
+      const chatSession = AIChatSessionText();
+      const result = await chatSession.sendMessage(prompt);
       const generatedContent = result.response.text();
 
       if (generatedContent && generatedContent.trim()) {

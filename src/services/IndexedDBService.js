@@ -14,6 +14,19 @@ export class ResumeDatabase extends Dexie {
         '++id, resumeId, userEmail, companyName, jobTitle, jobDetails, content, createdAt, updatedAt',
     });
 
+    // Versión 2: Añadir nuevas tablas y campos para sistema de candidaturas
+    this.version(2).stores({
+      resumes:
+        '++id, documentId, userEmail, createdAt, updatedAt, title, firstName, lastName',
+      userData: '++id, userEmail, preferences, lastLogin, totalResumes',
+      coverLetters:
+        '++id, resumeId, userEmail, companyName, jobTitle, jobDetails, content, jobApplicationId, style, length, createdAt, updatedAt',
+      jobApplications:
+        '++id, resumeId, userEmail, companyName, jobTitle, jobDescription, requirements, responsibilities, companyWebsite, contactPerson, applicationDate, status, notes, createdAt, updatedAt',
+      interviewSimulations:
+        '++id, jobApplicationId, resumeId, userEmail, candidateLevel, questions, createdAt, updatedAt',
+    });
+
     // Hooks para auto-generar timestamps
     this.resumes.hook('creating', function (primKey, obj) {
       obj.createdAt = new Date();
@@ -40,6 +53,27 @@ export class ResumeDatabase extends Dexie {
       if (obj.version) {
         modifications.version = obj.version + 1;
       }
+    });
+
+    // Hooks para candidaturas
+    this.jobApplications.hook('creating', function (primKey, obj) {
+      obj.createdAt = new Date();
+      obj.updatedAt = new Date();
+      obj.status = obj.status || 'draft';
+    });
+
+    this.jobApplications.hook('updating', function (modifications) {
+      modifications.updatedAt = new Date();
+    });
+
+    // Hooks para simulaciones de entrevista
+    this.interviewSimulations.hook('creating', function (primKey, obj) {
+      obj.createdAt = new Date();
+      obj.updatedAt = new Date();
+    });
+
+    this.interviewSimulations.hook('updating', function (modifications) {
+      modifications.updatedAt = new Date();
     });
   }
 }

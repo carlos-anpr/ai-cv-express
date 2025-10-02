@@ -21,12 +21,14 @@ const generationConfig = {
   responseMimeType: 'application/json',
 };
 
-export const AIChatSession = model.startChat({
-  generationConfig,
-  // safetySettings: Adjust safety settings
-  // See https://ai.google.dev/gemini-api/docs/safety-settings
-  history: [],
-});
+export const AIChatSession = () => {
+  return model.startChat({
+    generationConfig,
+    // safetySettings: Adjust safety settings
+    // See https://ai.google.dev/gemini-api/docs/safety-settings
+    history: [],
+  });
+};
 
 // Configuración específica para cartas de recomendación (texto plano)
 const textGenerationConfig = {
@@ -37,7 +39,9 @@ const textGenerationConfig = {
   responseMimeType: 'text/plain',
 };
 
-export const AIChatSessionText = model.startChat({
-  generationConfig: textGenerationConfig,
-  history: [],
-});
+export const AIChatSessionText = () => {
+  return model.startChat({
+    generationConfig: textGenerationConfig,
+    history: [],
+  });
+};

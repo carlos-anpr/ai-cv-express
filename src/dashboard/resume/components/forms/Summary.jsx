@@ -36,7 +36,8 @@ function Summary({ enableNext }) {
     setLoading(true);
     try {
       const PROMPT = prompt.replace('jobTitle', resumeInfo?.jobTitle);
-      const result = await AIChatSession.sendMessage(PROMPT);
+      const chatSession = AIChatSession();
+      const result = await chatSession.sendMessage(PROMPT);
       const generatedList = JSON.parse(result.response.text());
       setAiGenerateSummaryList(generatedList);
     } catch (error) {
