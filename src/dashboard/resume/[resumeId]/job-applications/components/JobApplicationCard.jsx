@@ -141,17 +141,17 @@ const JobApplicationCard = ({
           </div>
 
           {application.jobUrl && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-blue-600 hover:text-blue-700 p-1"
+            <div 
+              className="flex items-center gap-1 text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded cursor-pointer hover:bg-blue-100 transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
                 window.open(application.jobUrl, '_blank');
               }}
+              title="Ver oferta original"
             >
               <ExternalLink className="w-3 h-3" />
-            </Button>
+              <span>Ver Oferta</span>
+            </div>
           )}
         </div>
       </CardContent>
