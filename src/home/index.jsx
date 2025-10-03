@@ -1,5 +1,16 @@
 import Header from '@/components/custom/Header';
-import { Sparkles, FileText, Download, ArrowRight } from 'lucide-react';
+import {
+  Sparkles,
+  FileText,
+  Download,
+  ArrowRight,
+  Zap,
+  Palette,
+  Globe,
+  Shield,
+  RefreshCw,
+  Star,
+} from 'lucide-react';
 import React from 'react';
 import { Link } from 'react-router-dom';
 
@@ -69,10 +80,7 @@ function Home() {
       </section>
 
       {/* Featured Section */}
-      <section
-        id="features"
-        className="px-4 py-16 mx-auto border-t max-w-7xl lg:px-8 border-border"
-      >
+      <section className="px-4 py-16 mx-auto border-t max-w-7xl lg:px-8 border-border">
         <div className="text-center">
           <p className="mb-12 text-sm font-medium tracking-wider uppercase text-muted-foreground">
             Destacado en
@@ -140,6 +148,100 @@ function Home() {
             <div className="flex items-center justify-center col-span-2 md:col-span-1 lg:col-span-1">
               <div className="text-2xl font-bold tracking-tight">Forbes</div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section
+        id="features"
+        className="px-4 py-32 mx-auto max-w-7xl lg:px-8 bg-secondary/30"
+      >
+        <div className="mb-16 text-center">
+          <h2 className="mb-4 text-4xl font-bold tracking-tight lg:text-5xl">
+            Potencia tu búsqueda laboral
+          </h2>
+          <p className="max-w-2xl mx-auto text-lg text-muted-foreground">
+            Herramientas profesionales impulsadas por IA para destacar entre la
+            competencia
+          </p>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {/* Feature 1 */}
+          <div className="group relative p-8 transition-all duration-300 border rounded-2xl border-border bg-background hover:border-black/20 hover:shadow-lg">
+            <div className="inline-flex items-center justify-center mb-6 p-2.5 rounded-xl bg-secondary transition-colors group-hover:bg-black/5">
+              <Zap className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+            </div>
+            <h3 className="mb-3 text-xl font-semibold">IA Generativa</h3>
+            <p className="leading-relaxed text-muted-foreground">
+              Crea contenido profesional instantáneamente con nuestra IA
+              avanzada. Genera descripciones, habilidades y experiencias
+              optimizadas.
+            </p>
+          </div>
+
+          {/* Feature 2 */}
+          <div className="group relative p-8 transition-all duration-300 border rounded-2xl border-border bg-background hover:border-black/20 hover:shadow-lg">
+            <div className="inline-flex items-center justify-center mb-6 p-2.5 rounded-xl bg-secondary transition-colors group-hover:bg-black/5">
+              <Palette className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+            </div>
+            <h3 className="mb-3 text-xl font-semibold">Diseños Modernos</h3>
+            <p className="leading-relaxed text-muted-foreground">
+              Múltiples plantillas profesionales y personalizables. Cambia
+              colores, fuentes y estilos para reflejar tu personalidad.
+            </p>
+          </div>
+
+          {/* Feature 3 */}
+          <div className="group relative p-8 transition-all duration-300 border rounded-2xl border-border bg-background hover:border-black/20 hover:shadow-lg">
+            <div className="inline-flex items-center justify-center mb-6 p-2.5 rounded-xl bg-secondary transition-colors group-hover:bg-black/5">
+              <Globe className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+            </div>
+            <h3 className="mb-3 text-xl font-semibold">Comparte en Línea</h3>
+            <p className="leading-relaxed text-muted-foreground">
+              Obtén un enlace único para compartir tu CV. Actualízalo en tiempo
+              real y los reclutadores siempre verán la última versión.
+            </p>
+          </div>
+
+          {/* Feature 4 */}
+          <div className="group relative p-8 transition-all duration-300 border rounded-2xl border-border bg-background hover:border-black/20 hover:shadow-lg">
+            <div className="inline-flex items-center justify-center mb-6 p-2.5 rounded-xl bg-secondary transition-colors group-hover:bg-black/5">
+              <Download className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+            </div>
+            <h3 className="mb-3 text-xl font-semibold">Exportación PDF</h3>
+            <p className="leading-relaxed text-muted-foreground">
+              Descarga tu currículum en formato PDF de alta calidad, listo para
+              imprimir o enviar por email. Compatible con ATS.
+            </p>
+          </div>
+
+          {/* Feature 5 */}
+          <div className="group relative p-8 transition-all duration-300 border rounded-2xl border-border bg-background hover:border-black/20 hover:shadow-lg">
+            <div className="inline-flex items-center justify-center mb-6 p-2.5 rounded-xl bg-secondary transition-colors group-hover:bg-black/5">
+              <RefreshCw
+                className="w-5 h-5 text-foreground"
+                strokeWidth={1.5}
+              />
+            </div>
+            <h3 className="mb-3 text-xl font-semibold">Actualización Rápida</h3>
+            <p className="leading-relaxed text-muted-foreground">
+              Modifica y actualiza tu CV en segundos. Los cambios se reflejan
+              instantáneamente en tiempo real.
+            </p>
+          </div>
+
+          {/* Feature 6 */}
+          <div className="group relative p-8 transition-all duration-300 border rounded-2xl border-border bg-background hover:border-black/20 hover:shadow-lg">
+            <div className="inline-flex items-center justify-center mb-6 p-2.5 rounded-xl bg-secondary transition-colors group-hover:bg-black/5">
+              <Star className="w-5 h-5 text-foreground" strokeWidth={1.5} />
+            </div>
+            <h3 className="mb-3 text-xl font-semibold">Optimizado ATS</h3>
+            <p className="leading-relaxed text-muted-foreground">
+              Currículums optimizados para sistemas de seguimiento de
+              candidatos. Aumenta tus posibilidades de ser seleccionado.
+            </p>
           </div>
         </div>
       </section>

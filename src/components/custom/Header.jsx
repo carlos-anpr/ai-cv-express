@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { Button } from '../ui/button';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { UserButton, useUser } from '@clerk/clerk-react';
 import { Menu, X } from 'lucide-react';
 
 function Header() {
   const { isSignedIn } = useUser();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+
+  // Solo mostrar el menú de navegación en la página de inicio
+  const showNavMenu = location.pathname === '/';
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -37,27 +41,29 @@ function Header() {
           </button>
         </div>
 
-        {/* Desktop navigation */}
-        <div className="hidden lg:flex lg:gap-x-8">
-          <a
-            href="#features"
-            className="text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
-          >
-            Características
-          </a>
-          <a
-            href="#how-it-works"
-            className="text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
-          >
-            ¿Cómo funciona?
-          </a>
-          <a
-            href="#"
-            className="text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
-          >
-            Ayuda
-          </a>
-        </div>
+        {/* Desktop navigation - Solo en homepage */}
+        {showNavMenu && (
+          <div className="hidden lg:flex lg:gap-x-8">
+            <a
+              href="#features"
+              className="text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
+            >
+              Características
+            </a>
+            <a
+              href="#how-it-works"
+              className="text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
+            >
+              ¿Cómo funciona?
+            </a>
+            <a
+              href="#"
+              className="text-sm font-medium transition-colors text-muted-foreground hover:text-foreground"
+            >
+              Ayuda
+            </a>
+          </div>
+        )}
 
         {/* Desktop CTA buttons */}
         <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-3">
@@ -91,28 +97,37 @@ function Header() {
       {mobileMenuOpen && (
         <div className="lg:hidden">
           <div className="px-4 py-6 space-y-2 border-t border-border">
-            <a
-              href="#features"
-              className="block px-3 py-2 text-base font-medium rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
-              onClick={() => setMobileMenuOpen(false)}
+            {/* Menú de navegación - Solo en homepage */}
+            {showNavMenu && (
+              <>
+                <a
+                  href="#features"
+                  className="block px-3 py-2 text-base font-medium rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Características
+                </a>
+                <a
+                  href="#how-it-works"
+                  className="block px-3 py-2 text-base font-medium rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  ¿Cómo funciona?
+                </a>
+                <a
+                  href="#"
+                  className="block px-3 py-2 text-base font-medium rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Ayuda
+                </a>
+              </>
+            )}
+            <div
+              className={`space-y-2 ${
+                showNavMenu ? 'pt-4 mt-4 border-t border-border' : ''
+              }`}
             >
-              Características
-            </a>
-            <a
-              href="#how-it-works"
-              className="block px-3 py-2 text-base font-medium rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              ¿Cómo funciona?
-            </a>
-            <a
-              href="#"
-              className="block px-3 py-2 text-base font-medium rounded-lg text-muted-foreground hover:bg-accent hover:text-foreground"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              Ayuda
-            </a>
-            <div className="pt-4 mt-4 space-y-2 border-t border-border">
               {isSignedIn ? (
                 <>
                   <Link
