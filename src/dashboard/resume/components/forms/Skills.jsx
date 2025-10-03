@@ -4,7 +4,13 @@ import { Rating } from '@smastrom/react-rating';
 
 import '@smastrom/react-rating/style.css';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, Sparkles, Trash2, AlertTriangle } from 'lucide-react';
+import {
+  LoaderCircle,
+  Sparkles,
+  Trash2,
+  AlertTriangle,
+  Tag,
+} from 'lucide-react';
 import { ResumeInfoContext } from '@/context/ResumeInfoContext';
 import LocalDatabase from '../../../../services/LocalDatabase';
 import { useParams } from 'react-router-dom';
@@ -12,11 +18,20 @@ import { toast } from 'sonner';
 import { useSkillsGenerator } from '@/hooks/useSkillsGenerator';
 import SkillsGeneratorInput from '../SkillsGeneratorInput';
 import GeneratedSkillsPreview from '../GeneratedSkillsPreview';
+import AIContentEnhancer from '@/services/AIContentEnhancer';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 function Skills() {
   const [skillsList, setSkillsList] = useState([]);
   const { resumeId } = useParams();
 
   const [loading, setLoading] = useState(false);
+  const [categorizingSkills, setCategorizingSkills] = useState(false);
   const { resumeInfo, setResumeInfo } = useContext(ResumeInfoContext);
 
   const {
@@ -101,6 +116,89 @@ function Skills() {
       console.error('Error al eliminar habilidad:', error);
       toast.error('Error al eliminar la habilidad');
     }
+  };
+
+  const categorizeAllSkills = async () => {
+    if (!resumeInfo?.jobTitle) {
+      toast.error('Por favor, añade el puesto de trabajo primero');
+      return;
+    }
+
+    if (skillsList.length === 0) {
+      toast.error('No hay habilidades para categorizar');
+      return;
+    }
+
+    setCategorizingSkills(true);
+    try {
+      const skillsToCategory = skillsList
+        .filter((skill) => skill.name && skill.name.trim() !== '')
+        .map((skill) => ({ name: skill.name, rating: skill.rating }));
+
+      const result = await AIContentEnhancer.categorizeSkills(
+        skillsToCategory,
+        resumeInfo.jobTitle
+      );
+
+      console.log('📊 Resultado de categorización:', result);
+
+      // Fusionar las categorías con los skills existentes (preservando IDs y flags)
+      const categorizedSkillsList = skillsList.map((skill) => {
+        const categorized = result.categorizedSkills.find(
+          (cs) => cs.name.toLowerCase() === skill.name.toLowerCase()
+        );
+        return {
+          ...skill,
+          category: categorized?.category || 'Otros',
+        };
+      });
+
+      console.log('🔄 Skills categorizadas localmente:', categorizedSkillsList);
+
+      // Actualizar estado local
+      setSkillsList(categorizedSkillsList);
+
+      // Actualizar contexto para que se refleje en el preview
+      setResumeInfo((prev) => ({
+        ...prev,
+        skills: categorizedSkillsList,
+      }));
+
+      // Guardar en base de datos
+      const cleanSkills = categorizedSkillsList
+        .filter((skill) => skill.name && skill.name.trim() !== '')
+        .map(
+          // eslint-disable-next-line no-unused-vars
+          ({ id, isNew, isUpdated, isDuplicate, ...rest }) => rest
+        );
+
+      await LocalDatabase.UpdateResumeDetail(resumeId, {
+        skills: cleanSkills,
+      });
+
+      console.log('✅ Skills categorizadas guardadas en DB');
+
+      toast.success(
+        `✅ ${result.categorizedSkills.length} habilidades categorizadas`
+      );
+    } catch (error) {
+      console.error('Error categorizando skills:', error);
+      toast.error('Error al categorizar habilidades');
+    } finally {
+      setCategorizingSkills(false);
+    }
+  };
+
+  const handleCategoryChange = (index, newCategory) => {
+    const updatedSkills = [...skillsList];
+    updatedSkills[index].category = newCategory;
+    setSkillsList(updatedSkills);
+
+    // Actualizar contexto inmediatamente para reflejar en preview
+    setResumeInfo((prev) => ({
+      ...prev,
+      skills: updatedSkills,
+    }));
   };
 
   const onSave = async () => {
@@ -320,6 +418,27 @@ function Skills() {
             Mis Habilidades
           </h3>
           <div className="flex gap-2">
+            {skillsList.length > 0 && skillsList.some((s) => s.name) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={categorizeAllSkills}
+                disabled={categorizingSkills}
+                className="text-purple-600 border-purple-300 hover:bg-purple-50"
+              >
+                {categorizingSkills ? (
+                  <>
+                    <LoaderCircle className="w-3 h-3 mr-1 animate-spin" />
+                    Categorizando...
+                  </>
+                ) : (
+                  <>
+                    <Tag className="w-3 h-3 mr-1" />
+                    Categorizar con IA
+                  </>
+                )}
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -345,7 +464,7 @@ function Skills() {
           {skillsList?.map((item, index) => (
             <div
               key={item.id || index}
-              className={`flex justify-between items-center border rounded-lg p-3 transition-all duration-300 ${
+              className={`border rounded-lg p-3 transition-all duration-300 ${
                 item.isNew
                   ? 'bg-green-50 border-green-300 animate-pulse'
                   : item.isUpdated
@@ -355,51 +474,99 @@ function Skills() {
                   : 'bg-white'
               }`}
             >
-              <div className="flex-1 mr-4">
-                <label className="text-xs text-gray-500">Habilidad</label>
-                <Input
-                  className="w-full mt-1"
-                  value={item.name}
-                  onChange={(e) => handleChange(index, 'name', e.target.value)}
-                  placeholder="ej: React, Node.js, Python..."
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <div>
-                  <label className="text-xs text-gray-500 block text-center">
-                    Nivel
-                  </label>
-                  <Rating
-                    style={{ maxWidth: 120 }}
-                    value={item.rating}
-                    onChange={(v) => handleChange(index, 'rating', v)}
+              <div className="flex justify-between items-start gap-3">
+                {/* Columna 1: Habilidad */}
+                <div className="flex-1">
+                  <label className="text-xs text-gray-500">Habilidad</label>
+                  <Input
+                    className="w-full mt-1"
+                    value={item.name}
+                    onChange={(e) =>
+                      handleChange(index, 'name', e.target.value)
+                    }
+                    placeholder="ej: React, Node.js, Python..."
                   />
                 </div>
-                {item.isNew && (
-                  <span className="ml-2 px-2 py-1 bg-green-600 text-white text-xs rounded-full">
-                    Nueva
-                  </span>
-                )}
-                {item.isUpdated && (
-                  <span className="ml-2 px-2 py-1 bg-blue-600 text-white text-xs rounded-full">
-                    Mejorada
-                  </span>
-                )}
-                {item.isDuplicate && (
-                  <div className="flex items-center gap-1 ml-2 px-2 py-1 bg-yellow-100 border border-yellow-400 text-yellow-800 text-xs rounded-full">
-                    <AlertTriangle className="w-3 h-3" />
-                    <span>Duplicada</span>
+
+                {/* Columna 2: Categoría */}
+                <div className="w-48">
+                  <label className="text-xs text-gray-500">Categoría</label>
+                  <Select
+                    value={item.category || ''}
+                    onValueChange={(value) =>
+                      handleCategoryChange(index, value)
+                    }
+                  >
+                    <SelectTrigger className="w-full mt-1 h-9">
+                      <SelectValue placeholder="Sin categoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Backend Development">
+                        Backend Development
+                      </SelectItem>
+                      <SelectItem value="Frontend Development">
+                        Frontend Development
+                      </SelectItem>
+                      <SelectItem value="Bases de Datos">
+                        Bases de Datos
+                      </SelectItem>
+                      <SelectItem value="DevOps & Herramientas">
+                        DevOps & Herramientas
+                      </SelectItem>
+                      <SelectItem value="Mobile Development">
+                        Mobile Development
+                      </SelectItem>
+                      <SelectItem value="Testing & Quality">
+                        Testing & Quality
+                      </SelectItem>
+                      <SelectItem value="Metodologías">Metodologías</SelectItem>
+                      <SelectItem value="Soft Skills">Soft Skills</SelectItem>
+                      <SelectItem value="Otros">Otros</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Columna 3: Nivel y acciones */}
+                <div className="flex flex-col items-end gap-2">
+                  <div>
+                    <label className="text-xs text-gray-500 block text-center">
+                      Nivel
+                    </label>
+                    <Rating
+                      style={{ maxWidth: 120 }}
+                      value={item.rating}
+                      onChange={(v) => handleChange(index, 'rating', v)}
+                    />
                   </div>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => RemoveSkillByIndex(index)}
-                  className="ml-2 text-destructive hover:text-destructive hover:bg-red-50"
-                  title="Eliminar esta habilidad"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+
+                  <div className="flex items-center gap-2">
+                    {item.isNew && (
+                      <span className="px-2 py-1 bg-green-600 text-white text-xs rounded-full">
+                        Nueva
+                      </span>
+                    )}
+                    {item.isUpdated && (
+                      <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full">
+                        Mejorada
+                      </span>
+                    )}
+                    {item.isDuplicate && (
+                      <div className="flex items-center gap-1 px-2 py-1 bg-yellow-100 border border-yellow-400 text-yellow-800 text-xs rounded-full">
+                        <AlertTriangle className="w-3 h-3" />
+                        <span>Duplicada</span>
+                      </div>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => RemoveSkillByIndex(index)}
+                      className="text-destructive hover:text-destructive hover:bg-red-50"
+                      title="Eliminar esta habilidad"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
             </div>
           ))}

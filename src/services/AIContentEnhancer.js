@@ -12,7 +12,10 @@ import {
   experienceExpansionPrompt,
   experienceGenerationPrompt,
 } from './prompts/enhancementPrompts';
-import { skillsParserPrompt } from './prompts/skillsPrompts';
+import {
+  skillsParserPrompt,
+  skillsCategorizationPrompt,
+} from './prompts/skillsPrompts';
 
 class AIContentEnhancer {
   /**
@@ -207,6 +210,39 @@ class AIContentEnhancer {
 
     const normalizedLevel = level.toLowerCase().trim();
     return levelMap[normalizedLevel] || 3; // Default a intermedio
+  }
+
+  /**
+   * Categoriza automáticamente una lista de habilidades existentes
+   * @param {Array} skills - Array de skills con {name, rating}
+   * @param {string} jobTitle - Título del puesto para contexto
+   * @returns {Promise<Object>} - Skills categorizadas con lista de categorías
+   */
+  async categorizeSkills(skills, jobTitle) {
+    if (!skills || skills.length === 0) {
+      return { categorizedSkills: [], categories: [] };
+    }
+
+    try {
+      const prompt = skillsCategorizationPrompt(skills, jobTitle);
+      const chatSession = AIChatSession();
+      const result = await chatSession.sendMessage(prompt);
+      const response = JSON.parse(result.response.text());
+
+      console.log('📊 Skills categorizadas por IA:', response);
+
+      return {
+        categorizedSkills: response.categorizedSkills || [],
+        categories: response.categories || [],
+      };
+    } catch (error) {
+      console.error('Error al categorizar skills:', error);
+      // En caso de error, devolver skills sin categorizar
+      return {
+        categorizedSkills: skills.map((s) => ({ ...s, category: 'Otros' })),
+        categories: ['Otros'],
+      };
+    }
   }
 }
 
