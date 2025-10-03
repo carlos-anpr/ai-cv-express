@@ -18,23 +18,41 @@ function SkillsPreview({ resumeInfo }) {
     return grouped;
   };
 
-  // Renderizar indicadores de nivel (círculos rellenos según rating)
-  const renderLevelDots = (rating, themeColor) => {
+  // Convertir rating (0-5) a porcentaje (0-100)
+  const ratingToPercentage = (rating) => {
+    if (!rating) return 0;
+    return Math.round((rating / 5) * 100);
+  };
+
+  // Renderizar indicadores de nivel (círculos para pantalla, porcentaje para impresión)
+  const renderLevelIndicator = (rating, themeColor) => {
     const maxDots = 5;
     const filledDots = Math.round(rating || 0);
+    const percentage = ratingToPercentage(rating);
 
     return (
-      <div className="flex items-center gap-0.5">
-        {[...Array(maxDots)].map((_, index) => (
-          <div
-            key={index}
-            className="w-1.5 h-1.5 rounded-full"
-            style={{
-              backgroundColor: index < filledDots ? themeColor : '#e5e7eb',
-            }}
-          />
-        ))}
-      </div>
+      <>
+        {/* Círculos para vista en pantalla */}
+        <div className="flex items-center gap-0.5 print:hidden">
+          {[...Array(maxDots)].map((_, index) => (
+            <div
+              key={index}
+              className="w-1.5 h-1.5 rounded-full"
+              style={{
+                backgroundColor: index < filledDots ? themeColor : '#e5e7eb',
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Porcentaje para impresión */}
+        <span
+          className="hidden print:inline-block text-[9px] font-semibold"
+          style={{ color: themeColor }}
+        >
+          {percentage}%
+        </span>
+      </>
     );
   };
 
@@ -77,7 +95,7 @@ function SkillsPreview({ resumeInfo }) {
                     <span className="text-[10px] text-gray-700 flex-1">
                       {skill.name}
                     </span>
-                    {renderLevelDots(skill.rating, resumeInfo?.themeColor)}
+                    {renderLevelIndicator(skill.rating, resumeInfo?.themeColor)}
                   </div>
                 ))}
               </div>
