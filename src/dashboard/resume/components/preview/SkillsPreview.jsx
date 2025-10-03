@@ -15,11 +15,11 @@ function SkillsPreview({ resumeInfo }) {
   // Función para obtener el nivel textual
   const getRatingText = (rating) => {
     const normalizedRating = normalizeRating(rating);
-    if (normalizedRating >= 90) return 'Expert';
-    if (normalizedRating >= 75) return 'Advanced';
-    if (normalizedRating >= 50) return 'Intermediate';
-    if (normalizedRating >= 25) return 'Basic';
-    return 'Beginner';
+    if (normalizedRating >= 90) return 'Experto';
+    if (normalizedRating >= 75) return 'Avanzado';
+    if (normalizedRating >= 50) return 'Intermedio';
+    if (normalizedRating >= 25) return 'Básico';
+    return 'Principiante';
   };
 
   return (
@@ -30,7 +30,7 @@ function SkillsPreview({ resumeInfo }) {
           color: resumeInfo?.themeColor,
         }}
       >
-        Skills
+        Habilidades
       </h2>
       <hr
         style={{

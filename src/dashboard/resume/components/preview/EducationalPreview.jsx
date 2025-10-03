@@ -9,7 +9,7 @@ function EducationalPreview({ resumeInfo }) {
           color: resumeInfo?.themeColor,
         }}
       >
-        Education
+        Educación
       </h2>
       <hr
         style={{
@@ -27,7 +27,7 @@ function EducationalPreview({ resumeInfo }) {
             {education?.universityName}
           </h2>
           <h2 className="text-xs flex justify-between">
-            {education?.degree} in {education?.major}
+            {education?.degree} en {education?.major}
             <span>
               {education?.startDate} - {education?.endDate}
             </span>

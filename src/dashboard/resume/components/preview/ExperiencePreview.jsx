@@ -9,7 +9,7 @@ function ExperiencePreview({ resumeInfo }) {
           color: resumeInfo?.themeColor,
         }}
       >
-        Professional Experience
+        Experiencia Profesional
       </h2>
       <hr
         style={{
@@ -30,7 +30,9 @@ function ExperiencePreview({ resumeInfo }) {
             {experience?.companyName}, {experience?.city}, {experience?.state}
             <span>
               {experience?.startDate} -
-              {experience?.currentlyWorking ? 'Present' : experience?.endDate}
+              {experience?.currentlyWorking
+                ? 'Actualidad'
+                : experience?.endDate}
             </span>
           </h2>
           {/* <p className='text-xs my-2'>

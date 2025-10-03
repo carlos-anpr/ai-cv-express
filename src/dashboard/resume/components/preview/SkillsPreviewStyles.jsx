@@ -3,7 +3,15 @@ import React from 'react';
 /**
  * Componente con múltiples estilos para mostrar habilidades en     <div className="space-y-2 my-4">
       {resumeInfo?.skills?.map((skill, index) => {
-        const normalizedRating = normalizeRating(skill?.rating);
+        const // ESTILO 5: Minimalista (Solo texto - perfecto para ATS)
+export const SkillsStyleMinimal = ({ resumeInfo }) => (
+  <div className="my-6">
+    <h2
+      className="text-center font-bold text-sm mb-2"
+      style={{ color: resumeInfo?.themeColor }}
+    >
+      Habilidades
+    </h2>dRating = normalizeRating(skill?.rating);
         
         return (
           <div key={index} className="flex items-center justify-between border-b border-gray-100 py-2"> Todos los estilos están optimizados para ser compatibles con generación de PDF
@@ -18,11 +26,11 @@ const normalizeRating = (rating) => {
 
 const getRatingText = (rating) => {
   const normalizedRating = normalizeRating(rating);
-  if (normalizedRating >= 90) return 'Expert';
-  if (normalizedRating >= 75) return 'Advanced';
-  if (normalizedRating >= 50) return 'Intermediate';
-  if (normalizedRating >= 25) return 'Basic';
-  return 'Beginner';
+  if (normalizedRating >= 90) return 'Experto';
+  if (normalizedRating >= 75) return 'Avanzado';
+  if (normalizedRating >= 50) return 'Intermedio';
+  if (normalizedRating >= 25) return 'Básico';
+  return 'Principiante';
 };
 
 // ESTILO 1: Barras horizontales con texto (Actual mejorado)
@@ -32,7 +40,7 @@ export const SkillsStyleBars = ({ resumeInfo }) => (
       className="text-center font-bold text-sm mb-2"
       style={{ color: resumeInfo?.themeColor }}
     >
-      Skills
+      Habilidades
     </h2>
     <hr style={{ borderColor: resumeInfo?.themeColor }} />
 
@@ -73,7 +81,7 @@ export const SkillsStyleCircles = ({ resumeInfo }) => (
       className="text-center font-bold text-sm mb-2"
       style={{ color: resumeInfo?.themeColor }}
     >
-      Skills
+      Habilidades
     </h2>
     <hr style={{ borderColor: resumeInfo?.themeColor }} />
 
@@ -114,7 +122,7 @@ export const SkillsStyleList = ({ resumeInfo }) => (
       className="text-center font-bold text-sm mb-2"
       style={{ color: resumeInfo?.themeColor }}
     >
-      Skills
+      Habilidades
     </h2>
     <hr style={{ borderColor: resumeInfo?.themeColor }} />
 
@@ -161,7 +169,7 @@ export const SkillsStyleBlocks = ({ resumeInfo }) => (
       className="text-center font-bold text-sm mb-2"
       style={{ color: resumeInfo?.themeColor }}
     >
-      Skills
+      Habilidades
     </h2>
     <hr style={{ borderColor: resumeInfo?.themeColor }} />
 
@@ -208,7 +216,7 @@ export const SkillsStyleMinimal = ({ resumeInfo }) => (
       className="text-center font-bold text-sm mb-2"
       style={{ color: resumeInfo?.themeColor }}
     >
-      Skills
+      Habilidades
     </h2>
     <hr style={{ borderColor: resumeInfo?.themeColor }} />
 
