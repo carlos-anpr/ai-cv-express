@@ -45,7 +45,7 @@ function Home() {
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               to="/dashboard"
-              className="inline-flex items-center justify-center gap-2 px-8 py-3 text-base font-medium transition-all rounded-lg bg-black text-white hover:bg-black/90"
+              className="inline-flex items-center justify-center gap-2 px-8 py-3 text-base font-medium transition-all rounded-lg bg-black text-white hover:bg-black/90 animate-breathe"
             >
               Comenzar
               <ArrowRight className="w-4 h-4" />
@@ -204,7 +204,7 @@ function Home() {
         <div className="mt-16 text-center">
           <Link
             to="/auth/sign-in"
-            className="inline-flex items-center justify-center gap-2 px-8 py-3 text-base font-medium transition-all rounded-lg bg-black text-white hover:bg-black/90"
+            className="inline-flex items-center justify-center gap-2 px-8 py-3 text-base font-medium transition-all rounded-lg bg-black text-white hover:bg-black/90 animate-breathe"
           >
             Comienza hoy
             <ArrowRight className="w-4 h-4" />

@@ -78,7 +78,7 @@ function Header() {
                 </Button>
               </Link>
               <Link to="/dashboard">
-                <Button className="text-sm font-medium bg-black text-white hover:bg-black/90">
+                <Button className="text-sm font-medium bg-black text-white hover:bg-black/90 animate-breathe">
                   Comenzar
                 </Button>
               </Link>
