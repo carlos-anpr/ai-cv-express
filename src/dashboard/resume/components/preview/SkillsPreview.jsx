@@ -12,16 +12,6 @@ function SkillsPreview({ resumeInfo }) {
     return Math.min(rating, 100);
   };
 
-  // Función para obtener el nivel textual
-  const getRatingText = (rating) => {
-    const normalizedRating = normalizeRating(rating);
-    if (normalizedRating >= 90) return 'Experto';
-    if (normalizedRating >= 75) return 'Avanzado';
-    if (normalizedRating >= 50) return 'Intermedio';
-    if (normalizedRating >= 25) return 'Básico';
-    return 'Principiante';
-  };
-
   return (
     <div className="my-6">
       <h2
@@ -38,84 +28,37 @@ function SkillsPreview({ resumeInfo }) {
         }}
       />
 
-      <div className="space-y-4 my-4">
+      {/* Diseño en grid de 2 columnas - Compacto y profesional */}
+      <div className="grid grid-cols-2 gap-x-4 gap-y-2 my-4">
         {resumeInfo?.skills?.map((skill, index) => {
           const normalizedRating = normalizeRating(skill?.rating);
-          const ratingText = getRatingText(skill?.rating);
-          const skillLevel = Math.ceil(normalizedRating / 20);
 
           return (
-            <div key={index} className="skill-item">
-              {/* Encabezado limpio con nombre y nivel */}
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-gray-800">
-                  {skill.name}
-                </span>
-                <div className="flex items-center gap-2">
-                  <span
-                    className="text-xs font-bold px-2 py-1 rounded-full border"
+            <div key={index} className="flex items-center justify-between">
+              {/* Nombre de la habilidad */}
+              <span className="text-xs font-medium text-gray-700 flex-shrink-0 mr-2">
+                {skill.name}
+              </span>
+
+              {/* Barra de progreso minimalista */}
+              <div className="flex items-center gap-1 flex-grow">
+                <div className="w-full h-1.5 bg-gray-200 rounded-full">
+                  <div
+                    className="h-1.5 rounded-full"
                     style={{
-                      borderColor: resumeInfo?.themeColor,
-                      color: resumeInfo?.themeColor,
+                      backgroundColor: resumeInfo?.themeColor,
+                      width: normalizedRating + '%',
                     }}
-                  >
-                    {ratingText}
-                  </span>
-                  <span
-                    className="text-xs font-bold"
-                    style={{ color: resumeInfo?.themeColor }}
-                  >
-                    {Math.round(normalizedRating)}%
-                  </span>
+                  ></div>
                 </div>
-              </div>
-
-              {/* Barra de progreso principal - Compatible con PDF */}
-              <div className="w-full h-2 bg-gray-200 rounded-full mb-2">
-                <div
-                  className="h-2 rounded-full"
-                  style={{
-                    backgroundColor: resumeInfo?.themeColor,
-                    width: normalizedRating + '%',
-                  }}
-                ></div>
-              </div>
-
-              {/* Indicador visual de nivel - Sistema de círculos sólidos CORREGIDO */}
-              <div className="flex items-center justify-between">
-                <div className="flex gap-1.5">
-                  {Array.from({ length: 5 }, (_, i) => {
-                    const level = i + 1;
-                    const isActive = level <= skillLevel;
-                    const circleColor = isActive
-                      ? resumeInfo?.themeColor || '#3b82f6'
-                      : '#e5e7eb';
-
-                    return (
-                      <div
-                        key={level}
-                        style={{
-                          width: '12px',
-                          height: '12px',
-                          borderRadius: '50%',
-                          backgroundColor: circleColor,
-                          display: 'inline-block',
-                        }}
-                      />
-                    );
-                  })}
-                </div>
-
-                {/* Nivel numérico simple */}
-                <span className="text-xs text-gray-500 font-medium">
-                  Level {skillLevel}/5
+                {/* Porcentaje pequeño */}
+                <span
+                  className="text-[10px] font-bold flex-shrink-0"
+                  style={{ color: resumeInfo?.themeColor }}
+                >
+                  {Math.round(normalizedRating)}%
                 </span>
               </div>
-
-              {/* Separador entre skills */}
-              {index < (resumeInfo?.skills?.length || 0) - 1 && (
-                <div className="mt-3 border-b border-gray-100"></div>
-              )}
             </div>
           );
         })}
