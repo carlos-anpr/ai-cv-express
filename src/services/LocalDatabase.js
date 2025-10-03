@@ -1049,6 +1049,112 @@ class LocalDatabase {
       return { needsMigration: false, error: error.message };
     }
   }
+
+  // ============================================================================
+  // MÉTODOS ADICIONALES PARA INTERVIEW SIMULATIONS
+  // ============================================================================
+
+  /**
+   * READ - Obtener simulación por ID de candidatura (alias mejorado)
+   * @param {string} jobApplicationId - ID de la candidatura
+   * @param {string} userEmail - Email del usuario
+   * @returns {Promise<Object>} Simulación encontrada o null
+   */
+  async GetInterviewSimulationByJobApplication(jobApplicationId, userEmail) {
+    // Usar el método existente GetInterviewSimulation
+    const simulation = await this.GetInterviewSimulation(
+      jobApplicationId,
+      userEmail
+    );
+    return { data: simulation || null };
+  }
+
+  /**
+   * DELETE - Eliminar simulación por candidatura (para regenerar)
+   * @param {string} jobApplicationId - ID de la candidatura
+   * @param {string} userEmail - Email del usuario
+   * @returns {Promise<Object>} Resultado de la eliminación
+   */
+  async DeleteInterviewSimulationByJobApplication(jobApplicationId, userEmail) {
+    await this.ensureDatabaseReady();
+    try {
+      console.log(
+        '🗑️ Preparando regeneración para candidatura:',
+        jobApplicationId
+      );
+
+      // Buscar simulación existente
+      const simulation = await this.GetInterviewSimulation(
+        jobApplicationId,
+        userEmail
+      );
+
+      if (simulation && simulation.id) {
+        await this.DeleteInterviewSimulation(simulation.id, userEmail);
+        return {
+          success: true,
+          message: 'Simulación eliminada, lista para regenerar',
+        };
+      }
+
+      return {
+        success: true,
+        message: 'No había simulación previa',
+      };
+    } catch (error) {
+      console.error('❌ Error eliminando simulación por candidatura:', error);
+      throw new Error('No se pudo eliminar la simulación: ' + error.message);
+    }
+  }
+
+  /**
+   * UTILITY - Obtener estadísticas de simulaciones de un usuario
+   * @param {string} userEmail - Email del usuario
+   * @returns {Promise<Object>} Estadísticas
+   */
+  async GetInterviewSimulationStats(userEmail) {
+    await this.ensureDatabaseReady();
+    try {
+      const simulations = await db.interviewSimulations
+        .where('userEmail')
+        .equals(userEmail)
+        .toArray();
+
+      const stats = {
+        total: simulations.length,
+        byLevel: {
+          junior: simulations.filter((s) => s.candidateLevel === 'junior')
+            .length,
+          mid: simulations.filter((s) => s.candidateLevel === 'mid').length,
+          senior: simulations.filter((s) => s.candidateLevel === 'senior')
+            .length,
+        },
+        totalQuestions: simulations.reduce((acc, sim) => {
+          const questions = this.safeJsonParse(sim.questions, []);
+          return acc + questions.length;
+        }, 0),
+        lastGenerated:
+          simulations.length > 0
+            ? simulations.reduce((latest, sim) =>
+                new Date(sim.generatedAt || sim.createdAt) >
+                new Date(latest.generatedAt || latest.createdAt)
+                  ? sim
+                  : latest
+              ).generatedAt || simulations[0].createdAt
+            : null,
+      };
+
+      return stats;
+    } catch (error) {
+      console.error('❌ Error obteniendo estadísticas:', error);
+      return {
+        total: 0,
+        byLevel: { junior: 0, mid: 0, senior: 0 },
+        totalQuestions: 0,
+        lastGenerated: null,
+      };
+    }
+  }
 }
 
 // Instancia global del servicio
