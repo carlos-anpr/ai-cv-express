@@ -4,6 +4,124 @@
 
 Implementar un sistema de generación de tests de preparación para entrevistas de trabajo, con 5 preguntas en castellano, respuestas sugeridas y explicaciones generadas por IA (Gemini). Los tests se guardan automáticamente en IndexedDB con opciones para regenerar o eliminar.
 
+## ⚠️ IMPORTANTE: Generación Basada en Datos de la Candidatura
+
+**El test se genera EXCLUSIVAMENTE en base a los campos de la candidatura:**
+
+### 📋 Campos Obligatorios de la Candidatura
+
+1. **Empresa** (`companyName`) - OBLIGATORIO
+2. **Puesto** (`jobTitle`) - OBLIGATORIO
+3. **Requisitos Específicos** (`requirements`) - OBLIGATORIO
+4. **Descripción del Puesto** (`jobDescription`) - OBLIGATORIO
+5. **Responsabilidades** (`responsibilities`) - RECOMENDADO
+
+### 🎯 Proceso de Detección y Análisis
+
+**Gemini analiza estos campos para:**
+
+1. **Extraer habilidades técnicas requeridas**
+   - Ejemplo: "Backend Node.js", "Java Spring Boot", "React", etc.
+   - Extrae tecnologías, frameworks, metodologías
+2. **Detectar nivel profesional (Junior, Mid, Senior)**
+   - Analiza años de experiencia mencionados
+   - Analiza complejidad de responsabilidades
+   - Analiza requisitos técnicos y de liderazgo
+3. **Identificar tipo de puesto**
+   - Backend Developer
+   - Frontend Developer
+   - Full Stack Developer
+   - DevOps Engineer
+   - Data Scientist
+   - etc.
+
+### 🚫 Validación Previa a la Generación
+
+**ANTES de llamar a Gemini, el sistema DEBE validar:**
+
+```javascript
+// Validación de campos obligatorios
+const validateJobApplicationData = (jobApplication) => {
+  const errors = [];
+
+  if (!jobApplication.companyName?.trim()) {
+    errors.push('El nombre de la empresa es obligatorio');
+  }
+
+  if (!jobApplication.jobTitle?.trim()) {
+    errors.push('El puesto es obligatorio');
+  }
+
+  if (
+    !jobApplication.requirements?.trim() ||
+    jobApplication.requirements.length < 50
+  ) {
+    errors.push(
+      'Los Requisitos Específicos deben tener al menos 50 caracteres'
+    );
+  }
+
+  if (
+    !jobApplication.jobDescription?.trim() ||
+    jobApplication.jobDescription.length < 50
+  ) {
+    errors.push('La Descripción del Puesto debe tener al menos 50 caracteres');
+  }
+
+  return errors;
+};
+```
+
+**Si hay errores:**
+
+```jsx
+❌ No se puede generar el test
+
+Faltan datos obligatorios de la candidatura:
+• Los Requisitos Específicos están vacíos o son muy generales
+• La Descripción del Puesto es insuficiente
+
+Por favor, edita la candidatura y completa estos campos con información detallada
+sobre las habilidades técnicas requeridas, experiencia necesaria y responsabilidades
+del puesto.
+
+[Editar Candidatura]
+```
+
+### 📊 Ejemplo de Análisis
+
+**Candidatura: Backend Developer**
+
+```
+Empresa: TechCorp S.L.
+Puesto: Backend Developer
+Requisitos:
+- 2-3 años de experiencia en Node.js
+- Conocimiento de Express.js y Nest.js
+- Base de datos MongoDB y PostgreSQL
+- API REST y GraphQL
+- Testing con Jest
+- Docker básico
+
+Descripción:
+Buscamos desarrollador backend para proyecto de e-commerce.
+Trabajarás en equipo ágil con sprints de 2 semanas.
+```
+
+**Gemini detecta:**
+
+- ✅ Nivel: **Junior/Mid** (2-3 años)
+- ✅ Stack: **Node.js, Express, Nest.js**
+- ✅ Bases de datos: **MongoDB, PostgreSQL**
+- ✅ Tipo: **Backend Developer**
+
+**Genera preguntas como:**
+
+1. "Explica la diferencia entre Express.js y Nest.js y cuándo usarías cada uno"
+2. "¿Cómo manejarías la autenticación JWT en una API REST con Node.js?"
+3. "Describe una situación donde optimizaste una query lenta en MongoDB"
+4. etc.
+
 ---
 
 ## 🎯 Ruta de la Funcionalidad
@@ -84,56 +202,96 @@ class InterviewTestGenerator {
 }
 ```
 
-**Prompt Template:**
+**Prompt Template (Actualizado):**
 
 ```
-Eres un experto reclutador especializado en preparación de entrevistas.
+Eres un experto reclutador técnico especializado en preparación de entrevistas.
 
-CONTEXTO DEL CANDIDATO:
+PASO 1: ANALIZA LA OFERTA DE TRABAJO
+=======================================
+
+INFORMACIÓN DE LA CANDIDATURA:
+- Empresa: {companyName}
+- Puesto: {jobTitle}
+
+REQUISITOS ESPECÍFICOS DEL PUESTO:
+{requirements}
+
+DESCRIPCIÓN COMPLETA DEL PUESTO:
+{jobDescription}
+
+RESPONSABILIDADES:
+{responsibilities}
+
+CONTEXTO ADICIONAL DEL CANDIDATO:
 - Nombre: {firstName} {lastName}
-- Nivel detectado: {level}
 - Experiencia: {experience}
 - Educación: {education}
 - Habilidades: {skills}
 
-CONTEXTO DEL PUESTO:
-- Empresa: {companyName}
-- Puesto: {jobTitle}
-- Requisitos: {requirements}
-- Responsabilidades: {responsibilities}
+PASO 2: DETECTA Y EXTRAE INFORMACIÓN CLAVE
+============================================
 
-TAREA:
-Genera exactamente 5 preguntas de test de preparación para entrevista en CASTELLANO.
-Cada pregunta debe tener:
-1. Una pregunta relevante basada en el puesto y el perfil del candidato
-2. La respuesta más adecuada y profesional
-3. Una breve explicación (2-3 líneas) de por qué esa es la mejor respuesta
+Analiza los requisitos y descripción para determinar:
 
-DISTRIBUCIÓN:
-- 2 preguntas técnicas relacionadas con las habilidades requeridas
-- 2 preguntas comportamentales (STAR method)
-- 1 pregunta sobre conocimiento de la empresa/sector
+1. **NIVEL PROFESIONAL** (Basado en años de experiencia y complejidad):
+   - "junior" → 0-3 años, tareas supervisadas, aprendizaje
+   - "mid" → 3-6 años, autonomía, proyectos completos
+   - "senior" → 6+ años, liderazgo, arquitectura, mentoría
+
+2. **HABILIDADES TÉCNICAS PRINCIPALES**:
+   - Lenguajes de programación (ej: "Node.js", "Java", "Python")
+   - Frameworks (ej: "Express.js", "Spring Boot", "React")
+   - Herramientas (ej: "Docker", "Git", "Jenkins")
+   - Bases de datos (ej: "MongoDB", "PostgreSQL")
+   - Metodologías (ej: "Agile", "Scrum", "TDD")
+
+3. **TIPO DE ROL**:
+   - Backend, Frontend, Full Stack, DevOps, Data, etc.
+
+PASO 3: GENERA 5 PREGUNTAS PERSONALIZADAS
+==========================================
+
+IMPORTANTE: Las preguntas deben ser ESPECÍFICAS a las tecnologías y requisitos mencionados.
+
+DISTRIBUCIÓN OBLIGATORIA:
+- 2 preguntas TÉCNICAS sobre las habilidades específicas del puesto
+- 2 preguntas COMPORTAMENTALES usando metodología STAR
+- 1 pregunta sobre CONOCIMIENTO de la empresa/industria
+
+REQUISITOS DE LAS PREGUNTAS:
+✅ Mencionar tecnologías ESPECÍFICAS de los requisitos
+✅ Ajustar dificultad al nivel detectado
+✅ TODO en castellano
+✅ Respuestas realistas y profesionales (no teóricas)
+✅ Explicaciones educativas (por qué esa respuesta es efectiva)
+
+EJEMPLO DE PREGUNTA TÉCNICA BUENA:
+❌ MAL: "¿Qué es una base de datos?"
+✅ BIEN: "Explica cómo implementarías un índice compuesto en MongoDB para optimizar
+          consultas de búsqueda por usuario y fecha en una aplicación con 1M+ registros"
 
 FORMATO JSON ESTRICTO:
 {
   "candidateLevel": "junior|mid|senior",
+  "detectedSkills": ["skill1", "skill2", "skill3"],
+  "roleType": "Backend|Frontend|FullStack|DevOps|Data|etc",
   "questions": [
     {
       "id": "uuid",
-      "question": "Pregunta en castellano",
-      "correctAnswer": "Respuesta sugerida profesional",
-      "explanation": "Explicación de por qué esta respuesta es efectiva",
+      "question": "Pregunta en castellano específica a las tecnologías mencionadas",
+      "correctAnswer": "Respuesta sugerida profesional y práctica",
+      "explanation": "Explicación de por qué esta respuesta es efectiva (2-3 líneas)",
       "category": "técnica|comportamental|empresa",
       "difficulty": "básica|intermedia|avanzada"
     }
   ]
 }
 
-IMPORTANTE:
-- Todo en castellano
-- Respuestas profesionales y realistas
-- Explicaciones educativas
-- Preguntas específicas al puesto, NO genéricas
+VALIDACIÓN FINAL:
+- Verifica que mencionas al menos 2 tecnologías específicas de los requisitos
+- Verifica que el nivel de dificultad coincide con el nivel detectado
+- Verifica que las preguntas NO sean genéricas
 ```
 
 ---
@@ -317,6 +475,77 @@ const [error, setError] = useState(null); // Errores
 ### **4. Interfaz de Usuario**
 
 #### **4.1 Estados de la UI**
+
+**Estado 0: Datos de candidatura insuficientes** ⚠️ **NUEVO**
+
+```jsx
+<Card className="border-yellow-200 bg-yellow-50">
+  <CardHeader>
+    <div className="flex items-start gap-3">
+      <AlertTriangle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-1" />
+      <div>
+        <CardTitle className="text-yellow-900">
+          No se puede generar el test
+        </CardTitle>
+        <CardDescription className="text-yellow-800 mt-2">
+          Faltan datos obligatorios de la candidatura para poder generar
+          preguntas relevantes
+        </CardDescription>
+      </div>
+    </div>
+  </CardHeader>
+  <CardContent>
+    <div className="bg-white rounded-lg p-4 mb-4">
+      <h4 className="font-medium text-gray-900 mb-3">
+        Campos obligatorios faltantes:
+      </h4>
+      <ul className="space-y-2">
+        {validationErrors.map((error, index) => (
+          <li
+            key={index}
+            className="flex items-start gap-2 text-sm text-gray-700"
+          >
+            <XCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+            <span>{error}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+      <h4 className="font-medium text-blue-900 mb-2 flex items-center gap-2">
+        <Info className="w-4 h-4" />
+        ¿Por qué son necesarios estos datos?
+      </h4>
+      <p className="text-sm text-blue-800">
+        El sistema de IA necesita información específica sobre las{' '}
+        <strong>habilidades técnicas requeridas</strong>, el{' '}
+        <strong>nivel de experiencia</strong> y las{' '}
+        <strong>responsabilidades del puesto</strong> para generar preguntas de
+        entrevista relevantes y personalizadas.
+      </p>
+    </div>
+
+    <div className="flex gap-3">
+      <Button
+        onClick={() =>
+          navigate(
+            `/dashboard/resume/${resumeId}/job-applications/${applicationId}/edit`
+          )
+        }
+        className="bg-yellow-600 hover:bg-yellow-700"
+      >
+        <Edit className="w-4 h-4 mr-2" />
+        Completar Datos de la Candidatura
+      </Button>
+      <Button variant="outline" onClick={handleGoBack}>
+        <ArrowLeft className="w-4 h-4 mr-2" />
+        Volver
+      </Button>
+    </div>
+  </CardContent>
+</Card>
+```
 
 **Estado 1: Cargando (inicial)**
 
@@ -549,12 +778,118 @@ console.log('Simulación recuperada:', retrieved);
 
 ---
 
-### **PASO 3: Implementar lógica de generación con IA**
+### **PASO 3: Implementar validación de datos de candidatura** ⚠️ **CRÍTICO**
+
+**Archivo:** `src/services/prompts/interviewTestGenerator.js`
+
+✅ **Tareas:**
+
+- Crear función `validateJobApplicationData()`
+- Validar campos obligatorios
+- Validar longitud mínima de campos
+- Retornar errores descriptivos
+
+**Código:**
+
+```javascript
+class InterviewTestGenerator {
+  /**
+   * Valida que la candidatura tenga los datos mínimos necesarios
+   * para generar un test de entrevista relevante
+   */
+  static validateJobApplicationData(jobApplication) {
+    const errors = [];
+    const MIN_TEXT_LENGTH = 50; // Mínimo 50 caracteres para descripciones
+
+    // 1. Validar empresa
+    if (!jobApplication.companyName?.trim()) {
+      errors.push('El nombre de la empresa es obligatorio');
+    }
+
+    // 2. Validar puesto
+    if (!jobApplication.jobTitle?.trim()) {
+      errors.push('El título del puesto es obligatorio');
+    }
+
+    // 3. Validar requisitos (CRÍTICO - de aquí se extraen las skills técnicas)
+    if (!jobApplication.requirements?.trim()) {
+      errors.push('Los Requisitos Específicos son obligatorios');
+    } else if (jobApplication.requirements.trim().length < MIN_TEXT_LENGTH) {
+      errors.push(
+        `Los Requisitos Específicos deben tener al menos ${MIN_TEXT_LENGTH} caracteres ` +
+          `(actualmente: ${jobApplication.requirements.trim().length}). ` +
+          `Describe las habilidades técnicas, herramientas y experiencia requerida.`
+      );
+    }
+
+    // 4. Validar descripción del puesto (CRÍTICO - de aquí se detecta el nivel)
+    if (!jobApplication.jobDescription?.trim()) {
+      errors.push('La Descripción del Puesto es obligatoria');
+    } else if (jobApplication.jobDescription.trim().length < MIN_TEXT_LENGTH) {
+      errors.push(
+        `La Descripción del Puesto debe tener al menos ${MIN_TEXT_LENGTH} caracteres ` +
+          `(actualmente: ${jobApplication.jobDescription.trim().length}). ` +
+          `Describe las responsabilidades, nivel de experiencia y contexto del rol.`
+      );
+    }
+
+    // 5. Warning si faltan responsabilidades (no bloqueante, pero recomendado)
+    if (!jobApplication.responsibilities?.trim()) {
+      errors.push(
+        '⚠️ Las Responsabilidades del Puesto no están definidas (recomendado pero no obligatorio)'
+      );
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      hasWarnings: errors.some((e) => e.startsWith('⚠️')),
+    };
+  }
+
+  /**
+   * Retorna un mensaje de ayuda para el usuario
+   */
+  static getValidationHelpMessage() {
+    return {
+      title: '¿Qué información debo incluir?',
+      tips: [
+        {
+          field: 'Requisitos Específicos',
+          description:
+            'Lista detallada de habilidades técnicas, tecnologías, frameworks, años de experiencia y conocimientos necesarios.',
+          example:
+            'Ejemplo: "3+ años en Node.js, Express.js, MongoDB, conocimiento de Docker y CI/CD"',
+        },
+        {
+          field: 'Descripción del Puesto',
+          description:
+            'Descripción del rol, responsabilidades principales, tipo de proyectos, metodologías de trabajo y nivel de autonomía esperado.',
+          example:
+            'Ejemplo: "Desarrollarás APIs REST para aplicaciones web, trabajarás en equipo ágil con sprints de 2 semanas..."',
+        },
+        {
+          field: 'Responsabilidades',
+          description:
+            'Listado de tareas y responsabilidades específicas del día a día (opcional pero recomendado).',
+          example:
+            'Ejemplo: "Desarrollo de nuevas funcionalidades, code review, optimización de queries, documentación técnica"',
+        },
+      ],
+    };
+  }
+}
+```
+
+---
+
+### **PASO 4: Implementar lógica de generación con IA**
 
 **Archivo:** `src/dashboard/resume/[resumeId]/job-applications/[applicationId]/interview-simulation/index.jsx`
 
 ✅ **Tareas:**
 
+- **PRIMERO: Validar datos de candidatura** ⚠️
 - Crear función `handleGenerateTest()`
 - Implementar llamada a Gemini AI
 - Parsear respuesta JSON
@@ -569,6 +904,18 @@ const handleGenerateTest = async () => {
   try {
     setGenerating(true);
     setError(null);
+
+    // ⚠️ PASO 0: VALIDAR DATOS DE CANDIDATURA (CRÍTICO)
+    const validation =
+      InterviewTestGenerator.validateJobApplicationData(application);
+
+    if (!validation.isValid) {
+      // Mostrar errores de validación
+      setValidationErrors(validation.errors);
+      setGenerating(false);
+      toast.error('Faltan datos obligatorios de la candidatura');
+      return;
+    }
 
     // 1. Generar prompt
     const prompt = InterviewTestGenerator.generatePrompt(
@@ -623,7 +970,7 @@ const handleGenerateTest = async () => {
 
 ---
 
-### **PASO 4: Implementar carga de datos inicial**
+### **PASO 5: Implementar carga de datos inicial**
 
 **Archivo:** Mismo componente
 
@@ -632,18 +979,29 @@ const handleGenerateTest = async () => {
 - Crear `useEffect` para carga inicial
 - Cargar datos de candidatura
 - Cargar datos de CV
+- **Validar datos de candidatura inmediatamente** ⚠️
 - Buscar simulación existente
 - Manejar estados de carga
 
 **Código:**
 
 ```javascript
+// Estados del componente
+const [loading, setLoading] = useState(true);
+const [generating, setGenerating] = useState(false);
+const [simulation, setSimulation] = useState(null);
+const [application, setApplication] = useState(null);
+const [resumeData, setResumeData] = useState(null);
+const [error, setError] = useState(null);
+const [validationErrors, setValidationErrors] = useState([]); // ⚠️ NUEVO
+
 useEffect(() => {
   const loadData = async () => {
     if (!user?.primaryEmailAddress?.emailAddress) return;
 
     try {
       setLoading(true);
+      setValidationErrors([]);
 
       // Cargar candidatura
       const appResponse = await LocalDatabase.GetJobApplicationById(
@@ -656,16 +1014,30 @@ useEffect(() => {
       const resumeResponse = await LocalDatabase.GetResumeById(resumeId);
       setResumeData(resumeResponse.data);
 
-      // Buscar simulación existente
-      const simResponse =
-        await LocalDatabase.GetInterviewSimulationByJobApplication(
-          applicationId,
-          user.primaryEmailAddress.emailAddress
-        );
-      setSimulation(simResponse.data);
+      // ⚠️ VALIDAR DATOS DE CANDIDATURA INMEDIATAMENTE
+      const validation = InterviewTestGenerator.validateJobApplicationData(
+        appResponse.data
+      );
+
+      if (!validation.isValid) {
+        setValidationErrors(validation.errors);
+        console.warn('⚠️ Candidatura incompleta:', validation.errors);
+        // NO bloquear carga, solo mostrar warning
+      }
+
+      // Buscar simulación existente (solo si datos son válidos)
+      if (validation.isValid) {
+        const simResponse =
+          await LocalDatabase.GetInterviewSimulationByJobApplication(
+            applicationId,
+            user.primaryEmailAddress.emailAddress
+          );
+        setSimulation(simResponse.data);
+      }
     } catch (error) {
       console.error('Error cargando datos:', error);
       toast.error('Error al cargar los datos');
+      setError(error.message);
     } finally {
       setLoading(false);
     }
@@ -677,7 +1049,7 @@ useEffect(() => {
 
 ---
 
-### **PASO 5: Implementar acciones (Regenerar y Eliminar)**
+### **PASO 6: Implementar acciones (Regenerar y Eliminar)**
 
 **Archivo:** Mismo componente
 
@@ -738,21 +1110,22 @@ const handleDelete = async () => {
 
 ---
 
-### **PASO 6: Diseñar e implementar UI completa**
+### **PASO 7: Diseñar e implementar UI completa**
 
 **Archivo:** Mismo componente
 
 ✅ **Tareas:**
 
-- Implementar todos los estados de UI
+- Implementar todos los estados de UI (incluido estado de validación)
 - Añadir iconos (lucide-react)
 - Implementar diseño responsivo
 - Añadir animaciones de carga
+- Mostrar mensajes de ayuda cuando falten datos
 - Probar todos los flujos
 
 ---
 
-### **PASO 7: Testing y refinamiento**
+### **PASO 8: Testing y refinamiento**
 
 ✅ **Tareas:**
 
@@ -929,6 +1302,7 @@ parsedData.questions.forEach((q, i) => {
 2. ✅ No regenerar si ya existe test (mostrar guardado por defecto)
 3. ✅ Usar `useMemo` para formatear datos pesados
 4. ✅ Serialización eficiente de JSON en IndexedDB
+5. ✅ Validación temprana de datos (antes de llamar a IA)
 
 ### **UX:**
 
@@ -937,6 +1311,9 @@ parsedData.questions.forEach((q, i) => {
 3. ✅ Confirmaciones para acciones destructivas
 4. ✅ Toast notifications para feedback
 5. ✅ Diseño responsive mobile-friendly
+6. ✅ **Mensajes claros cuando faltan datos de candidatura** ⚠️
+7. ✅ **Botón directo para editar candidatura** ⚠️
+8. ✅ **Guía de ayuda sobre qué datos incluir** ⚠️
 
 ### **AI:**
 
@@ -944,6 +1321,9 @@ parsedData.questions.forEach((q, i) => {
 2. ✅ Retry logic si falla la primera vez
 3. ✅ Validación estricta de respuesta JSON
 4. ✅ Prompt engineering optimizado
+5. ✅ **Prompt analiza requisitos para extraer skills técnicas** ⚠️
+6. ✅ **Prompt detecta nivel profesional de la descripción** ⚠️
+7. ✅ **Validación pre-IA para evitar llamadas innecesarias** ⚠️
 
 ---
 
@@ -1022,6 +1402,30 @@ parsedData.questions.forEach((q, i) => {
 4. ✅ No guarda datos corruptos
 ```
 
+### **Test 6: Datos de candidatura insuficientes** ⚠️ **NUEVO**
+
+```
+1. Usuario con candidatura sin requisitos o descripción
+2. Navega a la ruta de simulación
+3. ✅ Sistema valida datos automáticamente
+4. ✅ Muestra estado de "datos insuficientes"
+5. ✅ Lista errores específicos
+6. ✅ Ofrece botón para editar candidatura
+7. ✅ NO permite generar test hasta completar datos
+```
+
+### **Test 7: Generación con datos específicos** ⚠️ **NUEVO**
+
+```
+1. Candidatura completa: "Backend Node.js Junior, 2 años exp"
+2. Click "Generar Test"
+3. ✅ Gemini detecta nivel: Junior
+4. ✅ Gemini extrae skills: Node.js, Express, MongoDB
+5. ✅ Genera preguntas específicas de Node.js
+6. ✅ Ajusta dificultad a nivel Junior
+7. ✅ Preguntas mencionan tecnologías del puesto
+```
+
 ---
 
 ## 📋 Checklist de Implementación
@@ -1029,16 +1433,22 @@ parsedData.questions.forEach((q, i) => {
 ### **Backend (LocalDatabase + Prompts)**
 
 - [ ] Crear `InterviewTestGenerator.js`
+- [ ] **Implementar `validateJobApplicationData()`** ⚠️ **NUEVO**
+- [ ] **Implementar `getValidationHelpMessage()`** ⚠️ **NUEVO**
 - [ ] Implementar detección de nivel profesional
-- [ ] Implementar generación de prompt
+- [ ] Implementar extracción de skills técnicas
+- [ ] Implementar generación de prompt mejorado
 - [ ] Extender `LocalDatabase.js` con métodos CRUD
 - [ ] Probar guardado y recuperación en IndexedDB
 
 ### **Frontend (Componente)**
 
 - [ ] Implementar estados del componente
+- [ ] **Añadir estado `validationErrors`** ⚠️ **NUEVO**
 - [ ] Implementar carga inicial de datos
-- [ ] Implementar función `handleGenerateTest()`
+- [ ] **Implementar validación temprana en `useEffect`** ⚠️ **NUEVO**
+- [ ] **Implementar UI de "datos insuficientes"** ⚠️ **NUEVO**
+- [ ] Implementar función `handleGenerateTest()` con validación previa
 - [ ] Implementar función `handleRegenerate()`
 - [ ] Implementar función `handleDelete()`
 - [ ] Implementar UI de carga (spinner)
@@ -1049,20 +1459,28 @@ parsedData.questions.forEach((q, i) => {
 
 ### **Testing**
 
+- [ ] **Probar validación con candidatura vacía** ⚠️ **NUEVO**
+- [ ] **Probar validación con campos muy cortos (< 50 chars)** ⚠️ **NUEVO**
+- [ ] **Verificar que preguntas técnicas mencionan tecnologías específicas** ⚠️ **NUEVO**
+- [ ] **Probar detección de nivel (Junior, Mid, Senior)** ⚠️ **NUEVO**
 - [ ] Probar con diferentes perfiles de candidatos
-- [ ] Probar con diferentes tipos de puestos
-- [ ] Verificar que las preguntas son relevantes
+- [ ] Probar con diferentes tipos de puestos (Backend, Frontend, FullStack, etc.)
+- [ ] Verificar que las preguntas son relevantes al puesto específico
 - [ ] Verificar que todo está en castellano
 - [ ] Probar regeneración múltiple
 - [ ] Probar eliminación
 - [ ] Probar persistencia (recargar página)
 - [ ] Probar en mobile
+- [ ] **Verificar que no se puede generar test sin datos válidos** ⚠️ **NUEVO**
 
 ### **Refinamiento**
 
 - [ ] Ajustar prompts según calidad de respuestas
+- [ ] **Refinar detección de nivel profesional** ⚠️ **NUEVO**
+- [ ] **Mejorar extracción de skills técnicas** ⚠️ **NUEVO**
 - [ ] Optimizar tiempos de carga
 - [ ] Mejorar mensajes de error
+- [ ] **Añadir ejemplos en mensajes de validación** ⚠️ **NUEVO**
 - [ ] Añadir animaciones suaves
 - [ ] Revisar accesibilidad (ARIA labels)
 
@@ -1090,6 +1508,11 @@ parsedData.questions.forEach((q, i) => {
 
 ### **Funcionalidad completa:**
 
+✅ **Generación basada EXCLUSIVAMENTE en datos de candidatura** ⚠️  
+✅ **Validación previa de campos obligatorios (empresa, puesto, requisitos, descripción)** ⚠️  
+✅ **Detección automática de nivel profesional desde la descripción** ⚠️  
+✅ **Extracción automática de habilidades técnicas desde requisitos** ⚠️  
+✅ **Preguntas técnicas específicas a las tecnologías mencionadas** ⚠️  
 ✅ Generación de 5 preguntas personalizadas en castellano  
 ✅ Respuestas sugeridas profesionales  
 ✅ Explicaciones educativas del por qué  
@@ -1098,6 +1521,7 @@ parsedData.questions.forEach((q, i) => {
 ✅ Opción de regenerar  
 ✅ Opción de eliminar  
 ✅ Spinner informativo durante generación  
+✅ **Mensaje claro si faltan datos con botón para editar candidatura** ⚠️  
 ✅ Interfaz limpia y profesional  
 ✅ Responsive design  
 ✅ Integración completa con sistema existente
@@ -1132,9 +1556,92 @@ parsedData.questions.forEach((q, i) => {
 
 ---
 
+## 🎯 RESUMEN EJECUTIVO - PUNTOS CRÍTICOS
+
+### ⚠️ **LO MÁS IMPORTANTE:**
+
+1. **El test se genera SOLO con datos de la candidatura, NO del CV**
+
+   - Campos obligatorios: empresa, puesto, requisitos (>50 chars), descripción (>50 chars)
+   - De aquí Gemini extrae: nivel profesional, skills técnicas, tipo de rol
+
+2. **Validación ANTES de generar**
+
+   - Si faltan datos → Mostrar UI de error + botón "Editar Candidatura"
+   - NO permitir generación hasta completar campos mínimos
+   - Validación en `useEffect` (carga inicial) y en `handleGenerateTest()`
+
+3. **Prompt mejorado con análisis en 3 pasos**
+
+   - PASO 1: Analizar oferta completa
+   - PASO 2: Detectar nivel + extraer skills + identificar rol
+   - PASO 3: Generar preguntas específicas a las tecnologías
+
+4. **Preguntas técnicas ESPECÍFICAS, NO genéricas**
+
+   - ❌ MAL: "¿Qué es una API REST?"
+   - ✅ BIEN: "Explica cómo implementarías autenticación JWT en Express.js"
+
+5. **Campos de candidatura como requisitos previos**
+   - Al crear/editar candidatura, hacer énfasis en completar bien requisitos y descripción
+   - Estos campos son críticos para calidad del test
+
+### 📊 **Flujo de Validación:**
+
+```
+Usuario → Clic "Generar Test"
+    ↓
+¿Campos obligatorios completos?
+    ↓                    ↓
+   NO                   SÍ
+    ↓                    ↓
+Mostrar error       Llamar Gemini
+con ayuda           con prompt mejorado
+    ↓                    ↓
+Botón editar        Analizar candidatura
+candidatura         Detectar nivel
+                    Extraer skills
+                    Generar 5 preguntas
+                         ↓
+                    Guardar en DB
+                    Mostrar test
+```
+
+### 🔍 **Ejemplo Real:**
+
+**Input (Candidatura):**
+
+```
+Empresa: Acme Tech
+Puesto: Backend Developer
+Requisitos: 2 años Node.js, Express, MongoDB, Docker básico, Git
+Descripción: Desarrollo de microservicios REST, trabajo en equipo ágil
+```
+
+**Output (Test):**
+
+```json
+{
+  "candidateLevel": "junior",
+  "detectedSkills": ["Node.js", "Express", "MongoDB", "Docker", "Git"],
+  "roleType": "Backend",
+  "questions": [
+    {
+      "question": "Explica cómo estructurarías un proyecto Node.js con Express para una API REST escalable",
+      "category": "técnica",
+      "difficulty": "intermedia"
+    }
+    // ... 4 preguntas más
+  ]
+}
+```
+
+---
+
 **Documento creado:** 3 de Octubre, 2025  
-**Versión:** 1.0  
+**Versión:** 2.0 (Actualizado con validación de candidatura)  
 **Autor:** GitHub Copilot  
-**Estado:** Listo para implementación
+**Estado:** Listo para implementación  
+**Cambios importantes:** Añadida validación de campos obligatorios y generación basada en candidatura
 
 ---
