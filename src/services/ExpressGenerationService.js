@@ -5,7 +5,7 @@
  * Integra todos los prompts y maneja el flujo completo.
  */
 
-import { AIChatSession } from '../../../service/AIModal';
+import { AIChatSession } from '../../service/AIModal';
 import {
   expressProfileParserPrompt,
   validateProfileData,
