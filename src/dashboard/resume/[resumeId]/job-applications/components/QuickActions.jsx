@@ -24,6 +24,7 @@ import {
   Edit,
   FileText,
   MessageSquare,
+  Brain,
   ExternalLink,
   Trash2,
   RefreshCw,
@@ -121,10 +122,8 @@ const QuickActions = ({ application, resumeId, onDelete, onStatusChange }) => {
               );
             }}
           >
-            <MessageSquare className="mr-2 h-4 w-4" />
-            {application.interviewSimulated
-              ? 'Ver entrevista'
-              : 'Simular entrevista'}
+            <Brain className="mr-2 h-4 w-4" />
+            Test de preparación
           </DropdownMenuItem>
 
           {application.jobUrl && (

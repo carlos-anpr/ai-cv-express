@@ -15,6 +15,7 @@ import {
   Edit,
   FileText,
   MessageSquare,
+  Brain,
   ExternalLink,
   Calendar,
   MapPin,
@@ -24,6 +25,7 @@ import {
   Building,
   Briefcase,
   Phone,
+  Sparkles,
 } from 'lucide-react';
 import LocalDatabase from '@/services/LocalDatabase';
 import { getStatusLabel, getStatusColor } from '@/services/types';
@@ -35,6 +37,7 @@ function JobApplicationDetail() {
   const { user } = useUser();
   const [application, setApplication] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [hasInterviewSimulation, setHasInterviewSimulation] = useState(false);
 
   const loadApplication = React.useCallback(async () => {
     if (!user?.primaryEmailAddress?.emailAddress) return;
@@ -47,6 +50,14 @@ function JobApplicationDetail() {
       );
       console.log('✅ Candidatura cargada:', response.data);
       setApplication(response.data);
+
+      // Verificar si existe una simulación de entrevista
+      const simulationResponse =
+        await LocalDatabase.GetInterviewSimulationByJobApplication(
+          applicationId,
+          user.primaryEmailAddress.emailAddress
+        );
+      setHasInterviewSimulation(!!simulationResponse.data);
     } catch (error) {
       console.error('❌ Error cargando candidatura:', error);
       toast.error('Error al cargar la candidatura');
@@ -151,10 +162,23 @@ function JobApplicationDetail() {
                 `/dashboard/resume/${resumeId}/job-applications/${applicationId}/interview-simulation`
               )
             }
-            className="bg-green-600 hover:bg-green-700"
+            className={
+              hasInterviewSimulation
+                ? 'bg-green-600 hover:bg-green-700'
+                : 'bg-purple-600 hover:bg-purple-700'
+            }
           >
-            <MessageSquare className="w-4 h-4 mr-2" />
-            Simular Entrevista
+            {hasInterviewSimulation ? (
+              <>
+                <Brain className="w-4 h-4 mr-2" />
+                Ver Test de Preparación
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Generar Test de Preparación
+              </>
+            )}
           </Button>
         </div>
       </div>

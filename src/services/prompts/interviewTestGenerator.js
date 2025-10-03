@@ -27,12 +27,20 @@ export class InterviewTestGenerator {
     }
 
     // 3. Validar requisitos (CRÍTICO - de aquí se extraen las skills técnicas)
-    if (!jobApplication?.requirements?.trim()) {
+    // Manejar requirements como string o array
+    let requirementsText = '';
+    if (Array.isArray(jobApplication?.requirements)) {
+      requirementsText = jobApplication.requirements.join(' ');
+    } else if (typeof jobApplication?.requirements === 'string') {
+      requirementsText = jobApplication.requirements;
+    }
+
+    if (!requirementsText.trim()) {
       errors.push('Los Requisitos Específicos son obligatorios');
-    } else if (jobApplication.requirements.trim().length < MIN_TEXT_LENGTH) {
+    } else if (requirementsText.trim().length < MIN_TEXT_LENGTH) {
       errors.push(
         `Los Requisitos Específicos deben tener al menos ${MIN_TEXT_LENGTH} caracteres ` +
-          `(actualmente: ${jobApplication.requirements.trim().length}). ` +
+          `(actualmente: ${requirementsText.trim().length}). ` +
           `Describe las habilidades técnicas, herramientas y experiencia requerida.`
       );
     }
@@ -121,7 +129,11 @@ INFORMACIÓN DE LA CANDIDATURA:
 ${jobApplication.location ? `- Ubicación: ${jobApplication.location}` : ''}
 
 REQUISITOS ESPECÍFICOS DEL PUESTO:
-${jobApplication.requirements}
+${
+  Array.isArray(jobApplication.requirements)
+    ? jobApplication.requirements.join(', ')
+    : jobApplication.requirements
+}
 
 DESCRIPCIÓN COMPLETA DEL PUESTO:
 ${jobApplication.jobDescription}
@@ -236,7 +248,10 @@ VALIDACIÓN FINAL:
     }
 
     if (jobApplication.requirements) {
-      parts.push(`\nRequisitos:\n${jobApplication.requirements}`);
+      const requirementsText = Array.isArray(jobApplication.requirements)
+        ? jobApplication.requirements.join(', ')
+        : jobApplication.requirements;
+      parts.push(`\nRequisitos:\n${requirementsText}`);
     }
 
     if (jobApplication.jobDescription) {
@@ -374,11 +389,14 @@ VALIDACIÓN FINAL:
    * (Método auxiliar - Gemini hace la detección real, esto es solo para referencia)
    *
    * @param {string} jobDescription - Descripción del puesto
-   * @param {string} requirements - Requisitos del puesto
+   * @param {string|Array} requirements - Requisitos del puesto
    * @returns {string} 'junior' | 'mid' | 'senior'
    */
   static detectCandidateLevel(jobDescription = '', requirements = '') {
-    const text = `${jobDescription} ${requirements}`.toLowerCase();
+    const requirementsText = Array.isArray(requirements)
+      ? requirements.join(' ')
+      : requirements;
+    const text = `${jobDescription} ${requirementsText}`.toLowerCase();
 
     // Indicadores de nivel senior
     const seniorIndicators = [
@@ -457,13 +475,16 @@ VALIDACIÓN FINAL:
    * Extrae habilidades técnicas mencionadas en los requisitos
    * (Método auxiliar - Gemini hace la extracción real, esto es solo para referencia)
    *
-   * @param {string} requirements - Requisitos del puesto
+   * @param {string|Array} requirements - Requisitos del puesto
    * @returns {Array<string>} Array de habilidades detectadas
    */
   static extractTechnicalSkills(requirements = '') {
     if (!requirements) return [];
 
-    const text = requirements.toLowerCase();
+    const requirementsText = Array.isArray(requirements)
+      ? requirements.join(' ')
+      : requirements;
+    const text = requirementsText.toLowerCase();
     const detectedSkills = [];
 
     // Lista de tecnologías comunes a buscar
