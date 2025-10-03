@@ -76,12 +76,12 @@ function Skills() {
 
   const AddNewSkills = () => {
     setSkillsList([
-      ...skillsList,
       {
         id: `skill-${Date.now()}-${skillsList.length}`,
         name: '',
         rating: 0,
       },
+      ...skillsList,
     ]);
   };
   const RemoveSkills = () => {
