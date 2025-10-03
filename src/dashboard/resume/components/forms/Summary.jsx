@@ -18,19 +18,40 @@ function Summary({ enableNext }) {
   const [loading, setLoading] = useState(false);
   const [aiGeneratedSummeryList, setAiGenerateSummaryList] = useState(null);
 
-  // Actualizar resumeInfo y enableNext cuando cambie el summary
+  // Actualizar resumeInfo cuando cambie el summary
   useEffect(() => {
     // Actualizar el contexto del resumen
     setResumeInfo((prevResumeInfo) => ({
       ...prevResumeInfo,
       summary,
     }));
-
-    // Controlar el estado del botón Next
-    const hasValidSummary = summary && summary.trim().length > 0;
-    enableNext(hasValidSummary);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [summary]); // Solo summary como dependencia para evitar loop infinito
+
+  // Controlar el estado del botón Next y guardar automáticamente
+  useEffect(() => {
+    const hasValidSummary = summary && summary.trim().length > 0;
+    enableNext(hasValidSummary);
+
+    // Guardar automáticamente en la base de datos cuando hay contenido válido
+    if (hasValidSummary && params?.resumeId) {
+      const autoSaveTimeout = setTimeout(async () => {
+        try {
+          console.log('💾 Guardando resumen automáticamente...', summary);
+          await LocalDatabase.UpdateResumeDetail(params.resumeId, {
+            summary,
+          });
+          console.log('✅ Resumen guardado automáticamente en la BD');
+        } catch (error) {
+          console.error('❌ Error en guardado automático:', error);
+          toast.error('Error al guardar: ' + error.message);
+        }
+      }, 1000); // Debounce de 1 segundo
+
+      return () => clearTimeout(autoSaveTimeout);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [summary, params?.resumeId]);
 
   const GenerateSummaryFromAI = async () => {
     setLoading(true);
