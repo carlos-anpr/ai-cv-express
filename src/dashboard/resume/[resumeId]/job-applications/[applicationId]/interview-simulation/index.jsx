@@ -53,6 +53,56 @@ function InterviewSimulation() {
   const [validationErrors, setValidationErrors] = useState([]);
   const [error, setError] = useState(null);
   const [selectedLevel, setSelectedLevel] = useState(null); // Nivel seleccionado por el usuario
+  const [detectedLevel, setDetectedLevel] = useState('mid'); // Nivel detectado por defecto
+
+  // Función para detectar el nivel según la descripción de la oferta
+  const detectLevel = (jobApplication) => {
+    const description =
+      (jobApplication?.jobDescription || '') +
+      ' ' +
+      (Array.isArray(jobApplication?.requirements)
+        ? jobApplication.requirements.join(' ')
+        : jobApplication?.requirements || '');
+
+    const lowerText = description.toLowerCase();
+
+    // Patrones para detectar senior
+    const seniorPatterns = [
+      /senior/i,
+      /lead/i,
+      /architect/i,
+      /principal/i,
+      /\b[6-9]\+?\s*años/i,
+      /\b1[0-9]\+?\s*años/i,
+      /liderazgo/i,
+      /mentori[aá]/i,
+      /strategic/i,
+    ];
+
+    // Patrones para detectar junior
+    const juniorPatterns = [
+      /junior/i,
+      /entry\s*level/i,
+      /trainee/i,
+      /\b[0-2]\s*años/i,
+      /sin experiencia/i,
+      /recién graduado/i,
+      /graduate/i,
+    ];
+
+    // Verificar senior primero
+    if (seniorPatterns.some((pattern) => pattern.test(lowerText))) {
+      return 'senior';
+    }
+
+    // Verificar junior
+    if (juniorPatterns.some((pattern) => pattern.test(lowerText))) {
+      return 'junior';
+    }
+
+    // Por defecto: mid
+    return 'mid';
+  };
 
   // Cargar datos iniciales
   const loadData = useCallback(async () => {
@@ -77,6 +127,12 @@ function InterviewSimulation() {
 
       setApplication(appResponse.data);
       console.log('✅ Candidatura cargada:', appResponse.data);
+
+      // Detectar nivel basado en la oferta
+      const level = detectLevel(appResponse.data);
+      setDetectedLevel(level);
+      setSelectedLevel(level); // Inicializar con el nivel detectado
+      console.log('📊 Nivel detectado:', level);
 
       // Cargar CV
       const resumeResponse = await LocalDatabase.GetResumeById(resumeId);
@@ -524,8 +580,67 @@ function InterviewSimulation() {
                 Genera un test de estudio personalizado con preguntas,
                 respuestas y explicaciones
               </p>
+
+              {/* Selector de Nivel */}
+              <div className="mb-6 flex flex-col items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm font-medium text-gray-700">
+                    Selecciona el nivel de dificultad:
+                  </span>
+                </div>
+                <Select
+                  value={selectedLevel || detectedLevel}
+                  onValueChange={setSelectedLevel}
+                  disabled={generating}
+                >
+                  <SelectTrigger className="w-[200px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="junior">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">📗</span>
+                        <span>Junior (0-3 años)</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="mid">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">📘</span>
+                        <span>Mid (3-6 años)</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="senior">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">📕</span>
+                        <span>Senior (6+ años)</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+                <Badge
+                  variant="outline"
+                  className={
+                    (selectedLevel || detectedLevel) === 'junior'
+                      ? 'bg-green-50 text-green-700 border-green-300'
+                      : (selectedLevel || detectedLevel) === 'mid'
+                      ? 'bg-blue-50 text-blue-700 border-blue-300'
+                      : 'bg-purple-50 text-purple-700 border-purple-300'
+                  }
+                >
+                  {(selectedLevel || detectedLevel) === 'junior' && '📗'}
+                  {(selectedLevel || detectedLevel) === 'mid' && '📘'}
+                  {(selectedLevel || detectedLevel) === 'senior' &&
+                    '📕'} Nivel {selectedLevel || detectedLevel}
+                </Badge>
+                <p className="text-xs text-gray-500 max-w-md">
+                  💡 Se ha detectado automáticamente el nivel según la oferta.
+                  Puedes cambiarlo si lo deseas antes de generar el test.
+                </p>
+              </div>
+
               <Button
-                onClick={handleGenerateTest}
+                onClick={() => handleGenerateTest(selectedLevel)}
                 className="bg-blue-600 hover:bg-blue-700"
                 disabled={generating}
               >
