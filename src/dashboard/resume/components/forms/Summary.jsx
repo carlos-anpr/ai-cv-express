@@ -27,6 +27,7 @@ function Summary({ enableNext }) {
     showOptions,
     showPreview,
     improvedContent,
+    multipleOptions,
     setShowOptions,
     setShowPreview,
     detectMode,
@@ -34,6 +35,7 @@ function Summary({ enableNext }) {
     applyImprovedContent,
     cancelImprovement,
     regenerateContent,
+    selectOption,
   } = useAIContentEnhancement();
 
   // Actualizar resumeInfo cuando cambie el summary
@@ -248,6 +250,8 @@ function Summary({ enableNext }) {
         title="✨ Resumen Mejorado"
         content={improvedContent}
         originalContent={summary}
+        multipleOptions={multipleOptions}
+        onSelectOption={selectOption}
         onApply={handleApplyImproved}
         onRegenerate={handleRegenerate}
         onCancel={() => {

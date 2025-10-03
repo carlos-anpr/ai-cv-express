@@ -102,7 +102,8 @@ function RichTextEditor({ onRichTextEditorChange, index, defaultValue }) {
   // Handler para selección de opción de mejora
   const handleOptionSelect = async (option) => {
     const jobTitle = resumeInfo.experience[index].title;
-    const companyName = resumeInfo.experience[index].companyName || 'la empresa';
+    const companyName =
+      resumeInfo.experience[index].companyName || 'la empresa';
 
     try {
       await enhanceExperience(value, jobTitle, companyName, option);
@@ -122,7 +123,8 @@ function RichTextEditor({ onRichTextEditorChange, index, defaultValue }) {
   // Handler para regenerar
   const handleRegenerate = async () => {
     const jobTitle = resumeInfo.experience[index].title;
-    const companyName = resumeInfo.experience[index].companyName || 'la empresa';
+    const companyName =
+      resumeInfo.experience[index].companyName || 'la empresa';
 
     try {
       await regenerateContent('experience', value, jobTitle, companyName);

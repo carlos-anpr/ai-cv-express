@@ -58,7 +58,8 @@ class AIContentEnhancer {
           prompt = summaryExpansionPrompt(currentText, jobTitle);
           break;
         case 'regenerate':
-          prompt = summaryGenerationPrompt(jobTitle);
+          // Pasar currentText para generar variaciones basadas en el nivel del usuario
+          prompt = summaryGenerationPrompt(jobTitle, currentText);
           break;
         default:
           prompt = summaryEnhancementPrompt(currentText, jobTitle);

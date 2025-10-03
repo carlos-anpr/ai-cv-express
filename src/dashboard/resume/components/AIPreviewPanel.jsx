@@ -20,12 +20,15 @@ const AIPreviewPanel = ({
   title,
   content,
   originalContent,
+  multipleOptions = [],
+  onSelectOption,
   onApply,
   onRegenerate,
   onCancel,
   isLoading,
   showComparison = false,
 }) => {
+  const hasMultipleOptions = multipleOptions.length > 0;
   return (
     <Dialog open={isOpen} onOpenChange={onCancel}>
       <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
@@ -52,11 +55,28 @@ const AIPreviewPanel = ({
           )}
 
           <div>
-            {showComparison && (
-              <h4 className="font-semibold text-sm mb-2 text-primary">
-                Mejorado:
-              </h4>
-            )}
+            <div className="flex items-center justify-between mb-2">
+              {showComparison && (
+                <h4 className="font-semibold text-sm text-primary">
+                  Mejorado:
+                </h4>
+              )}
+              {hasMultipleOptions && (
+                <div className="flex gap-2">
+                  {multipleOptions.map((option, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onSelectOption(index)}
+                      className="text-xs"
+                    >
+                      {option.experience_level || `Opción ${index + 1}`}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border-l-4 border-green-500">
               {isLoading ? (
                 <div className="flex items-center justify-center py-8">

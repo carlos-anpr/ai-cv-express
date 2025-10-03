@@ -69,7 +69,10 @@ const GeneratedSkillsPreview = ({
                     <Input
                       value={editingSkill.name}
                       onChange={(e) =>
-                        setEditingSkill({ ...editingSkill, name: e.target.value })
+                        setEditingSkill({
+                          ...editingSkill,
+                          name: e.target.value,
+                        })
                       }
                       placeholder="Nombre de la habilidad"
                     />

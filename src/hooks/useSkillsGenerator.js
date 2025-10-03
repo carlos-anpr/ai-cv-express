@@ -43,9 +43,7 @@ export const useSkillsGenerator = () => {
       return result;
     } catch (error) {
       console.error('Error generating skills:', error);
-      toast.error(
-        'Error al generar habilidades. Por favor intenta de nuevo.'
-      );
+      toast.error('Error al generar habilidades. Por favor intenta de nuevo.');
       throw error;
     } finally {
       setIsLoading(false);

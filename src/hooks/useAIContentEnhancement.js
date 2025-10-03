@@ -13,6 +13,7 @@ export const useAIContentEnhancement = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [improvedContent, setImprovedContent] = useState('');
   const [originalContent, setOriginalContent] = useState('');
+  const [multipleOptions, setMultipleOptions] = useState([]);
 
   /**
    * Detecta el modo basado en el contenido
@@ -42,8 +43,66 @@ export const useAIContentEnhancement = () => {
       );
 
       // Manejar diferentes estructuras de respuesta
-      const content =
-        result.improved || result.expanded || result[0]?.summary || '';
+      console.log('📝 Resultado de IA:', result);
+
+      // Si es un array
+      if (Array.isArray(result)) {
+        if (result.length === 0) {
+          console.error('⚠️ Array vacío recibido:', result);
+          toast.error(
+            'No se pudo generar contenido. Por favor intenta de nuevo.'
+          );
+          setShowPreview(false);
+          return null;
+        }
+
+        // Detectar si es array de opciones múltiples (con 'summary' y 'experience_level')
+        // vs array con un solo resultado (con 'improved' o 'expanded')
+        const firstItem = result[0];
+        const isMultipleOptions =
+          firstItem?.summary && firstItem?.experience_level;
+
+        if (isMultipleOptions) {
+          // Array de opciones múltiples para regenerate
+          console.log('✨ Opciones múltiples detectadas:', result.length);
+          setMultipleOptions(result);
+          setImprovedContent(result[0]?.summary || '');
+          setShowPreview(true);
+          return result;
+        } else {
+          // Array con un solo resultado (algunas veces Gemini devuelve así)
+          console.log('📄 Resultado único en array detectado');
+          const content = firstItem?.improved || firstItem?.expanded || '';
+
+          if (!content || content.trim() === '') {
+            console.error('⚠️ Contenido vacío en array:', result);
+            toast.error(
+              'No se pudo generar contenido. Por favor intenta de nuevo.'
+            );
+            setShowPreview(false);
+            return null;
+          }
+
+          setMultipleOptions([]);
+          setImprovedContent(content);
+          setShowPreview(true);
+          return result;
+        }
+      }
+
+      // Si es un objeto con improved/expanded
+      const content = result.improved || result.expanded || '';
+
+      if (!content || content.trim() === '') {
+        console.error('⚠️ Contenido vacío recibido:', result);
+        toast.error(
+          'No se pudo generar contenido. Por favor intenta de nuevo.'
+        );
+        setShowPreview(false);
+        return null;
+      }
+
+      setMultipleOptions([]); // Limpiar opciones múltiples
       setImprovedContent(content);
       setShowPreview(true);
       return result;
@@ -81,6 +140,17 @@ export const useAIContentEnhancement = () => {
         option
       );
 
+      console.log('📝 Resultado de experiencia IA:', result);
+
+      if (!result || result.trim() === '') {
+        console.error('⚠️ Contenido de experiencia vacío:', result);
+        toast.error(
+          'No se pudo generar contenido. Por favor intenta de nuevo.'
+        );
+        setShowPreview(false);
+        return null;
+      }
+
       setImprovedContent(result);
       setShowPreview(true);
       return result;
@@ -111,7 +181,18 @@ export const useAIContentEnhancement = () => {
   const cancelImprovement = () => {
     setShowPreview(false);
     setImprovedContent('');
+    setMultipleOptions([]);
     return originalContent;
+  };
+
+  /**
+   * Selecciona una opción específica de las múltiples generadas
+   * @param {number} index - Índice de la opción a seleccionar
+   */
+  const selectOption = (index) => {
+    if (multipleOptions[index]) {
+      setImprovedContent(multipleOptions[index].summary);
+    }
   };
 
   /**
@@ -139,6 +220,7 @@ export const useAIContentEnhancement = () => {
     showPreview,
     improvedContent,
     originalContent,
+    multipleOptions,
     setShowOptions,
     setShowPreview,
     detectMode,
@@ -147,5 +229,6 @@ export const useAIContentEnhancement = () => {
     applyImprovedContent,
     cancelImprovement,
     regenerateContent,
+    selectOption,
   };
 };
