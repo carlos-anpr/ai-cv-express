@@ -12,27 +12,37 @@ import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 
 function ThemeColor() {
+  // Paleta profesional de colores para CVs corporativos
   const colors = [
-    '#FF5733',
-    '#33FF57',
-    '#3357FF',
-    '#FF33A1',
-    '#A133FF',
-    '#33FFA1',
-    '#FF7133',
-    '#71FF33',
-    '#7133FF',
-    '#FF3371',
-    '#33FF71',
-    '#3371FF',
-    '#A1FF33',
-    '#33A1FF',
-    '#FF5733',
-    '#5733FF',
-    '#33FF5A',
-    '#5A33FF',
-    '#FF335A',
-    '#335AFF',
+    // Grises y neutros profesionales
+    '#1a1a1a', // Negro profesional
+    '#2d3748', // Gris oscuro
+    '#4a5568', // Gris medio
+    '#718096', // Gris claro
+
+    // Azules corporativos
+    '#1e3a8a', // Azul oscuro corporativo
+    '#2563eb', // Azul rey
+    '#3b82f6', // Azul vibrante
+    '#0ea5e9', // Azul cielo
+
+    // Verdes profesionales
+    '#065f46', // Verde bosque
+    '#059669', // Verde esmeralda
+    '#10b981', // Verde profesional
+    '#14b8a6', // Verde azulado (teal)
+
+    // Tonos tierra y cálidos profesionales
+    '#92400e', // Marrón oscuro
+    '#b45309', // Naranja tierra
+    '#d97706', // Ámbar profesional
+    '#dc2626', // Rojo corporativo
+
+    // Púrpuras y violetas elegantes
+    '#4c1d95', // Púrpura oscuro
+    '#7c3aed', // Violeta profesional
+    '#a855f7', // Púrpura medio
+    '#ec4899', // Rosa corporativo
   ];
 
   const [isOpen, setIsOpen] = useState(false);
