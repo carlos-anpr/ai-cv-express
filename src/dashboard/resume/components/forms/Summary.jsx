@@ -7,6 +7,9 @@ import { useParams } from 'react-router-dom';
 import { LoaderCircle, WandSparkles } from 'lucide-react';
 import { toast } from 'sonner';
 import { AIChatSession } from '../../../../../service/AIModal';
+import { useAIContentEnhancement } from '../../../../hooks/useAIContentEnhancement';
+import AIOptionsDialog from '../AIOptionsDialog';
+import AIPreviewPanel from '../AIPreviewPanel';
 
 const prompt =
   'Puesto de Trabajo: {jobTitle}. Según el puesto de trabajo, dame una lista de resúmenes profesionales para 3 niveles de experiencia: Senior, Nivel Medio y Junior/Principiante, cada uno de 5-6 líneas. Devuelve la respuesta en formato array JSON con los campos "summary" y "experience_level". Toda la respuesta debe estar en castellano (español).';
@@ -17,6 +20,21 @@ function Summary({ enableNext }) {
   const [summary, setSummary] = useState(resumeInfo?.summary || '');
   const [loading, setLoading] = useState(false);
   const [aiGeneratedSummeryList, setAiGenerateSummaryList] = useState(null);
+
+  // Hook para mejora de contenido con IA
+  const {
+    isLoading: isEnhancing,
+    showOptions,
+    showPreview,
+    improvedContent,
+    setShowOptions,
+    setShowPreview,
+    detectMode,
+    enhanceSummary,
+    applyImprovedContent,
+    cancelImprovement,
+    regenerateContent,
+  } = useAIContentEnhancement();
 
   // Actualizar resumeInfo cuando cambie el summary
   useEffect(() => {
@@ -69,6 +87,52 @@ function Summary({ enableNext }) {
     }
   };
 
+  // Detectar modo del botón (generar vs mejorar)
+  const contentMode = detectMode(summary);
+  const aiButtonText =
+    contentMode === 'enhance' ? 'Mejorar con IA' : 'Generar con IA';
+
+  // Handler para clic en el botón de IA
+  const handleAIAction = () => {
+    if (!resumeInfo?.jobTitle) {
+      toast.error('Por favor añade primero el título del puesto');
+      return;
+    }
+
+    if (contentMode === 'enhance') {
+      // Mostrar opciones de mejora
+      setShowOptions(true);
+    } else {
+      // Generar desde cero
+      GenerateSummaryFromAI();
+    }
+  };
+
+  // Handler para selección de opción de mejora
+  const handleOptionSelect = async (option) => {
+    try {
+      await enhanceSummary(summary, resumeInfo.jobTitle, option);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  // Handler para aplicar contenido mejorado
+  const handleApplyImproved = () => {
+    const newContent = applyImprovedContent();
+    setSummary(newContent);
+    toast.success('Contenido aplicado correctamente');
+  };
+
+  // Handler para regenerar
+  const handleRegenerate = async () => {
+    try {
+      await regenerateContent('summary', summary, resumeInfo.jobTitle);
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
   const onSave = async (e) => {
     e.preventDefault();
 
@@ -107,9 +171,15 @@ function Summary({ enableNext }) {
               variant="outline"
               size="sm"
               className="border-primary text-primary"
-              onClick={() => GenerateSummaryFromAI()}
+              onClick={handleAIAction}
+              disabled={loading || isEnhancing}
             >
-              <WandSparkles className="h-4 w-4" /> Generar con IA
+              {isEnhancing ? (
+                <LoaderCircle className="animate-spin h-4 w-4" />
+              ) : (
+                <WandSparkles className="h-4 w-4" />
+              )}
+              {' ' + aiButtonText}
             </Button>
           </div>
           <Textarea
@@ -143,6 +213,50 @@ function Summary({ enableNext }) {
           ))}
         </div>
       )}
+
+      {/* Diálogo de opciones de mejora */}
+      <AIOptionsDialog
+        isOpen={showOptions}
+        onClose={() => setShowOptions(false)}
+        onSelect={handleOptionSelect}
+        title="¿Cómo quieres mejorar tu resumen?"
+        options={[
+          {
+            id: 'improve',
+            icon: '✨',
+            label: 'Mejorar mi texto actual',
+            description: 'Mantiene tu contenido pero lo hace más profesional',
+          },
+          {
+            id: 'expand',
+            icon: '📈',
+            label: 'Ampliar y hacer más atractivo',
+            description: 'Añade más detalles y contexto profesional',
+          },
+          {
+            id: 'regenerate',
+            icon: '🎯',
+            label: 'Generar nuevas opciones',
+            description: 'Crea versiones completamente nuevas',
+          },
+        ]}
+      />
+
+      {/* Panel de preview */}
+      <AIPreviewPanel
+        isOpen={showPreview}
+        title="✨ Resumen Mejorado"
+        content={improvedContent}
+        originalContent={summary}
+        onApply={handleApplyImproved}
+        onRegenerate={handleRegenerate}
+        onCancel={() => {
+          cancelImprovement();
+          setShowPreview(false);
+        }}
+        isLoading={isEnhancing}
+        showComparison={true}
+      />
     </div>
   );
 }
