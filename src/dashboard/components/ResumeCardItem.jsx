@@ -87,14 +87,14 @@ function ResumeCardItem({ resume, refreshData }) {
                 navigation('/dashboard/resume/' + resume.documentId + '/edit')
               }
             >
-              Edit
+              Editar
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() =>
                 navigation('/my-resume/' + resume.documentId + '/view')
               }
             >
-              View
+              Ver
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() =>
@@ -110,10 +110,10 @@ function ResumeCardItem({ resume, refreshData }) {
                 navigation('/my-resume/' + resume.documentId + '/view')
               }
             >
-              Download
+              Descargar
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setOpenAlert(true)}>
-              Delete
+              Eliminar
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -121,18 +121,22 @@ function ResumeCardItem({ resume, refreshData }) {
         <AlertDialog open={openAlert}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete your
-                account and remove your data from our servers.
+                Esta acción no se puede deshacer. Esto eliminará permanentemente
+                tu currículum y los datos asociados.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setOpenAlert(false)}>
-                Cancel
+                Cancelar
               </AlertDialogCancel>
               <AlertDialogAction onClick={onDelete} disabled={loading}>
-                {loading ? <Loader2Icon className="animate-spin" /> : 'Delete'}
+                {loading ? (
+                  <Loader2Icon className="animate-spin" />
+                ) : (
+                  'Eliminar'
+                )}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

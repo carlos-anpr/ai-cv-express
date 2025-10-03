@@ -90,15 +90,15 @@ function Education() {
   }, [educationalList]);
   return (
     <div className="p-5 shadow-lg rounded-lg border-t-primary border-t-4 mt-10">
-      <h2 className="font-bold text-lg">Education</h2>
-      <p>Add Your educational details</p>
+      <h2 className="font-bold text-lg">Educación</h2>
+      <p>Añade tus detalles educativos</p>
 
       <div>
         {educationalList?.map((item, index) => (
           <div key={index}>
             <div className="grid grid-cols-2 gap-3 border p-3 my-5 rounded-lg">
               <div className="col-span-2">
-                <label>University Name</label>
+                <label>Nombre de la Universidad</label>
                 <Input
                   name="universityName"
                   onChange={(e) => handleChange(e, index)}
@@ -106,7 +106,7 @@ function Education() {
                 />
               </div>
               <div>
-                <label>Degree</label>
+                <label>Título</label>
                 <Input
                   name="degree"
                   onChange={(e) => handleChange(e, index)}
@@ -114,7 +114,7 @@ function Education() {
                 />
               </div>
               <div>
-                <label>Major</label>
+                <label>Especialidad</label>
                 <Input
                   name="major"
                   onChange={(e) => handleChange(e, index)}
@@ -122,7 +122,7 @@ function Education() {
                 />
               </div>
               <div>
-                <label>Start Date</label>
+                <label>Fecha de Inicio</label>
                 <Input
                   type="date"
                   name="startDate"
@@ -131,7 +131,7 @@ function Education() {
                 />
               </div>
               <div>
-                <label>End Date</label>
+                <label>Fecha de Fin</label>
                 <Input
                   type="date"
                   name="endDate"
@@ -140,7 +140,7 @@ function Education() {
                 />
               </div>
               <div className="col-span-2">
-                <label>Description</label>
+                <label>Descripción</label>
                 <Textarea
                   name="description"
                   onChange={(e) => handleChange(e, index)}
@@ -159,7 +159,7 @@ function Education() {
             className="text-primary"
           >
             {' '}
-            + Add More Education
+            + Añadir Más Educación
           </Button>
           <Button
             variant="outline"
@@ -167,11 +167,11 @@ function Education() {
             className="text-primary"
           >
             {' '}
-            - Remove
+            - Eliminar
           </Button>
         </div>
         <Button disabled={loading} onClick={() => onSave()}>
-          {loading ? <LoaderCircle className="animate-spin" /> : 'Save'}
+          {loading ? <LoaderCircle className="animate-spin" /> : 'Guardar'}
         </Button>
       </div>
     </div>

@@ -19,9 +19,11 @@ function Home() {
               role="alert"
             >
               <span className="text-xs bg-primary rounded-full text-white px-4 py-1.5 mr-3">
-                New
+                Nuevo
               </span>{' '}
-              <span className="text-sm font-medium">Everyday All new Apps</span>
+              <span className="text-sm font-medium">
+                Nuevas aplicaciones cada día
+              </span>
               <svg
                 className="ml-2 w-5 h-5"
                 fill="currentColor"
@@ -36,17 +38,19 @@ function Home() {
               </svg>
             </a>
             <h1 className="mb-4 text-4xl font-extrabold tracking-tight leading-none text-gray-900 md:text-5xl lg:text-6xl dark:text-white">
-              Build Your Resume <span className="text-primary">With AI</span>{' '}
+              Construye tu Currículum{' '}
+              <span className="text-primary">con IA</span>{' '}
             </h1>
             <p className="mb-8 text-lg font-normal text-gray-500 lg:text-xl sm:px-16 xl:px-48 dark:text-gray-400">
-              Effortlessly Craft a Standout Resume with Our AI-Powered Builder
+              Crea fácilmente un currículum destacado con nuestro generador
+              potenciado por IA
             </p>
             <div className="flex flex-col mb-8 lg:mb-16 space-y-4 sm:flex-row sm:justify-center sm:space-y-0 sm:space-x-4">
               <a
                 href="/dashboard"
                 className="inline-flex justify-center items-center py-3 px-5 text-base font-medium text-center text-white rounded-lg bg-primary hover:bg-primary focus:ring-4 focus:ring-primary-300 dark:focus:ring-primary-900"
               >
-                Get Started
+                Comenzar
                 <svg
                   className="ml-2 -mr-1 w-5 h-5"
                   fill="currentColor"
@@ -72,12 +76,12 @@ function Home() {
                 >
                   <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"></path>
                 </svg>
-                Watch video
+                Ver vídeo
               </a>
             </div>
             <div className="px-4 mx-auto text-center md:max-w-screen-md lg:max-w-screen-lg lg:px-36">
               <span className="font-semibold text-gray-400 uppercase">
-                FEATURED IN
+                DESTACADO EN
               </span>
               <div className="flex flex-wrap justify-center items-center mt-8 text-gray-500 sm:justify-between">
                 <a
@@ -185,9 +189,9 @@ function Home() {
           </div>
         </section>
         <section className="py-8 bg-white z-50 px-4 mx-auto max-w-screen-xl text-center lg:py-16 lg:px-12">
-          <h2 className="font-bold text-3xl">How it Works?</h2>
+          <h2 className="font-bold text-3xl">¿Cómo funciona?</h2>
           <h2 className="text-md text-gray-500">
-            Give mock interview in just 3 simplar easy step
+            Crea tu currículum en solo 3 sencillos pasos
           </h2>
 
           <div className="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
@@ -200,13 +204,12 @@ function Home() {
               <AtomIcon className="h-8 w-8" />
 
               <h2 className="mt-4 text-xl font-bold text-black">
-                Write promot for your form
+                Escribe la información de tu CV
               </h2>
 
               <p className="mt-1 text-sm text-gray-600">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Ex ut
-                quo possimus adipisci distinctio alias voluptatum blanditiis
-                laudantium.
+                Añade el título del CV y selecciona tu puesto de trabajo
+                preferido
               </p>
             </a>
 
@@ -217,13 +220,11 @@ function Home() {
               <Edit className="h-8 w-8" />
 
               <h2 className="mt-4 text-xl font-bold text-black">
-                Edit Your form{' '}
+                Edita tu currículum{' '}
               </h2>
 
               <p className="mt-1 text-sm text-gray-600">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Ex ut
-                quo possimus adipisci distinctio alias voluptatum blanditiis
-                laudantium.
+                Añade los detalles de tu perfil, como tu puesto y tu experiencia
               </p>
             </a>
 
@@ -234,13 +235,11 @@ function Home() {
               <Share2 className="h-8 w-8" />
 
               <h2 className="mt-4 text-xl font-bold text-black">
-                Share & Start Accepting Responses
+                Comparte y descarga tu CV
               </h2>
 
               <p className="mt-1 text-sm text-gray-600">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Ex ut
-                quo possimus adipisci distinctio alias voluptatum blanditiis
-                laudantium.
+                Comparte tu currículum y descárgalo en formato PDF
               </p>
             </a>
           </div>
@@ -250,7 +249,7 @@ function Home() {
               href="/auth/sign-in"
               className="inline-block rounded bg-pink-600 px-12 py-3 text-sm font-medium text-white transition hover:bg-pink-700 focus:outline-none focus:ring focus:ring-yellow-400"
             >
-              Get Started Today
+              Comienza hoy
             </a>
           </div>
         </section>

@@ -71,24 +71,24 @@ function AddResume() {
       <Dialog open={openDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New Resume</DialogTitle>
+            <DialogTitle>Crear Nuevo Currículum</DialogTitle>
             <DialogDescription>
-              <span>Add title for your new resume</span>
+              <span>Añade un título para tu nuevo currículum</span>
               <Input
                 className="my-2"
-                placeholder="Ex.Full Stack resume"
+                placeholder="Ej. CV Desarrollador Full Stack"
                 onChange={(e) => setResumeTitle(e.target.value)}
               />
             </DialogDescription>
             <div className="flex justify-end">
               <Button onClick={() => setOpenDialog(false)} variant="ghost">
-                Cancel
+                Cancelar
               </Button>
               <Button
                 disabled={!resumeTitle || loading}
                 onClick={() => onCreate()}
               >
-                {loading ? <Loader2 className="animate-spin" /> : 'Create'}
+                {loading ? <Loader2 className="animate-spin" /> : 'Crear'}
               </Button>
             </div>
           </DialogHeader>

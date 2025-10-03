@@ -81,8 +81,8 @@ function Skills() {
   }, [skillsList, setResumeInfo]);
   return (
     <div className="p-5 shadow-lg rounded-lg border-t-primary border-t-4 mt-10">
-      <h2 className="font-bold text-lg">Skills</h2>
-      <p>Add Your top professional key skills</p>
+      <h2 className="font-bold text-lg">Habilidades</h2>
+      <p>Añade tus principales habilidades profesionales</p>
 
       <div>
         {skillsList?.map((item, index) => (
@@ -91,7 +91,7 @@ function Skills() {
             className="flex justify-between mb-2 border rounded-lg p-3 "
           >
             <div>
-              <label className="text-xs">Name</label>
+              <label className="text-xs">Nombre</label>
               <Input
                 className="w-full"
                 defaultValue={item.name}
@@ -114,7 +114,7 @@ function Skills() {
             className="text-primary"
           >
             {' '}
-            + Add More Skill
+            + Añadir Más Habilidad
           </Button>
           <Button
             variant="outline"
@@ -122,11 +122,11 @@ function Skills() {
             className="text-primary"
           >
             {' '}
-            - Remove
+            - Eliminar
           </Button>
         </div>
         <Button disabled={loading} onClick={() => onSave()}>
-          {loading ? <LoaderCircle className="animate-spin" /> : 'Save'}
+          {loading ? <LoaderCircle className="animate-spin" /> : 'Guardar'}
         </Button>
       </div>
     </div>

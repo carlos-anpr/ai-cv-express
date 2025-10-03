@@ -21,7 +21,7 @@ import {
 import { AIChatSession } from './../../../../service/AIModal';
 import { toast } from 'sonner';
 const PROMPT =
-  'position titile: {positionTitle} , Depends on position title give me 5-7 bullet points for my experience in resume (Please do not add experince level and No JSON array) , give me result JSOn containing the structure { jobTitle: {positionTitle}, points: ["point1","point2",....]}. La respuesta sea en castellano';
+  'Título del puesto: {positionTitle}. Según el título del puesto, dame entre 5-7 puntos clave para describir mi experiencia en el currículum (No añadas nivel de experiencia y no uses formato JSON array). Dame el resultado en formato JSON con la estructura { jobTitle: "{positionTitle}", points: ["punto1","punto2",...]}. Toda la respuesta debe estar en castellano (español).';
 function RichTextEditor({ onRichTextEditorChange, index, defaultValue }) {
   const [value, setValue] = useState(defaultValue);
   const { resumeInfo } = useContext(ResumeInfoContext);
@@ -29,7 +29,7 @@ function RichTextEditor({ onRichTextEditorChange, index, defaultValue }) {
 
   const GenerateSummaryFromAI = async () => {
     if (!resumeInfo?.experience[index]?.title) {
-      toast('Please Add Position Title');
+      toast('Por favor añade el título del puesto');
       return;
     }
     setLoading(true);
@@ -57,7 +57,7 @@ function RichTextEditor({ onRichTextEditorChange, index, defaultValue }) {
   return (
     <div>
       <div className="flex justify-between my-2">
-        <label className="text-xs">Summary</label>
+        <label className="text-xs">Resumen</label>
         <Button
           variant="outline"
           size="sm"
@@ -69,7 +69,7 @@ function RichTextEditor({ onRichTextEditorChange, index, defaultValue }) {
             <LoaderCircle className="animate-spin" />
           ) : (
             <>
-              <WandSparkles className="h-4 w-4" /> Generate from AI
+              <WandSparkles className="h-4 w-4" /> Generar con IA
             </>
           )}
         </Button>

@@ -107,14 +107,14 @@ function Experience() {
   return (
     <div>
       <div className="p-5 shadow-lg rounded-lg border-t-primary border-t-4 mt-10">
-        <h2 className="font-bold text-lg">Professional Experience</h2>
-        <p>Add Your previous Job experience</p>
+        <h2 className="font-bold text-lg">Experiencia Profesional</h2>
+        <p>Añade tu experiencia laboral anterior</p>
         <div>
           {experinceList?.map((item, index) => (
             <div key={index}>
               <div className="grid grid-cols-2 gap-3 border p-3 my-5 rounded-lg">
                 <div>
-                  <label className="text-xs">Position Title</label>
+                  <label className="text-xs">Puesto</label>
                   <Input
                     name="title"
                     onChange={(event) => handleChange(index, event)}
@@ -122,7 +122,7 @@ function Experience() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs">Company Name</label>
+                  <label className="text-xs">Empresa</label>
                   <Input
                     name="companyName"
                     onChange={(event) => handleChange(index, event)}
@@ -130,7 +130,7 @@ function Experience() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs">City</label>
+                  <label className="text-xs">Ciudad</label>
                   <Input
                     name="city"
                     onChange={(event) => handleChange(index, event)}
@@ -138,7 +138,7 @@ function Experience() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs">State</label>
+                  <label className="text-xs">Provincia/Estado</label>
                   <Input
                     name="state"
                     onChange={(event) => handleChange(index, event)}
@@ -146,7 +146,7 @@ function Experience() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs">Start Date</label>
+                  <label className="text-xs">Fecha de Inicio</label>
                   <Input
                     type="date"
                     name="startDate"
@@ -155,7 +155,7 @@ function Experience() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs">End Date</label>
+                  <label className="text-xs">Fecha de Fin</label>
                   <Input
                     type="date"
                     name="endDate"
@@ -185,7 +185,7 @@ function Experience() {
               className="text-primary"
             >
               {' '}
-              + Add More Experience
+              + Añadir Más Experiencia
             </Button>
             <Button
               variant="outline"
@@ -193,11 +193,11 @@ function Experience() {
               className="text-primary"
             >
               {' '}
-              - Remove
+              - Eliminar
             </Button>
           </div>
           <Button disabled={loading} onClick={() => onSave()}>
-            {loading ? <LoaderCircle className="animate-spin" /> : 'Save'}
+            {loading ? <LoaderCircle className="animate-spin" /> : 'Guardar'}
           </Button>
         </div>
       </div>

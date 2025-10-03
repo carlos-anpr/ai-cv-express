@@ -9,7 +9,7 @@ import { toast } from 'sonner';
 import { AIChatSession } from '../../../../../service/AIModal';
 
 const prompt =
-  'Job Title: {jobTitle} , Depends on job title give me list of  summary for 3 experience level, Mid Level and Freasher level in 5-6 lines in array format, With summary and experience_level Field in JSON Format.La respuesta que sea en castellano';
+  'Puesto de Trabajo: {jobTitle}. Según el puesto de trabajo, dame una lista de resúmenes profesionales para 3 niveles de experiencia: Senior, Nivel Medio y Junior/Principiante, cada uno de 5-6 líneas. Devuelve la respuesta en formato array JSON con los campos "summary" y "experience_level". Toda la respuesta debe estar en castellano (español).';
 
 function Summary({ enableNext }) {
   const params = useParams();
@@ -76,11 +76,11 @@ function Summary({ enableNext }) {
   return (
     <div>
       <div className="p-5 shadow-lg border-t-primary border-t-4 mt-10 rounded-lg">
-        <h2 className="font-bold text-lg">Summary Detail</h2>
-        <p>Add Summary for your job title</p>
+        <h2 className="font-bold text-lg">Resumen Profesional</h2>
+        <p>Añade un resumen para tu puesto de trabajo</p>
         <form className="mt-7" onSubmit={onSave}>
           <div className="flex justify-between items-end">
-            <label>Add Summary</label>
+            <label>Añadir Resumen</label>
             <Button
               type="button"
               variant="outline"
@@ -88,7 +88,7 @@ function Summary({ enableNext }) {
               className="border-primary text-primary"
               onClick={() => GenerateSummaryFromAI()}
             >
-              <WandSparkles className="h-4 w-4" /> Generate from AI
+              <WandSparkles className="h-4 w-4" /> Generar con IA
             </Button>
           </div>
           <Textarea
@@ -99,7 +99,7 @@ function Summary({ enableNext }) {
           <div className="mt-2 flex justify-end">
             <Button disabled={loading} type="submit">
               {loading ? <LoaderCircle className="animate-spin" /> : null}
-              Save
+              Guardar
             </Button>
           </div>
         </form>
@@ -107,7 +107,7 @@ function Summary({ enableNext }) {
 
       {aiGeneratedSummeryList && (
         <div className="my-5">
-          <h2 className="font-bold text-lg">Suggestions</h2>
+          <h2 className="font-bold text-lg">Sugerencias</h2>
           {aiGeneratedSummeryList?.map((item, index) => (
             <div
               key={index}
@@ -115,7 +115,7 @@ function Summary({ enableNext }) {
               className="p-5 shadow-lg my-4 rounded-lg cursor-pointer"
             >
               <h2 className="font-bold my-1 text-primary">
-                Level: {item?.experience_level}
+                Nivel: {item?.experience_level}
               </h2>
               <p>{item?.summary}</p>
             </div>

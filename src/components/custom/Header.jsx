@@ -12,13 +12,13 @@ function Header() {
       {isSignedIn ? (
         <div className="flex gap-2 items-center">
           <Link to={'/dashboard'}>
-            <Button variant="outline">Dashboard</Button>
+            <Button variant="outline">Panel</Button>
           </Link>
           <UserButton />
         </div>
       ) : (
         <Link to={'/auth/sign-in'}>
-          <Button>Get Started</Button>
+          <Button>Comenzar</Button>
         </Link>
       )}
     </div>

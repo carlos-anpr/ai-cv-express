@@ -60,13 +60,13 @@ function PersonalDetail({ enableNext }) {
   };
   return (
     <div className="p-5 shadow-lg rounded-lg border-t-primary border-t-4 mt-10">
-      <h2 className="font-bold text-lg">Personal Detail</h2>
-      <p>Get Started with the basic information</p>
+      <h2 className="font-bold text-lg">Detalles Personales</h2>
+      <p>Comienza con la información básica</p>
 
       <form onSubmit={onSave}>
         <div className="grid grid-cols-2 mt-5 gap-3">
           <div>
-            <label className="text-sm">First Name</label>
+            <label className="text-sm">Nombre</label>
             <Input
               name="firstName"
               defaultValue={resumeInfo?.firstName}
@@ -75,7 +75,7 @@ function PersonalDetail({ enableNext }) {
             />
           </div>
           <div>
-            <label className="text-sm">Last Name</label>
+            <label className="text-sm">Apellidos</label>
             <Input
               name="lastName"
               required
@@ -84,7 +84,7 @@ function PersonalDetail({ enableNext }) {
             />
           </div>
           <div className="col-span-2">
-            <label className="text-sm">Job Title</label>
+            <label className="text-sm">Puesto de Trabajo</label>
             <Input
               name="jobTitle"
               required
@@ -93,7 +93,7 @@ function PersonalDetail({ enableNext }) {
             />
           </div>
           <div className="col-span-2">
-            <label className="text-sm">Address</label>
+            <label className="text-sm">Dirección</label>
             <Input
               name="address"
               required
@@ -102,7 +102,7 @@ function PersonalDetail({ enableNext }) {
             />
           </div>
           <div>
-            <label className="text-sm">Phone</label>
+            <label className="text-sm">Teléfono</label>
             <Input
               name="phone"
               required
@@ -122,7 +122,7 @@ function PersonalDetail({ enableNext }) {
         </div>
         <div className="mt-3 flex justify-end">
           <Button type="submit" disabled={loading}>
-            {loading ? <LoaderCircle className="animate-spin" /> : 'Save'}
+            {loading ? <LoaderCircle className="animate-spin" /> : 'Guardar'}
           </Button>
         </div>
       </form>
