@@ -52,18 +52,72 @@ const Step4Results = ({ generatedData, onStartOver }) => {
     return () => clearTimeout(timer);
   }, []);
 
+  // Transformar datos de Express a formato del editor
+  const transformToEditorFormat = (data) => {
+    // Parsear si vienen como strings JSON
+    const experience =
+      typeof data.experience === 'string'
+        ? JSON.parse(data.experience)
+        : Array.isArray(data.experience)
+        ? data.experience
+        : [];
+
+    const education =
+      typeof data.education === 'string'
+        ? JSON.parse(data.education)
+        : Array.isArray(data.education)
+        ? data.education
+        : [];
+
+    const skills =
+      typeof data.skills === 'string'
+        ? JSON.parse(data.skills)
+        : Array.isArray(data.skills)
+        ? data.skills
+        : [];
+
+    return {
+      ...data,
+      experience: experience.map((exp) => ({
+        title: exp.title || '',
+        companyName: exp.company || '',
+        city: exp.location?.split(',')[0]?.trim() || '',
+        state: exp.location?.split(',')[1]?.trim() || '',
+        startDate: exp.startDate || '',
+        endDate: exp.endDate || '',
+        currentlyWorking: exp.current || false,
+        workSummary: [exp.description || '', ...(exp.achievements || [])]
+          .filter(Boolean)
+          .map((item, idx) => `${idx === 0 ? '' : '• '}${item}`)
+          .join('\n'),
+      })),
+      education: education.map((edu) => ({
+        universityName: edu.institution || '',
+        degree: edu.degree || '',
+        major: '',
+        startDate: edu.graduationYear ? `${edu.graduationYear - 4}` : '',
+        endDate: edu.graduationYear?.toString() || '',
+        description: edu.description || '',
+      })),
+      skills: skills,
+    };
+  };
+
   // Guardar y navegar al editor
   const handleEditResume = async () => {
     try {
       setIsSaving(true);
 
+      // Transformar al formato del editor
+      const transformedData = transformToEditorFormat(resumeForDB);
+
       // Guardar en IndexedDB
-      const savedResume = await LocalDatabase.CreateNewResume(resumeForDB);
+      const savedResume = await LocalDatabase.CreateNewResume(transformedData);
 
       toast.success('CV guardado exitosamente');
 
-      // Navegar al editor
-      navigate(`/dashboard/resume/${savedResume.documentId}/edit`);
+      // Navegar al editor usando el ID numérico
+      navigate(`/dashboard/resume/${savedResume.data.id}/edit`);
     } catch (error) {
       console.error('Error saving resume:', error);
       toast.error('Error al guardar el CV. Intenta de nuevo.');
@@ -77,8 +131,11 @@ const Step4Results = ({ generatedData, onStartOver }) => {
     try {
       setIsSaving(true);
 
+      // Transformar al formato del editor
+      const transformedData = transformToEditorFormat(resumeForDB);
+
       // Guardar en IndexedDB
-      await LocalDatabase.CreateNewResume(resumeForDB);
+      await LocalDatabase.CreateNewResume(transformedData);
 
       toast.success('CV guardado en tu Dashboard');
 

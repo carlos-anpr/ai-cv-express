@@ -111,17 +111,43 @@ class LocalDatabase {
   }
 
   // READ - Obtener CV por ID
-  async GetResumeById(documentId) {
+  async GetResumeById(resumeId) {
     await this.ensureDatabaseReady();
     try {
-      const resume = await db.resumes
-        .where('documentId')
-        .equals(documentId)
-        .first();
+      let resume;
+
+      // Si es un número, buscar por ID numérico (clave primaria de IndexedDB)
+      if (!isNaN(resumeId) && resumeId !== null && resumeId !== undefined) {
+        resume = await db.resumes.get(parseInt(resumeId));
+      } else {
+        // Si es un string (UUID), buscar por documentId
+        resume = await db.resumes.where('documentId').equals(resumeId).first();
+      }
 
       if (!resume) {
         throw new Error('CV no encontrado');
       }
+
+      console.log('🔍 Resume RAW desde DB:', {
+        experience: typeof resume.experience,
+        education: typeof resume.education,
+        skills: typeof resume.skills,
+      });
+
+      console.log('📄 Valores RAW (primeros 100 chars):', {
+        experience:
+          typeof resume.experience === 'string'
+            ? resume.experience.substring(0, 100)
+            : resume.experience,
+        education:
+          typeof resume.education === 'string'
+            ? resume.education.substring(0, 100)
+            : resume.education,
+        skills:
+          typeof resume.skills === 'string'
+            ? resume.skills.substring(0, 100)
+            : resume.skills,
+      });
 
       const processedResume = {
         ...resume,
@@ -129,6 +155,14 @@ class LocalDatabase {
         education: this.safeJsonParse(resume.education, []),
         skills: this.safeJsonParse(resume.skills, []),
       };
+
+      console.log('🔍 Resume PROCESADO:', {
+        experienceIsArray: Array.isArray(processedResume.experience),
+        experienceType: typeof processedResume.experience,
+        experienceValue: processedResume.experience,
+        educationIsArray: Array.isArray(processedResume.education),
+        skillsIsArray: Array.isArray(processedResume.skills),
+      });
 
       return { data: processedResume };
     } catch (error) {
@@ -208,12 +242,24 @@ class LocalDatabase {
   // UTILITY - Parsear JSON de forma segura
   safeJsonParse(jsonString, defaultValue = null) {
     try {
+      // Si es null o undefined, devolver valor por defecto
+      if (jsonString === null || jsonString === undefined) {
+        return defaultValue;
+      }
+
+      // Si es string, parsear
       if (typeof jsonString === 'string') {
+        // Si está vacío, devolver valor por defecto
+        if (jsonString.trim() === '') {
+          return defaultValue;
+        }
         return JSON.parse(jsonString);
       }
-      return jsonString || defaultValue;
+
+      // Si ya es un objeto/array, devolverlo tal cual
+      return jsonString;
     } catch (error) {
-      console.warn('Error parsing JSON:', error);
+      console.warn('Error parsing JSON:', error, 'Value:', jsonString);
       return defaultValue;
     }
   }

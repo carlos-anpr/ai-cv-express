@@ -20,8 +20,29 @@ function EditResume() {
     setLoading(true);
     try {
       const response = await LocalDatabase.GetResumeById(resumeId);
-      console.log('✅ CV cargado:', response.data);
-      setResumeInfo(response.data);
+
+      // Asegurar que experience, education y skills sean arrays
+      const processedData = {
+        ...response.data,
+        experience: Array.isArray(response.data.experience)
+          ? response.data.experience
+          : typeof response.data.experience === 'string'
+          ? JSON.parse(response.data.experience)
+          : [],
+        education: Array.isArray(response.data.education)
+          ? response.data.education
+          : typeof response.data.education === 'string'
+          ? JSON.parse(response.data.education)
+          : [],
+        skills: Array.isArray(response.data.skills)
+          ? response.data.skills
+          : typeof response.data.skills === 'string'
+          ? JSON.parse(response.data.skills)
+          : [],
+      };
+
+      console.log('✅ CV cargado:', processedData);
+      setResumeInfo(processedData);
     } catch (error) {
       console.error('❌ Error cargando CV:', error);
       toast.error('Error al cargar el CV: ' + error.message);
