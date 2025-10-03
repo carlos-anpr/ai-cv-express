@@ -37,12 +37,12 @@ Para generar un test de preparación, **DEBES** haber completado estos campos en
 
 ### ✅ Campos Obligatorios
 
-| Campo | Mínimo Requerido | ¿Por qué es necesario? |
-|-------|------------------|------------------------|
-| **Empresa** | Nombre completo | Para contextualizar preguntas sobre la empresa |
-| **Puesto** | Título del rol | Para adaptar preguntas al rol específico |
-| **Requisitos Específicos** | 50 caracteres | **CRÍTICO**: De aquí se extraen las habilidades técnicas requeridas |
-| **Descripción del Puesto** | 50 caracteres | **CRÍTICO**: De aquí se detecta el nivel (Junior/Mid/Senior) y responsabilidades |
+| Campo                      | Mínimo Requerido | ¿Por qué es necesario?                                                           |
+| -------------------------- | ---------------- | -------------------------------------------------------------------------------- |
+| **Empresa**                | Nombre completo  | Para contextualizar preguntas sobre la empresa                                   |
+| **Puesto**                 | Título del rol   | Para adaptar preguntas al rol específico                                         |
+| **Requisitos Específicos** | 50 caracteres    | **CRÍTICO**: De aquí se extraen las habilidades técnicas requeridas              |
+| **Descripción del Puesto** | 50 caracteres    | **CRÍTICO**: De aquí se detecta el nivel (Junior/Mid/Senior) y responsabilidades |
 
 ### ⚠️ Campos Recomendados (No Obligatorios)
 
@@ -212,19 +212,99 @@ Al final del test verás consejos personalizados:
 #### Ejemplo de Personalización
 
 **Respuesta Sugerida:**
+
 > "He trabajado con APIs RESTful usando Express y he implementado autenticación con JWT..."
 
 **Tu Respuesta Personalizada:**
+
 > "En mi proyecto anterior en [Empresa X], desarrollé una API REST con Express para [funcionalidad específica]. Implementé autenticación JWT que manejaba [X] usuarios concurrentes. Un desafío interesante fue [situación real] que resolví [cómo lo resolviste]."
 
 ---
 
-## 🔄 Regenerar el Test
+## � Cambiar el Nivel de Dificultad
+
+### ⭐ NUEVA FUNCIONALIDAD
+
+¿El test es muy fácil o muy difícil? Ahora puedes cambiar el nivel manualmente:
+
+#### Niveles Disponibles
+
+| Nivel      | Emoji | Color   | Para quién              |
+| ---------- | ----- | ------- | ----------------------- |
+| **Junior** | 📗    | Verde   | 0-3 años de experiencia |
+| **Mid**    | 📘    | Azul    | 3-6 años de experiencia |
+| **Senior** | 📕    | Púrpura | 6+ años de experiencia  |
+
+#### Cómo Cambiar el Nivel
+
+1. En el test generado, busca el selector **"Nivel de Entrevista:"**
+2. Abre el dropdown y selecciona el nivel deseado:
+   - 📗 Junior (preguntas básicas y conceptos fundamentales)
+   - 📘 Mid (aplicación práctica y decisiones técnicas)
+   - 📕 Senior (arquitectura, liderazgo, decisiones estratégicas)
+3. Confirma: _"¿Regenerar el test con nivel SENIOR? El test actual se eliminará."_
+4. Click en **"Aceptar"**
+5. ¡La IA generará nuevas preguntas ajustadas al nivel!
+
+#### Diferencias entre Niveles
+
+**Junior:**
+
+```
+Pregunta ejemplo:
+"Explica cómo crearías una ruta GET en Express.js para listar usuarios
+ desde MongoDB"
+
+Enfoque: Conceptos básicos, sintaxis, implementaciones guiadas
+```
+
+**Mid:**
+
+```
+Pregunta ejemplo:
+"Describe cómo implementarías un sistema de caché con Redis para optimizar
+ consultas frecuentes en una API con 10K requests/hora"
+
+Enfoque: Patrones de diseño, optimización, manejo de errores avanzado
+```
+
+**Senior:**
+
+```
+Pregunta ejemplo:
+"Diseña la arquitectura de un sistema de procesamiento de pagos que maneje
+ 100K transacciones/día con garantías de consistencia eventual"
+
+Enfoque: Arquitectura de sistemas, escalabilidad, trade-offs técnicos
+```
+
+#### Consejos de Uso
+
+💡 **Prepárate para el nivel real del puesto:**
+
+- Si el puesto pide 2 años → usa Junior/Mid
+- Si pide 5+ años → usa Mid/Senior
+- Si es "Senior Developer" → usa Senior
+
+💡 **Practica con niveles superiores:**
+
+- Si estás entre Junior y Mid, genera un test Mid para desafiarte
+- Te ayudará a identificar áreas de mejora
+
+💡 **Compara niveles:**
+
+- Genera un test Mid, luego cambia a Senior
+- Observa la diferencia en complejidad
+- Identifica qué te falta para el siguiente nivel
+
+---
+
+## �🔄 Regenerar el Test
 
 ¿No te convencen las preguntas? Puedes generar un test completamente nuevo:
 
 1. Click en **"🔄 Regenerar"**
-2. Confirma la acción: *"¿Generar un nuevo test? El actual se eliminará permanentemente."*
+2. Confirma la acción: _"¿Generar un nuevo test? El actual se eliminará permanentemente."_
 3. Click en **"Aceptar"**
 4. La IA generará 5 preguntas completamente nuevas (10-20 segundos)
 
@@ -237,7 +317,7 @@ Al final del test verás consejos personalizados:
 Si ya no necesitas el test:
 
 1. Click en **"🗑️ Eliminar"**
-2. Confirma la acción: *"¿Eliminar este test permanentemente?"*
+2. Confirma la acción: _"¿Eliminar este test permanentemente?"_
 3. Click en **"Aceptar"**
 4. El test se eliminará de tu cuenta
 
@@ -253,8 +333,8 @@ Puedes generar uno nuevo cuando quieras.
    - Lista tecnologías específicas
    - Menciona años de experiencia
    - Incluye frameworks y herramientas
-   
 2. **Descripción detallada del puesto:**
+
    - Responsabilidades claras
    - Nivel de autonomía esperado
    - Contexto del equipo
@@ -268,39 +348,65 @@ Puedes generar uno nuevo cuando quieras.
 
 La IA detecta automáticamente tu nivel:
 
-| Nivel | Indicadores | Tipo de Preguntas |
-|-------|-------------|-------------------|
-| **Junior** | 0-2 años experiencia, tareas supervisadas | Conceptos básicos, sintaxis, best practices |
-| **Mid** | 3-5 años, autonomía, trabajo en equipo | Aplicación práctica, resolución de problemas, arquitectura básica |
-| **Senior** | 6+ años, liderazgo, mentoría | Diseño de sistemas, decisiones arquitectónicas, liderazgo técnico |
+| Nivel      | Indicadores                               | Tipo de Preguntas                                                 |
+| ---------- | ----------------------------------------- | ----------------------------------------------------------------- |
+| **Junior** | 0-2 años experiencia, tareas supervisadas | Conceptos básicos, sintaxis, best practices                       |
+| **Mid**    | 3-5 años, autonomía, trabajo en equipo    | Aplicación práctica, resolución de problemas, arquitectura básica |
+| **Senior** | 6+ años, liderazgo, mentoría              | Diseño de sistemas, decisiones arquitectónicas, liderazgo técnico |
 
 ---
 
 ## ❓ Preguntas Frecuentes (FAQ)
 
 ### ¿Cuánto tarda en generar el test?
+
 **Entre 10-20 segundos.** Depende de la carga del servidor de IA.
 
 ### ¿Puedo generar múltiples tests para la misma candidatura?
+
 **Sí, pero solo se guarda uno a la vez.** Si regeneras, el anterior se elimina.
 
 ### ¿Las preguntas son siempre las mismas?
+
 **No.** Cada generación produce preguntas completamente nuevas.
 
 ### ¿Puedo editar las respuestas sugeridas?
+
 **No directamente en la app.** Pero puedes copiar el contenido y adaptarlo a tu estilo.
 
 ### ¿El test se guarda automáticamente?
+
 **Sí.** Una vez generado, se guarda en tu cuenta y puedes verlo cuando quieras.
 
 ### ¿Funciona sin conexión a internet?
+
 **No.** Necesitas internet para generar el test (llama a la IA). Una vez generado, puedes verlo offline.
 
 ### ¿Puedo compartir el test con alguien?
+
 **No hay función de compartir actualmente.** Puedes tomar capturas de pantalla o copiar el texto.
 
 ### ¿Cuántas candidaturas puedo tener con test?
+
 **Ilimitadas.** Cada candidatura puede tener su propio test.
+
+### ¿Qué nivel debería seleccionar?
+
+**Depende del puesto:**
+
+- **Junior:** Si el puesto pide 0-3 años de experiencia
+- **Mid:** Si pide 3-6 años o experiencia intermedia
+- **Senior:** Si pide 6+ años, liderazgo o roles de arquitectura
+
+💡 **Consejo:** Si no estás seguro, deja que la IA lo detecte automáticamente basándose en los requisitos del puesto. Luego puedes cambiar si consideras que el nivel no es correcto.
+
+### ¿Si cambio el nivel, se pierden las preguntas anteriores?
+
+**Sí.** Al cambiar el nivel, el test anterior se elimina y se genera uno nuevo. Asegúrate de guardar o copiar las respuestas si las necesitas antes de cambiar.
+
+### ¿Puedo volver al nivel anterior después de cambiar?
+
+**No automáticamente.** Tendrás que seleccionar el nivel anterior en el dropdown y confirmar la regeneración. Las preguntas serán nuevas, no las mismas que antes.
 
 ---
 
@@ -311,6 +417,7 @@ La IA detecta automáticamente tu nivel:
 **Causa:** Datos de candidatura insuficientes
 
 **Solución:**
+
 1. Lee los mensajes de error (te dice exactamente qué falta)
 2. Click en "Completar Datos de la Candidatura"
 3. Añade al menos 50 caracteres en Requisitos y Descripción
@@ -322,11 +429,13 @@ La IA detecta automáticamente tu nivel:
 ### Problema: "Error al generar el test"
 
 **Causas posibles:**
+
 - Sin conexión a internet
 - Servidor de IA sobrecargado
 - Respuesta inválida de la IA
 
 **Solución:**
+
 1. Verifica tu conexión a internet
 2. Espera 1-2 minutos
 3. Intenta de nuevo
@@ -339,6 +448,7 @@ La IA detecta automáticamente tu nivel:
 **Causa:** La página no se actualizó automáticamente
 
 **Solución:**
+
 1. Recarga la página (F5) o
 2. Click en "Volver" y vuelve a entrar
 
@@ -347,10 +457,12 @@ La IA detecta automáticamente tu nivel:
 ### Problema: No veo el botón de "Test de Preparación"
 
 **Causas posibles:**
+
 - Versión antigua de la app
 - Cache del navegador
 
 **Solución:**
+
 1. Recarga con Ctrl+Shift+R (Windows) o Cmd+Shift+R (Mac)
 2. Limpia la caché del navegador
 3. Cierra y vuelve a abrir la aplicación

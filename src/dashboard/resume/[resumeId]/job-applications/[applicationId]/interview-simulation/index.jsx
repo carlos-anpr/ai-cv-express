@@ -11,6 +11,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   ArrowLeft,
   Brain,
   Sparkles,
@@ -24,6 +31,7 @@ import {
   XCircle,
   Info,
   Edit,
+  TrendingUp,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
@@ -44,6 +52,7 @@ function InterviewSimulation() {
   const [resumeData, setResumeData] = useState(null);
   const [validationErrors, setValidationErrors] = useState([]);
   const [error, setError] = useState(null);
+  const [selectedLevel, setSelectedLevel] = useState(null); // Nivel seleccionado por el usuario
 
   // Cargar datos iniciales
   const loadData = useCallback(async () => {
@@ -122,12 +131,15 @@ function InterviewSimulation() {
   }, [loadData]);
 
   // Generar test con IA
-  const handleGenerateTest = async () => {
+  const handleGenerateTest = async (levelOverride = null) => {
     try {
       setGenerating(true);
       setError(null);
 
       console.log('🤖 Iniciando generación de test con IA...');
+      if (levelOverride) {
+        console.log(`📊 Nivel forzado por usuario: ${levelOverride}`);
+      }
 
       // Validar datos de candidatura
       const validation =
@@ -139,10 +151,11 @@ function InterviewSimulation() {
         return;
       }
 
-      // Generar prompt
+      // Generar prompt (con nivel forzado si existe)
       const prompt = InterviewTestGenerator.generatePrompt(
         resumeData,
-        application
+        application,
+        levelOverride || selectedLevel
       );
 
       console.log('📝 Prompt generado, longitud:', prompt.length);
@@ -269,11 +282,51 @@ function InterviewSimulation() {
       );
 
       setSimulation(null);
+      setSelectedLevel(null);
       toast.success('Test eliminado correctamente');
       console.log('✅ Test eliminado');
     } catch (error) {
       console.error('❌ Error eliminando test:', error);
       toast.error('Error al eliminar el test');
+    }
+  };
+
+  // Cambiar nivel de la entrevista
+  const handleChangeLevel = async (newLevel) => {
+    if (!newLevel) return;
+
+    if (
+      !confirm(
+        `¿Regenerar el test con nivel "${newLevel.toUpperCase()}"? El test actual se eliminará.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setGenerating(true);
+      setSelectedLevel(newLevel);
+
+      console.log(`🔄 Regenerando test con nivel: ${newLevel}`);
+
+      // Eliminar simulación actual
+      if (simulation?.id) {
+        await LocalDatabase.DeleteInterviewSimulation(
+          simulation.id,
+          user.primaryEmailAddress.emailAddress
+        );
+        console.log('✅ Simulación anterior eliminada');
+      }
+
+      // Generar nuevo test con el nivel seleccionado
+      setSimulation(null);
+      await handleGenerateTest(newLevel);
+
+      toast.success(`Test regenerado con nivel ${newLevel}`);
+    } catch (error) {
+      console.error('❌ Error cambiando nivel:', error);
+      toast.error('Error al cambiar el nivel del test');
+      setGenerating(false);
     }
   };
 
@@ -489,19 +542,74 @@ function InterviewSimulation() {
           {/* Header con acciones */}
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
+              <div className="flex justify-between items-start gap-4">
+                <div className="flex-1">
                   <CardTitle>Test de Preparación</CardTitle>
                   <CardDescription>
                     Generado el {formatDate(simulation.createdAt)}
                   </CardDescription>
-                  <div className="mt-2">
-                    <Badge variant="outline">
-                      Nivel: {simulation.candidateLevel}
+
+                  {/* Selector de Nivel */}
+                  <div className="mt-4 flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <Target className="w-4 h-4 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-700">
+                        Nivel de Entrevista:
+                      </span>
+                    </div>
+                    <Select
+                      value={simulation.candidateLevel}
+                      onValueChange={handleChangeLevel}
+                      disabled={generating}
+                    >
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="junior">
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="w-3 h-3" />
+                            Junior
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="mid">
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="w-3 h-3" />
+                            Mid
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="senior">
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="w-3 h-3" />
+                            Senior
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Badge
+                      variant="outline"
+                      className={
+                        simulation.candidateLevel === 'junior'
+                          ? 'bg-green-50 text-green-700 border-green-300'
+                          : simulation.candidateLevel === 'mid'
+                          ? 'bg-blue-50 text-blue-700 border-blue-300'
+                          : 'bg-purple-50 text-purple-700 border-purple-300'
+                      }
+                    >
+                      {simulation.candidateLevel === 'junior' && '📗'}
+                      {simulation.candidateLevel === 'mid' && '📘'}
+                      {simulation.candidateLevel === 'senior' &&
+                        '📕'} Nivel {simulation.candidateLevel}
                     </Badge>
                   </div>
+
+                  <p className="text-xs text-gray-500 mt-2">
+                    💡 Cambia el nivel para regenerar el test con preguntas de
+                    diferente dificultad
+                  </p>
                 </div>
-                <div className="flex gap-2">
+
+                <div className="flex gap-2 flex-shrink-0">
                   <Button
                     variant="outline"
                     onClick={handleRegenerate}

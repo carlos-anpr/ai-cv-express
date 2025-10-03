@@ -111,11 +111,22 @@ export class InterviewTestGenerator {
    *
    * @param {Object} resumeData - Datos del CV (contexto adicional)
    * @param {Object} jobApplication - Datos de la candidatura (PRINCIPAL)
+   * @param {string|null} forcedLevel - Nivel forzado por el usuario ("junior"|"mid"|"senior"|null)
    * @returns {string} Prompt formateado para Gemini
    */
-  static generatePrompt(resumeData, jobApplication) {
+  static generatePrompt(resumeData, jobApplication, forcedLevel = null) {
     // Formatear contexto del candidato
     const candidateContext = this.formatCandidateContext(resumeData);
+
+    // Si hay nivel forzado, incluirlo en el prompt
+    const levelInstruction = forcedLevel
+      ? `
+⚠️ IMPORTANTE: EL USUARIO HA SELECCIONADO MANUALMENTE EL NIVEL "${forcedLevel.toUpperCase()}"
+   Debes generar preguntas específicamente para nivel ${forcedLevel}, ignorando cualquier 
+   detección automática del nivel. Ajusta la dificultad y complejidad de las preguntas 
+   a este nivel específico.
+`
+      : '';
 
     const prompt = `
 Eres un experto reclutador técnico especializado en preparación de entrevistas.
@@ -149,13 +160,14 @@ ${candidateContext}
 
 PASO 2: DETECTA Y EXTRAE INFORMACIÓN CLAVE
 ============================================
-
+${levelInstruction}
 Analiza los requisitos y descripción para determinar:
 
 1. **NIVEL PROFESIONAL** (Basado en años de experiencia y complejidad):
    - "junior" → 0-3 años, tareas supervisadas, aprendizaje, conceptos básicos
    - "mid" → 3-6 años, autonomía, proyectos completos, decisiones técnicas
    - "senior" → 6+ años, liderazgo, arquitectura, mentoría, decisiones estratégicas
+   ${forcedLevel ? `\n   ⚠️ USAR NIVEL FORZADO: "${forcedLevel}"` : ''}
 
 2. **HABILIDADES TÉCNICAS PRINCIPALES**:
    - Lenguajes de programación (ej: "Node.js", "Java", "Python", "JavaScript")

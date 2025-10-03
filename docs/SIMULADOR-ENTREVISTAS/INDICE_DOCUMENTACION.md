@@ -5,18 +5,22 @@
 ### Si eres un...
 
 **👤 Usuario Final:**
+
 - Lee: [`GUIA_USUARIO.md`](./GUIA_USUARIO.md) - Manual completo de uso
 
 **💼 Product Manager / Stakeholder:**
+
 - Lee: [`RESUMEN_EJECUTIVO.md`](./RESUMEN_EJECUTIVO.md) - Visión general del proyecto
 
 **👨‍💻 Desarrollador Nuevo:**
+
 - Lee en orden:
   1. [`RESUMEN_EJECUTIVO.md`](./RESUMEN_EJECUTIVO.md) - Contexto general
   2. [`INTERVIEW_SIMULATION_DESIGN.md`](./INTERVIEW_SIMULATION_DESIGN.md) - Arquitectura completa
   3. [`PASO_1_COMPLETADO.md`](./PASO_1_COMPLETADO.md) → [`PASO_6_COMPLETADO.md`](./PASO_5_COMPLETADO.md) - Implementación paso a paso
 
 **🔧 Mantenimiento:**
+
 - Lee: [`INTERVIEW_SIMULATION_DESIGN.md`](./INTERVIEW_SIMULATION_DESIGN.md) - Referencia técnica completa
 - Consulta: `PASO_X_COMPLETADO.md` según el área a modificar
 
@@ -26,32 +30,33 @@
 
 ### 🎯 Documentos Principales
 
-| Documento | Descripción | Audiencia | Páginas |
-|-----------|-------------|-----------|---------|
-| **[RESUMEN_EJECUTIVO.md](./RESUMEN_EJECUTIVO.md)** | Visión general, métricas, ROI | PM, Stakeholders | ~15 |
-| **[GUIA_USUARIO.md](./GUIA_USUARIO.md)** | Manual de uso completo con FAQs | Usuarios finales | ~20 |
-| **[INTERVIEW_SIMULATION_DESIGN.md](./INTERVIEW_SIMULATION_DESIGN.md)** | Arquitectura y diseño técnico | Desarrolladores | ~35 |
+| Documento                                                              | Descripción                     | Audiencia        | Páginas |
+| ---------------------------------------------------------------------- | ------------------------------- | ---------------- | ------- |
+| **[RESUMEN_EJECUTIVO.md](./RESUMEN_EJECUTIVO.md)**                     | Visión general, métricas, ROI   | PM, Stakeholders | ~15     |
+| **[GUIA_USUARIO.md](./GUIA_USUARIO.md)**                               | Manual de uso completo con FAQs | Usuarios finales | ~20     |
+| **[INTERVIEW_SIMULATION_DESIGN.md](./INTERVIEW_SIMULATION_DESIGN.md)** | Arquitectura y diseño técnico   | Desarrolladores  | ~35     |
 
 ---
 
 ### 🔧 Documentos de Implementación (Por Fase)
 
-| Documento | Fase | Contenido | Audiencia |
-|-----------|------|-----------|-----------|
-| **[PASO_1_COMPLETADO.md](./PASO_1_COMPLETADO.md)** | Validación & Prompts | InterviewTestGenerator.js | Devs |
-| **[PASO_2_COMPLETADO.md](./PASO_2_COMPLETADO.md)** | Base de Datos | LocalDatabase.js (CRUD) | Devs |
-| **[PASO_3_COMPLETADO.md](./PASO_3_COMPLETADO.md)** | Interfaz de Usuario | Componente React completo | Devs |
-| **[PASO_4_COMPLETADO.md](./PASO_4_COMPLETADO.md)** | Integración | Botones en detalle | Devs |
-| **[PASO_5_COMPLETADO.md](./PASO_5_COMPLETADO.md)** | Limpieza | Código y archivos | Devs |
+| Documento                                                  | Fase                 | Contenido                 | Audiencia |
+| ---------------------------------------------------------- | -------------------- | ------------------------- | --------- |
+| **[PASO_1_COMPLETADO.md](./PASO_1_COMPLETADO.md)**         | Validación & Prompts | InterviewTestGenerator.js | Devs      |
+| **[PASO_2_COMPLETADO.md](./PASO_2_COMPLETADO.md)**         | Base de Datos        | LocalDatabase.js (CRUD)   | Devs      |
+| **[PASO_3_COMPLETADO.md](./PASO_3_COMPLETADO.md)**         | Interfaz de Usuario  | Componente React completo | Devs      |
+| **[PASO_4_COMPLETADO.md](./PASO_4_COMPLETADO.md)**         | Integración          | Botones en detalle        | Devs      |
+| **[PASO_5_COMPLETADO.md](./PASO_5_COMPLETADO.md)**         | Limpieza             | Código y archivos         | Devs      |
+| **[PASO_7_SELECTOR_NIVEL.md](./PASO_7_SELECTOR_NIVEL.md)** | ⭐ Selector Nivel    | Cambiar dificultad        | Devs      |
 
 ---
 
 ### 🧹 Documentos de Utilidad
 
-| Documento | Propósito | Cuándo usar |
-|-----------|-----------|-------------|
-| **[LIMPIEZA_ARCHIVOS.md](./LIMPIEZA_ARCHIVOS.md)** | Guía de archivos temporales | Al finalizar desarrollo |
-| **[INDICE_DOCUMENTACION.md](./INDICE_DOCUMENTACION.md)** | Este documento | Navegación rápida |
+| Documento                                                | Propósito                   | Cuándo usar             |
+| -------------------------------------------------------- | --------------------------- | ----------------------- |
+| **[LIMPIEZA_ARCHIVOS.md](./LIMPIEZA_ARCHIVOS.md)**       | Guía de archivos temporales | Al finalizar desarrollo |
+| **[INDICE_DOCUMENTACION.md](./INDICE_DOCUMENTACION.md)** | Este documento              | Navegación rápida       |
 
 ---
 
@@ -338,92 +343,104 @@
 ## 🔍 Búsqueda Rápida por Tema
 
 ### 🎨 Validación de Datos
+
 - **PASO_1_COMPLETADO.md** → Sección "Métodos de Validación"
 - **INTERVIEW_SIMULATION_DESIGN.md** → Sección "Validación Previa"
 
 ### 💾 Base de Datos
+
 - **PASO_2_COMPLETADO.md** → Todo el documento
 - **INTERVIEW_SIMULATION_DESIGN.md** → Sección "Modelo de Datos"
 
 ### 🎨 UI/UX
+
 - **PASO_3_COMPLETADO.md** → Secciones "Estados de UI" y "Diseño"
 - **PASO_4_COMPLETADO.md** → Sección "Diseño del Botón"
 
 ### 🤖 Integración con IA
+
 - **PASO_1_COMPLETADO.md** → Sección "generatePrompt()"
 - **PASO_3_COMPLETADO.md** → Sección "handleGenerateTest()"
 - **INTERVIEW_SIMULATION_DESIGN.md** → Sección "Estructura del Prompt"
 
 ### 🔧 Funciones Específicas
+
 - **PASO_3_COMPLETADO.md** → Sección "Funciones Principales"
 - **PASO_2_COMPLETADO.md** → Sección "Métodos Implementados"
 
 ### 🐛 Errores y Soluciones
+
 - **GUIA_USUARIO.md** → Sección "Resolución de Problemas"
 - **PASO_3_COMPLETADO.md** → Sección "Manejo de Errores"
 
 ### 📊 Métricas y KPIs
+
 - **RESUMEN_EJECUTIVO.md** → Secciones "Métricas" y "KPIs"
 
 ### 💰 Costos
+
 - **RESUMEN_EJECUTIVO.md** → Sección "Estimación de Costos"
 
 ---
 
 ## 📊 Estadísticas de Documentación
 
-| Métrica | Valor |
-|---------|-------|
-| **Total documentos** | 9 documentos |
-| **Total páginas** | ~180 páginas |
-| **Documentos técnicos** | 6 docs |
-| **Documentos de usuario** | 1 doc |
-| **Documentos ejecutivos** | 1 doc |
-| **Documentos de utilidad** | 2 docs |
-| **Tiempo total de lectura** | ~3-4 horas |
-| **Diagramas incluidos** | 5+ diagramas |
-| **Ejemplos de código** | 50+ snippets |
+| Métrica                     | Valor          |
+| --------------------------- | -------------- |
+| **Total documentos**        | 10 documentos  |
+| **Total páginas**           | ~200 páginas   |
+| **Documentos técnicos**     | 7 docs         |
+| **Documentos de usuario**   | 1 doc          |
+| **Documentos ejecutivos**   | 1 doc          |
+| **Documentos de utilidad**  | 2 docs         |
+| **Tiempo total de lectura** | ~3.5-4.5 horas |
+| **Diagramas incluidos**     | 5+ diagramas   |
+| **Ejemplos de código**      | 55+ snippets   |
 
 ---
 
 ## 🎓 Glosario Rápido
 
-| Término | Definición | Dónde se explica |
-|---------|------------|------------------|
-| **InterviewTestGenerator** | Clase para validación y prompts | PASO_1_COMPLETADO.md |
-| **LocalDatabase** | Servicio de CRUD para IndexedDB | PASO_2_COMPLETADO.md |
-| **Simulación** | Test generado con 5 preguntas | INTERVIEW_SIMULATION_DESIGN.md |
-| **Candidatura** | Job Application (puesto al que aplica) | GUIA_USUARIO.md |
-| **Nivel** | Junior/Mid/Senior (detectado por IA) | PASO_1_COMPLETADO.md |
-| **Regenerar** | Eliminar y crear nuevo test | GUIA_USUARIO.md |
-| **IndexedDB** | Base de datos local del navegador | PASO_2_COMPLETADO.md |
-| **Gemini AI** | Motor de IA para generar preguntas | RESUMEN_EJECUTIVO.md |
+| Término                    | Definición                             | Dónde se explica               |
+| -------------------------- | -------------------------------------- | ------------------------------ |
+| **InterviewTestGenerator** | Clase para validación y prompts        | PASO_1_COMPLETADO.md           |
+| **LocalDatabase**          | Servicio de CRUD para IndexedDB        | PASO_2_COMPLETADO.md           |
+| **Simulación**             | Test generado con 5 preguntas          | INTERVIEW_SIMULATION_DESIGN.md |
+| **Candidatura**            | Job Application (puesto al que aplica) | GUIA_USUARIO.md                |
+| **Nivel**                  | Junior/Mid/Senior (detectado por IA)   | PASO_1_COMPLETADO.md           |
+| **Regenerar**              | Eliminar y crear nuevo test            | GUIA_USUARIO.md                |
+| **IndexedDB**              | Base de datos local del navegador      | PASO_2_COMPLETADO.md           |
+| **Gemini AI**              | Motor de IA para generar preguntas     | RESUMEN_EJECUTIVO.md           |
 
 ---
 
 ## 📞 Soporte y Contacto
 
 ### Preguntas sobre Uso
+
 - Consulta: **GUIA_USUARIO.md** → Sección "FAQ"
 
 ### Preguntas Técnicas
+
 - Consulta: **INTERVIEW_SIMULATION_DESIGN.md**
 - Consulta: Documentos PASO_X según área
 
 ### Errores o Bugs
+
 - Consulta: **GUIA_USUARIO.md** → Sección "Resolución de Problemas"
 - Revisa: **PASO_3_COMPLETADO.md** → Sección "Manejo de Errores"
 
 ### Mejoras o Sugerencias
+
 - Consulta: **RESUMEN_EJECUTIVO.md** → Sección "Mejoras Futuras"
 
 ---
 
 ## 🔄 Actualizaciones de Documentación
 
-| Fecha | Versión | Cambios |
-|-------|---------|---------|
-| 2025-10-03 | 1.0 | Creación inicial de toda la documentación |
+| Fecha      | Versión | Cambios                                   |
+| ---------- | ------- | ----------------------------------------- |
+| 2025-10-03 | 1.0     | Creación inicial de toda la documentación |
 
 ---
 
