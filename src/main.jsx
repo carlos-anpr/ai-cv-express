@@ -6,6 +6,7 @@ import SignInPage from './auth/sign-in';
 import Home from './home';
 import Dashboard from './dashboard';
 import { ClerkProvider } from '@clerk/clerk-react';
+import ExpressGeneration from './dashboard/express-generation';
 import EditResume from './dashboard/resume/[resumeId]/edit';
 import JobApplications from './dashboard/resume/[resumeId]/job-applications';
 import NewJobApplication from './dashboard/resume/[resumeId]/job-applications/new';
@@ -31,6 +32,10 @@ const router = createBrowserRouter([
       {
         path: '/dashboard',
         element: <Dashboard />,
+      },
+      {
+        path: '/dashboard/express',
+        element: <ExpressGeneration />,
       },
       {
         path: '/dashboard/resume/:resumeId/edit',

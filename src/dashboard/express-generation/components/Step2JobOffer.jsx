@@ -429,6 +429,7 @@ Beneficios:
 
 // Componentes auxiliares
 
+// eslint-disable-next-line no-unused-vars
 const DetectionItem = ({ icon: Icon, text }) => (
   <div className="flex items-center gap-2 text-sm">
     <Icon className="w-4 h-4 text-primary" />
@@ -436,6 +437,7 @@ const DetectionItem = ({ icon: Icon, text }) => (
   </div>
 );
 
+// eslint-disable-next-line no-unused-vars
 const ExtractedField = ({ label, value, icon: Icon }) => (
   <div className="flex items-start gap-3">
     <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">

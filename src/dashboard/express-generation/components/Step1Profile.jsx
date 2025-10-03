@@ -310,6 +310,7 @@ const SuggestionItem = ({ text }) => (
   </div>
 );
 
+// eslint-disable-next-line no-unused-vars
 const PreviewItem = ({ icon: IconComponent, title, description }) => (
   <div className="flex items-start gap-3">
     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">

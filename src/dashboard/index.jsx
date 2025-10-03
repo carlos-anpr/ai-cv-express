@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import AddResume from './components/AddResume';
+import AddExpressCard from './components/AddExpressCard';
 import { useUser } from '@clerk/clerk-react';
 import LocalDatabase from '../services/LocalDatabase';
 import ResumeCardItem from './components/ResumeCardItem';
@@ -44,7 +45,12 @@ function Dashboard() {
       <h2 className="font-bold text-3xl">Mis Currículums</h2>
       <p>Comienza a crear tu currículum con IA para tu próximo trabajo</p>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 mt-10">
+        {/* Express Generation Card - Destacada */}
+        <AddExpressCard />
+
+        {/* Create Resume Card - Original */}
         <AddResume />
+
         {loading ? (
           <div className="col-span-4 text-center py-8">
             <p>Cargando CVs...</p>
