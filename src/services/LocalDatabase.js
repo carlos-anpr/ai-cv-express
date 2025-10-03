@@ -832,8 +832,6 @@ class LocalDatabase {
   async CreateInterviewSimulation(data) {
     await this.ensureDatabaseReady();
     try {
-      console.log('🎯 Creando simulación de entrevista:', data);
-
       // Validar datos requeridos
       if (
         !data.jobApplicationId ||
@@ -856,7 +854,6 @@ class LocalDatabase {
       };
 
       const id = await db.interviewSimulations.add(simulationData);
-      console.log('✅ Simulación de entrevista creada con ID:', id);
 
       return id;
     } catch (error) {
@@ -871,11 +868,6 @@ class LocalDatabase {
   async GetInterviewSimulation(jobApplicationId, userEmail) {
     await this.ensureDatabaseReady();
     try {
-      console.log(
-        '🎯 Obteniendo simulación para candidatura:',
-        jobApplicationId
-      );
-
       const simulation = await db.interviewSimulations
         .where('jobApplicationId')
         .equals(parseInt(jobApplicationId))
@@ -885,13 +877,6 @@ class LocalDatabase {
       if (simulation) {
         // Deserializar preguntas
         simulation.questions = JSON.parse(simulation.questions);
-        console.log(
-          '✅ Simulación encontrada con',
-          simulation.questions.length,
-          'preguntas'
-        );
-      } else {
-        console.log('ℹ️ No se encontró simulación para esta candidatura');
       }
 
       return simulation;
@@ -907,8 +892,6 @@ class LocalDatabase {
   async UpdateInterviewSimulation(simulationId, updateData) {
     await this.ensureDatabaseReady();
     try {
-      console.log('📝 Actualizando simulación ID:', simulationId);
-
       const updatedFields = {};
 
       if (updateData.candidateLevel !== undefined)
@@ -925,7 +908,6 @@ class LocalDatabase {
         throw new Error('Simulación no encontrada para actualizar');
       }
 
-      console.log('✅ Simulación actualizada correctamente');
       return updated;
     } catch (error) {
       console.error('❌ Error actualizando simulación:', error);
@@ -937,8 +919,6 @@ class LocalDatabase {
   async DeleteInterviewSimulation(simulationId, userEmail) {
     await this.ensureDatabaseReady();
     try {
-      console.log('🗑️ Eliminando simulación ID:', simulationId);
-
       // Verificar que la simulación pertenece al usuario
       const simulation = await db.interviewSimulations
         .where('id')
@@ -954,7 +934,6 @@ class LocalDatabase {
         parseInt(simulationId)
       );
 
-      console.log('✅ Simulación eliminada correctamente');
       return deleted;
     } catch (error) {
       console.error('❌ Error eliminando simulación:', error);
@@ -1078,11 +1057,6 @@ class LocalDatabase {
   async DeleteInterviewSimulationByJobApplication(jobApplicationId, userEmail) {
     await this.ensureDatabaseReady();
     try {
-      console.log(
-        '🗑️ Preparando regeneración para candidatura:',
-        jobApplicationId
-      );
-
       // Buscar simulación existente
       const simulation = await this.GetInterviewSimulation(
         jobApplicationId,
