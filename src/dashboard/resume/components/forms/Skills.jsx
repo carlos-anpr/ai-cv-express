@@ -4,7 +4,7 @@ import { Rating } from '@smastrom/react-rating';
 
 import '@smastrom/react-rating/style.css';
 import { Button } from '@/components/ui/button';
-import { LoaderCircle, Sparkles } from 'lucide-react';
+import { LoaderCircle, Sparkles, Trash2, AlertTriangle } from 'lucide-react';
 import { ResumeInfoContext } from '@/context/ResumeInfoContext';
 import LocalDatabase from '../../../../services/LocalDatabase';
 import { useParams } from 'react-router-dom';
@@ -39,10 +39,15 @@ function Skills() {
         '🔄 Cargando skills desde resumeInfo (inicial):',
         resumeInfo.skills
       );
-      setSkillsList(resumeInfo.skills);
+      // Asignar IDs únicos si no existen
+      const skillsWithIds = resumeInfo.skills.map((skill, idx) => ({
+        ...skill,
+        id: skill.id || `skill-${Date.now()}-${idx}`,
+      }));
+      setSkillsList(skillsWithIds);
     } else if (skillsList.length === 0) {
       console.log('⚠️ No hay skills en resumeInfo, iniciando con skill vacía');
-      setSkillsList([{ name: '', rating: 0 }]);
+      setSkillsList([{ id: `skill-${Date.now()}-0`, name: '', rating: 0 }]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Solo ejecutar al montar el componente
@@ -58,6 +63,7 @@ function Skills() {
     setSkillsList([
       ...skillsList,
       {
+        id: `skill-${Date.now()}-${skillsList.length}`,
         name: '',
         rating: 0,
       },
@@ -65,6 +71,36 @@ function Skills() {
   };
   const RemoveSkills = () => {
     setSkillsList((skillsList) => skillsList.slice(0, -1));
+  };
+
+  const RemoveSkillByIndex = async (index) => {
+    try {
+      // Filtrar la skill a eliminar
+      const updatedSkills = skillsList.filter((_, i) => i !== index);
+
+      // Limpiar flags para guardar en DB
+      const cleanSkills = updatedSkills
+        .filter((skill) => skill.name && skill.name.trim() !== '')
+        .map(
+          // eslint-disable-next-line no-unused-vars
+          ({ id, isNew, isUpdated, isDuplicate, ...rest }) => rest
+        );
+
+      // Primero actualizar ambos estados inmediatamente
+      setSkillsList(updatedSkills);
+      setResumeInfo((prev) => ({
+        ...prev,
+        skills: updatedSkills,
+      }));
+
+      // Luego guardar en la base de datos en segundo plano
+      await LocalDatabase.UpdateResumeDetail(resumeId, { skills: cleanSkills });
+
+      toast.success('Habilidad eliminada');
+    } catch (error) {
+      console.error('Error al eliminar habilidad:', error);
+      toast.error('Error al eliminar la habilidad');
+    }
   };
 
   const onSave = async () => {
@@ -81,7 +117,7 @@ function Skills() {
         .filter((skill) => skill.name && skill.name.trim() !== '')
         .map(
           // eslint-disable-next-line no-unused-vars
-          ({ id, isNew, isUpdated, ...rest }) => rest
+          ({ id, isNew, isUpdated, isDuplicate, ...rest }) => rest
         );
 
       console.log('💾 Guardando skills manualmente:', cleanSkills);
@@ -174,13 +210,19 @@ function Skills() {
           console.log(
             `   - ⏭️ Omitiendo: rating actual ${existing.skill.rating} >= nuevo ${newSkill.rating}`
           );
+          // Marcar la existente como duplicada para mostrar advertencia
+          updatedSkillsList[existing.index] = {
+            ...updatedSkillsList[existing.index],
+            isDuplicate: true, // Flag para mostrar icono de advertencia
+          };
           skippedCount++;
         }
       } else {
-        // Añadir nueva skill
+        // Añadir nueva skill con ID único
         console.log(`   - ✨ Añadiendo como nueva skill`);
         updatedSkillsList.push({
           ...newSkill,
+          id: `skill-${Date.now()}-${updatedSkillsList.length}`,
           isNew: true, // Flag para animación
         });
         addedCount++;
@@ -212,7 +254,7 @@ function Skills() {
         .filter((skill) => skill.name && skill.name.trim() !== '')
         .map(
           // eslint-disable-next-line no-unused-vars
-          ({ id, isNew, isUpdated, ...rest }) => rest
+          ({ id, isNew, isUpdated, isDuplicate, ...rest }) => rest
         );
 
       console.log('💾 Guardando skills:', cleanSkills);
@@ -241,7 +283,7 @@ function Skills() {
       setTimeout(() => {
         setSkillsList((prev) =>
           // eslint-disable-next-line no-unused-vars
-          prev.map(({ isNew, isUpdated, ...rest }) => rest)
+          prev.map(({ isNew, isUpdated, isDuplicate, ...rest }) => rest)
         );
       }, 2000);
     } catch (error) {
@@ -302,12 +344,14 @@ function Skills() {
         <div className="space-y-2">
           {skillsList?.map((item, index) => (
             <div
-              key={index}
+              key={item.id || index}
               className={`flex justify-between items-center border rounded-lg p-3 transition-all duration-300 ${
                 item.isNew
                   ? 'bg-green-50 border-green-300 animate-pulse'
                   : item.isUpdated
                   ? 'bg-blue-50 border-blue-300'
+                  : item.isDuplicate
+                  ? 'bg-yellow-50 border-yellow-300'
                   : 'bg-white'
               }`}
             >
@@ -315,7 +359,7 @@ function Skills() {
                 <label className="text-xs text-gray-500">Habilidad</label>
                 <Input
                   className="w-full mt-1"
-                  defaultValue={item.name}
+                  value={item.name}
                   onChange={(e) => handleChange(index, 'name', e.target.value)}
                   placeholder="ej: React, Node.js, Python..."
                 />
@@ -341,6 +385,21 @@ function Skills() {
                     Mejorada
                   </span>
                 )}
+                {item.isDuplicate && (
+                  <div className="flex items-center gap-1 ml-2 px-2 py-1 bg-yellow-100 border border-yellow-400 text-yellow-800 text-xs rounded-full">
+                    <AlertTriangle className="w-3 h-3" />
+                    <span>Duplicada</span>
+                  </div>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => RemoveSkillByIndex(index)}
+                  className="ml-2 text-destructive hover:text-destructive hover:bg-red-50"
+                  title="Eliminar esta habilidad"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
               </div>
             </div>
           ))}
