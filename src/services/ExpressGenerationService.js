@@ -28,6 +28,7 @@ import {
   formatCoverLetterAsText,
   calculateCoverLetterQuality,
 } from './prompts/expressCoverLetterGenerator';
+import AIContentEnhancer from './AIContentEnhancer';
 
 class ExpressGenerationService {
   constructor() {
@@ -244,7 +245,7 @@ class ExpressGenerationService {
 
       onProgress?.({
         step: 'generating-resume',
-        progress: 80,
+        progress: 70,
         message: 'Generando habilidades...',
       });
 
@@ -254,6 +255,47 @@ class ExpressGenerationService {
       if (!validation.isValid) {
         console.error('Resume validation errors:', validation.errors);
         throw new Error('El CV generado no cumple los estándares de calidad');
+      }
+
+      onProgress?.({
+        step: 'generating-resume',
+        progress: 85,
+        message: 'Categorizando habilidades con IA...',
+      });
+
+      // Categorizar habilidades usando el mismo sistema que el flujo normal
+      try {
+        const jobTitle =
+          generatedResume.personalInfo?.jobTitle ||
+          jobOfferData.title ||
+          'Profesional';
+        const skillsToCategory = generatedResume.skills || [];
+
+        if (skillsToCategory.length > 0) {
+          const aiEnhancer = new AIContentEnhancer();
+          const categorizedResult = await aiEnhancer.categorizeSkills(
+            skillsToCategory,
+            jobTitle
+          );
+
+          // Reemplazar las skills generadas con las categorizadas por IA
+          if (
+            categorizedResult.categorizedSkills &&
+            categorizedResult.categorizedSkills.length > 0
+          ) {
+            generatedResume.skills = categorizedResult.categorizedSkills;
+            console.log(
+              '✅ Skills categorizadas con IA:',
+              categorizedResult.categorizedSkills
+            );
+          }
+        }
+      } catch (error) {
+        console.warn(
+          '⚠️ Error al categorizar skills, se usarán las categorías generadas:',
+          error
+        );
+        // Si falla la categorización, continuar con las categorías del prompt original
       }
 
       // Calculate quality
