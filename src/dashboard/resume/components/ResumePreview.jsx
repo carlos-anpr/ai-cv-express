@@ -5,6 +5,7 @@ import SummaryPreview from './preview/SummaryPreview';
 import ExperiencePreview from './preview/ExperiencePreview';
 import EducationalPreview from './preview/EducationalPreview';
 import SkillsPreview from './preview/SkillsPreview';
+import LanguagesPreview from './preview/LanguagesPreview';
 
 function ResumePreview() {
   const { resumeInfo } = useContext(ResumeInfoContext);
@@ -23,6 +24,8 @@ function ResumePreview() {
       <EducationalPreview resumeInfo={resumeInfo} />
 
       <SkillsPreview resumeInfo={resumeInfo} />
+
+      <LanguagesPreview resumeInfo={resumeInfo} />
     </div>
   );
 }

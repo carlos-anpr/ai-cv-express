@@ -21,7 +21,7 @@ function EditResume() {
     try {
       const response = await LocalDatabase.GetResumeById(resumeId);
 
-      // Asegurar que experience, education y skills sean arrays
+      // Asegurar que experience, education, skills y languages sean arrays
       const processedData = {
         ...response.data,
         experience: Array.isArray(response.data.experience)
@@ -38,6 +38,11 @@ function EditResume() {
           ? response.data.skills
           : typeof response.data.skills === 'string'
           ? JSON.parse(response.data.skills)
+          : [],
+        languages: Array.isArray(response.data.languages)
+          ? response.data.languages
+          : typeof response.data.languages === 'string'
+          ? JSON.parse(response.data.languages)
           : [],
       };
 
