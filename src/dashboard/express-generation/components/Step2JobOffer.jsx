@@ -36,24 +36,28 @@ const Step2JobOffer = ({ onNext, onBack, initialData }) => {
   );
   const [isExtracting, setIsExtracting] = useState(false);
   const [validation, setValidation] = useState({
-    isValid: false,
+    isValid: true, // Cambiado: Siempre válido porque es opcional
     errors: [],
     warnings: [],
     completeness: null,
   });
 
-  // Validación básica del texto
+  // Validación básica del texto (ahora opcional)
   useEffect(() => {
     const length = rawText.length;
     const errors = [];
     const warnings = [];
 
     if (length > 0 && length < 100) {
-      errors.push('La descripción de la oferta es demasiado corta');
+      warnings.push(
+        'La descripción es corta. Añade más información para generar carta y candidatura.'
+      );
     }
 
     if (length >= 100 && length < 200) {
-      warnings.push('Añade más información para mejor resultado');
+      warnings.push(
+        'Añade más detalles para obtener mejor carta de presentación'
+      );
     }
 
     // Validación de campos clave mencionados
@@ -66,20 +70,24 @@ const Step2JobOffer = ({ onNext, onBack, initialData }) => {
 
     if (length >= 100 && !hasCompany) {
       warnings.push(
-        'No se detecta nombre de empresa. Inclúyelo si está disponible.'
+        'No se detecta nombre de empresa. Sin empresa no se creará candidatura.'
       );
     }
 
     if (length >= 100 && !hasPosition) {
-      warnings.push('No se detecta título del puesto claramente.');
+      warnings.push(
+        'No se detecta título del puesto. Añádelo para mejor resultado.'
+      );
     }
 
     if (length >= 200 && !hasRequirements) {
-      warnings.push('No se detectan requisitos o habilidades.');
+      warnings.push(
+        'No se detectan requisitos. La carta será menos personalizada.'
+      );
     }
 
     setValidation({
-      isValid: length >= 100,
+      isValid: true, // Siempre válido porque el paso es opcional
       errors,
       warnings,
       completeness: extractedData?.validation?.completeness || null,
@@ -128,16 +136,35 @@ const Step2JobOffer = ({ onNext, onBack, initialData }) => {
   }, [rawText, extractedData, extractJobOffer]);
 
   const handleSubmit = () => {
-    if (validation.isValid && extractedData) {
+    if (rawText.length >= 100 && extractedData) {
+      // Tiene oferta válida y extraída
       onNext({
         rawText,
         extractedData: extractedData.data,
         validation: extractedData.validation,
       });
-    } else if (validation.isValid && !extractedData) {
-      // Forzar extracción si no se hizo automáticamente
+    } else if (rawText.length >= 100 && !extractedData) {
+      // Tiene texto pero no extraído, forzar extracción
       extractJobOffer();
+    } else {
+      // No tiene oferta o es muy corta, continuar sin ella
+      onNext({
+        rawText: '',
+        extractedData: null,
+        validation: null,
+        skipped: true,
+      });
     }
+  };
+
+  const handleSkip = () => {
+    // Saltar directamente sin oferta
+    onNext({
+      rawText: '',
+      extractedData: null,
+      validation: null,
+      skipped: true,
+    });
   };
 
   const characterCount = rawText.length;
@@ -146,14 +173,57 @@ const Step2JobOffer = ({ onNext, onBack, initialData }) => {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in slide-in-from-right duration-300">
       {/* Columna Izquierda: Entrada de datos */}
       <div className="space-y-6">
-        <div className="space-y-2">
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Briefcase className="w-6 h-6 text-primary" />
-            Información de la Oferta
-          </h2>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold flex items-center gap-2">
+              <Briefcase className="w-6 h-6 text-primary" />
+              Información de la Oferta
+            </h2>
+            <Badge variant="outline" className="text-xs">
+              Paso Opcional
+            </Badge>
+          </div>
           <p className="text-muted-foreground">
-            Pega toda la información de la oferta de trabajo aquí
+            Pega la información de la oferta de trabajo para generar carta y
+            candidatura personalizadas
           </p>
+        </div>
+
+        {/* Banner Informativo */}
+        <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg space-y-3">
+          <div className="flex items-start gap-3">
+            <Sparkles className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <div className="flex-1 space-y-2">
+              <h3 className="font-semibold text-blue-900">
+                ¿Qué se genera según tus datos?
+              </h3>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-blue-900">
+                      Con oferta de trabajo:
+                    </p>
+                    <p className="text-blue-700">
+                      ✓ CV personalizado • ✓ Carta de presentación • ✓
+                      Candidatura automática
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium text-blue-900">Sin oferta:</p>
+                    <p className="text-blue-700">
+                      ✓ CV genérico basado en tu perfil
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Textarea Principal */}
@@ -238,35 +308,58 @@ Beneficios:
         </div>
 
         {/* Botones de navegación */}
-        <div className="flex gap-3">
-          <Button
-            onClick={onBack}
-            variant="outline"
-            size="lg"
-            className="group"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-            Atrás
-          </Button>
+        <div className="space-y-3">
+          <div className="flex gap-3">
+            <Button
+              onClick={onBack}
+              variant="outline"
+              size="lg"
+              className="group"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
+              Atrás
+            </Button>
 
-          <Button
-            onClick={handleSubmit}
-            disabled={!validation.isValid || isExtracting}
-            size="lg"
-            className="flex-1 group"
-          >
-            {isExtracting ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Procesando...
-              </>
-            ) : (
-              <>
-                Continuar
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-              </>
-            )}
-          </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={isExtracting}
+              size="lg"
+              className="flex-1 group"
+              variant={rawText.length >= 100 ? 'default' : 'outline'}
+            >
+              {isExtracting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Procesando...
+                </>
+              ) : (
+                <>
+                  {rawText.length >= 100
+                    ? 'Continuar con Oferta'
+                    : 'Generar Solo CV'}
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </Button>
+          </div>
+
+          {/* Botón alternativo para omitir */}
+          {rawText.length === 0 && (
+            <button
+              onClick={handleSkip}
+              className="w-full text-center text-sm text-muted-foreground hover:text-primary transition-colors py-2"
+            >
+              Omitir este paso y generar solo el CV →
+            </button>
+          )}
+
+          {/* Mensaje informativo según estado */}
+          {rawText.length > 0 && rawText.length < 100 && (
+            <p className="text-xs text-center text-orange-600">
+              ⚠️ Texto muy corto. Se generará solo el CV sin carta ni
+              candidatura.
+            </p>
+          )}
         </div>
       </div>
 

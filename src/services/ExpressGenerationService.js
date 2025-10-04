@@ -428,6 +428,7 @@ class ExpressGenerationService {
       resume: null,
       coverLetter: null,
       errors: [],
+      warnings: [],
     };
 
     try {
@@ -445,7 +446,7 @@ class ExpressGenerationService {
           onProgress?.({
             phase: 1,
             totalPhases: 4,
-            progress: stepProgress.progress * 0.25, // 0-25%
+            progress: (stepProgress.progress / 100) * 25, // 0-25%
             message: stepProgress.message,
           });
         }
@@ -458,32 +459,63 @@ class ExpressGenerationService {
 
       results.profileData = profileResult.data;
 
-      // PASO 2: Extract job offer
-      onProgress?.({
-        phase: 2,
-        totalPhases: 4,
-        progress: 25,
-        message: 'Analizando la oferta de trabajo...',
-      });
+      // PASO 2: Extract job offer (si se proporcionó)
+      const shouldProcessJobOffer =
+        rawJobOffer && rawJobOffer.trim().length >= 100;
 
-      const jobOfferResult = await this.extractJobOffer(
-        rawJobOffer,
-        (stepProgress) => {
-          onProgress?.({
-            phase: 2,
-            totalPhases: 4,
-            progress: 25 + stepProgress.progress * 0.25, // 25-50%
-            message: stepProgress.message,
+      if (shouldProcessJobOffer) {
+        onProgress?.({
+          phase: 2,
+          totalPhases: 4,
+          progress: 25,
+          message: 'Analizando la oferta de trabajo...',
+        });
+
+        const jobOfferResult = await this.extractJobOffer(
+          rawJobOffer,
+          (stepProgress) => {
+            onProgress?.({
+              phase: 2,
+              totalPhases: 4,
+              progress: 25 + (stepProgress.progress / 100) * 25, // 25-50%
+              message: stepProgress.message,
+            });
+          }
+        );
+
+        if (!jobOfferResult.success) {
+          results.errors.push({
+            step: 'job-offer',
+            error: jobOfferResult.error,
           });
+          throw new Error(`Error en oferta: ${jobOfferResult.error}`);
         }
-      );
 
-      if (!jobOfferResult.success) {
-        results.errors.push({ step: 'job-offer', error: jobOfferResult.error });
-        throw new Error(`Error en oferta: ${jobOfferResult.error}`);
+        results.jobOfferData = jobOfferResult.data;
+      } else {
+        // Oferta omitida - usar valores por defecto
+        onProgress?.({
+          phase: 2,
+          totalPhases: 4,
+          progress: 25,
+          message: 'Omitiendo análisis de oferta (generación genérica)...',
+        });
+
+        results.jobOfferData = {
+          companyName: 'No especificado',
+          jobTitle: 'No especificado',
+          requirements: [],
+          responsibilities: [],
+          benefits: [],
+          rawText: rawJobOffer || '',
+        };
+
+        results.warnings.push({
+          step: 'job-offer',
+          message:
+            'Generación sin oferta específica - solo se creará CV genérico',
+        });
       }
-
-      results.jobOfferData = jobOfferResult.data;
 
       // PASO 3: Generate resume
       onProgress?.({
@@ -500,7 +532,7 @@ class ExpressGenerationService {
           onProgress?.({
             phase: 3,
             totalPhases: 4,
-            progress: 50 + stepProgress.progress * 0.25, // 50-75%
+            progress: 50 + (stepProgress.progress / 100) * 25, // 50-75%
             message: stepProgress.message,
           });
         }
@@ -537,7 +569,7 @@ class ExpressGenerationService {
             onProgress?.({
               phase: 4,
               totalPhases: 4,
-              progress: 75 + stepProgress.progress * 0.25, // 75-100%
+              progress: 75 + (stepProgress.progress / 100) * 25, // 75-100%
               message: stepProgress.message,
             });
           }

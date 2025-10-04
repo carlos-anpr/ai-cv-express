@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import GenerationProgress, {
   StepProgress,
@@ -26,6 +26,7 @@ const Step3Generation = ({
   const [currentPhase, setCurrentPhase] = useState(1);
   const [progress, setProgress] = useState(0);
   const [message, setMessage] = useState('Iniciando generación...');
+  const progressRef = useRef(0); // Ref para trackear el progreso real y evitar retrocesos
   const [generationSteps, setGenerationSteps] = useState([
     {
       label: 'Analizando perfil',
@@ -54,9 +55,19 @@ const Step3Generation = ({
   // Actualizar estado de un step específico
   const updateStepStatus = (index, status, duration) => {
     setGenerationSteps((prev) =>
-      prev.map((step, i) =>
-        i === index ? { ...step, status, duration } : step
-      )
+      prev.map((step, i) => {
+        if (i === index) {
+          // No sobrescribir 'completed' con 'active' o 'pending'
+          if (
+            step.status === 'completed' &&
+            (status === 'active' || status === 'pending')
+          ) {
+            return step;
+          }
+          return { ...step, status, duration };
+        }
+        return step;
+      })
     );
   };
 
@@ -69,29 +80,71 @@ const Step3Generation = ({
       const userEmail =
         user?.primaryEmailAddress?.emailAddress || 'user@example.com';
       const startTime = Date.now();
+      const maxProgressRef = { current: 0 }; // Usar objeto para evitar problemas de closure
+      const isCompletedRef = { current: false }; // Flag para ignorar callbacks después de completar
 
       const result = await ExpressGenerationService.generateComplete(
         profileData.description,
         jobOfferData.rawText,
         userEmail,
         (progressUpdate) => {
-          // Actualizar progreso general
-          setCurrentPhase(progressUpdate.phase);
-          setProgress(progressUpdate.progress);
-          setMessage(progressUpdate.message);
+          // Ignorar callbacks después de completar (evita actualizaciones después de navegar a Step4)
+          if (isCompletedRef.current) {
+            return;
+          }
+
+          // Actualizar progreso general (asegurar que nunca retroceda)
+          const newProgress = Math.max(
+            maxProgressRef.current,
+            progressUpdate.progress
+          );
+          maxProgressRef.current = newProgress;
+
+          // Si alcanzamos 100%, marcar como completado para ignorar callbacks futuros
+          if (newProgress >= 100) {
+            isCompletedRef.current = true;
+          }
+
+          // Solo actualizar el estado si el progreso realmente aumentó
+          if (newProgress > progressRef.current) {
+            progressRef.current = newProgress;
+            setCurrentPhase(progressUpdate.phase);
+            setProgress(newProgress);
+            setMessage(progressUpdate.message);
+          }
 
           // Actualizar estado de steps
           const phaseIndex = progressUpdate.phase - 1;
 
-          // Marcar como activo el step actual
-          if (progressUpdate.progress > 0 && progressUpdate.progress < 100) {
-            updateStepStatus(phaseIndex, 'active');
-          }
-
-          // Marcar como completado el step anterior
+          // Marcar como completado el step anterior PRIMERO
           if (phaseIndex > 0 && progressUpdate.progress > 25) {
             const prevTime = ((Date.now() - startTime) / 1000).toFixed(1);
-            updateStepStatus(phaseIndex - 1, 'completed', `${prevTime}s`);
+            setGenerationSteps((prev) =>
+              prev.map((step, i) => {
+                // Marcar el step anterior como completado si no lo está ya
+                if (i === phaseIndex - 1 && step.status !== 'completed') {
+                  return {
+                    ...step,
+                    status: 'completed',
+                    duration: `${prevTime}s`,
+                  };
+                }
+                return step;
+              })
+            );
+          }
+
+          // Marcar como activo el step actual solo si no está completado
+          if (progressUpdate.progress > 0 && progressUpdate.progress < 100) {
+            setGenerationSteps((prev) =>
+              prev.map((step, i) => {
+                // Solo marcar como activo si está pending (no si ya está completed)
+                if (i === phaseIndex && step.status === 'pending') {
+                  return { ...step, status: 'active' };
+                }
+                return step;
+              })
+            );
           }
         }
       );
@@ -130,6 +183,7 @@ const Step3Generation = ({
     );
     setCurrentPhase(1);
     setProgress(0);
+    progressRef.current = 0; // Reset ref también
     setMessage('Reintentando generación...');
 
     startGeneration();

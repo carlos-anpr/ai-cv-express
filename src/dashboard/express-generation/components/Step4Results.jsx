@@ -455,23 +455,55 @@ const Step4Results = ({ generatedData, onStartOver }) => {
             <div className="space-y-4 mt-6">
               <ResumePreview resume={resume} />
               {!hasValidJobOffer && (
-                <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-orange-600 mt-0.5" />
-                    <div className="flex-1">
-                      <h4 className="font-medium text-orange-900">
-                        Carta de Presentación No Generada
-                      </h4>
-                      <p className="text-sm text-orange-700 mt-1">
-                        Para obtener una carta de presentación personalizada y
-                        crear candidaturas automáticas, necesitas proporcionar
-                        una oferta de trabajo real en el Paso 2 con al menos:
-                      </p>
-                      <ul className="text-sm text-orange-700 mt-2 space-y-1 list-disc list-inside">
-                        <li>Nombre de la empresa</li>
-                        <li>Título del puesto</li>
-                        <li>Requisitos o responsabilidades</li>
-                      </ul>
+                <div className="mt-6 p-5 bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-300 rounded-xl shadow-sm">
+                  <div className="flex items-start gap-4">
+                    <div className="bg-orange-100 p-2 rounded-lg">
+                      <AlertCircle className="w-6 h-6 text-orange-600" />
+                    </div>
+                    <div className="flex-1 space-y-3">
+                      <div>
+                        <h4 className="font-bold text-orange-900 text-lg">
+                          Carta y Candidatura No Generadas
+                        </h4>
+                        <p className="text-sm text-orange-800 mt-1">
+                          No se proporcionó información de la oferta de trabajo
+                          en el Paso 2
+                        </p>
+                      </div>
+
+                      <div className="bg-white/60 p-3 rounded-lg border border-orange-200">
+                        <p className="text-sm font-medium text-orange-900 mb-2">
+                          📝 Para generar en el futuro:
+                        </p>
+                        <ul className="text-sm text-orange-800 space-y-1.5">
+                          <li className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                            <span>
+                              <strong>Carta de presentación</strong>{' '}
+                              personalizada
+                            </span>
+                          </li>
+                          <li className="flex items-center gap-2">
+                            <span className="w-1.5 h-1.5 bg-orange-500 rounded-full"></span>
+                            <span>
+                              <strong>Candidatura automática</strong> con todos
+                              los datos
+                            </span>
+                          </li>
+                        </ul>
+                      </div>
+
+                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
+                        <p className="text-xs font-medium text-blue-900 mb-1">
+                          💡 Tip para la próxima vez:
+                        </p>
+                        <p className="text-xs text-blue-800">
+                          En el Paso 2, pega la oferta completa con:{' '}
+                          <strong>
+                            empresa, puesto, requisitos y responsabilidades
+                          </strong>
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
