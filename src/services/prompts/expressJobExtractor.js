@@ -9,18 +9,35 @@ export const expressJobExtractorPrompt = (rawJobOfferText) => {
     systemInstruction: `Eres un experto en análisis de ofertas de trabajo. Tu tarea es extraer información estructurada de textos de ofertas laborales en cualquier formato (LinkedIn, InfoJobs, Indeed, etc.).
 
 IMPORTANTE:
-- Extrae SOLO información presente en el texto
+- Lee CUIDADOSAMENTE todo el texto antes de extraer
 - Identifica correctamente empresa, puesto, ubicación, requisitos
-- Si algo no está claro, márcalo como "No especificado"
+- BUSCA el título del puesto incluso si no dice explícitamente "Puesto:" o "Título:"
+- El título suele estar en la primera línea o después de "Oferta de trabajo:" o "Buscamos:"
+- Si menciona empresa/compañía de cualquier forma, extráela (puede estar en firma, contacto, etc.)
+- Si algo no está presente después de leer TODO el texto, marca como "No especificado"
 - Normaliza formatos (ej: "50k-60k", "50.000€-60.000€/año")
 - Detecta modalidad de trabajo (remoto/híbrido/presencial)`,
 
-    prompt: `Analiza la siguiente oferta de trabajo y extrae información estructurada en formato JSON:
+    prompt: `Analiza CUIDADOSAMENTE la siguiente oferta de trabajo y extrae información estructurada en formato JSON:
 
 OFERTA DE TRABAJO:
 """
 ${rawJobOfferText}
 """
+
+INSTRUCCIONES DE EXTRACCIÓN:
+1. Lee TODO el texto completo primero
+2. El título del puesto puede estar:
+   - En la primera línea
+   - Después de "Oferta de trabajo:", "Buscamos:", "Puesto:"
+   - Entre paréntesis como "(Nivel Mid)"
+   Ejemplo: "Desarrollador Java Backend (Nivel Mid)" → jobTitle: "Desarrollador Java Backend"
+3. La empresa puede estar:
+   - Al final en firma/contacto (empleo@empresaX.com → "empresaX")
+   - Mencionada como "nuestra empresa", "nuestro equipo"
+   - Si NO hay nombre de empresa real, usa "No especificado"
+4. Los requisitos están en secciones como "Requisitos:", "Requirements:", "Necesitas:"
+5. Las responsabilidades están en "Responsabilidades:", "Funciones:", "Harás:"
 
 Extrae la siguiente información y devuélvela en formato JSON válido:
 

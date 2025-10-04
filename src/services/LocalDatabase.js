@@ -686,9 +686,26 @@ class LocalDatabase {
     try {
       console.log('📚 Obteniendo candidaturas del CV:', resumeId);
 
+      // Si resumeId es un UUID (string), primero buscar el CV para obtener el ID numérico
+      let numericResumeId = resumeId;
+      if (typeof resumeId === 'string' && resumeId.includes('-')) {
+        console.log('🔍 Detectado UUID, buscando ID numérico...');
+        const resume = await db.resumes
+          .where('documentId')
+          .equals(resumeId)
+          .first();
+        if (resume) {
+          numericResumeId = resume.id;
+          console.log('✅ ID numérico encontrado:', numericResumeId);
+        } else {
+          console.warn('⚠️ No se encontró CV con documentId:', resumeId);
+          return { success: true, data: [] };
+        }
+      }
+
       const applications = await db.jobApplications
         .where('resumeId')
-        .equals(resumeId)
+        .equals(parseInt(numericResumeId))
         .and((item) => item.userEmail === userEmail)
         .toArray();
 

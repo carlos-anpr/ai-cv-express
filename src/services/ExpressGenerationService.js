@@ -272,8 +272,8 @@ class ExpressGenerationService {
         const skillsToCategory = generatedResume.skills || [];
 
         if (skillsToCategory.length > 0) {
-          const aiEnhancer = new AIContentEnhancer();
-          const categorizedResult = await aiEnhancer.categorizeSkills(
+          // AIContentEnhancer ya es una instancia singleton, no necesita 'new'
+          const categorizedResult = await AIContentEnhancer.categorizeSkills(
             skillsToCategory,
             jobTitle
           );
@@ -514,39 +514,59 @@ class ExpressGenerationService {
       results.resume = resumeResult.data;
       results.resumeQuality = resumeResult.quality;
 
-      // PASO 4: Generate cover letter
-      onProgress?.({
-        phase: 4,
-        totalPhases: 4,
-        progress: 75,
-        message: 'Generando carta de presentación...',
-      });
+      // PASO 4: Generate cover letter (solo si hay oferta válida)
+      const hasValidJobOffer =
+        results.jobOfferData?.companyName &&
+        results.jobOfferData.companyName !== 'No especificado' &&
+        results.jobOfferData?.jobTitle &&
+        results.jobOfferData.jobTitle !== 'No especificado';
 
-      const coverLetterResult = await this.generateCoverLetter(
-        results.profileData,
-        results.jobOfferData,
-        results.resume,
-        (stepProgress) => {
-          onProgress?.({
-            phase: 4,
-            totalPhases: 4,
-            progress: 75 + stepProgress.progress * 0.25, // 75-100%
-            message: stepProgress.message,
-          });
-        }
-      );
-
-      if (!coverLetterResult.success) {
-        results.errors.push({
-          step: 'cover-letter',
-          error: coverLetterResult.error,
+      if (hasValidJobOffer) {
+        onProgress?.({
+          phase: 4,
+          totalPhases: 4,
+          progress: 75,
+          message: 'Generando carta de presentación...',
         });
-        throw new Error(`Error generando carta: ${coverLetterResult.error}`);
-      }
 
-      results.coverLetter = coverLetterResult.data;
-      results.coverLetterText = coverLetterResult.textVersion;
-      results.coverLetterQuality = coverLetterResult.quality;
+        const coverLetterResult = await this.generateCoverLetter(
+          results.profileData,
+          results.jobOfferData,
+          results.resume,
+          (stepProgress) => {
+            onProgress?.({
+              phase: 4,
+              totalPhases: 4,
+              progress: 75 + stepProgress.progress * 0.25, // 75-100%
+              message: stepProgress.message,
+            });
+          }
+        );
+
+        if (!coverLetterResult.success) {
+          results.errors.push({
+            step: 'cover-letter',
+            error: coverLetterResult.error,
+          });
+          // No lanzar error, continuar sin carta
+          console.warn('⚠️ Error generando carta, continuando sin ella');
+        } else {
+          results.coverLetter = coverLetterResult.data;
+          results.coverLetterText = coverLetterResult.textVersion;
+          results.coverLetterQuality = coverLetterResult.quality;
+        }
+      } else {
+        console.log('⚠️ No hay oferta válida, saltando generación de carta');
+        results.coverLetter = null;
+        results.coverLetterText = null;
+        results.coverLetterQuality = null;
+        results.warnings = results.warnings || [];
+        results.warnings.push({
+          step: 'cover-letter',
+          message:
+            'No se generó carta de presentación porque no se proporcionó una oferta de trabajo válida',
+        });
+      }
 
       // Normalize resume for database
       results.resumeForDB = normalizeGeneratedResume(results.resume, userEmail);

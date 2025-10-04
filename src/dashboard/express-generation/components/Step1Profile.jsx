@@ -59,14 +59,14 @@ const Step1Profile = ({ onNext, initialData }) => {
     }
 
     // Advertencia si es muy largo
-    if (length > 1000) {
+    if (length > 2000) {
       warnings.push('Descripción muy larga. Intenta ser más conciso.');
     }
 
     setValidation({
       minChars,
       recommendedChars,
-      isValid: length >= minChars && length <= 1000,
+      isValid: length >= minChars && length <= 2000,
       errors,
       warnings,
     });
@@ -129,7 +129,7 @@ Tengo experiencia en metodologías ágiles, CI/CD, y trabajo en equipo. Me apasi
                   characterCount > 0 &&
                   'border-destructive focus-visible:ring-destructive'
               )}
-              maxLength={1000}
+              maxLength={2000}
             />
 
             {/* Indicador de caracteres flotante */}
@@ -144,7 +144,7 @@ Tengo experiencia en metodologías ágiles, CI/CD, y trabajo en equipo. Me apasi
                 }
                 className="text-xs"
               >
-                {characterCount} / 1000
+                {characterCount} / 2000
               </Badge>
             </div>
           </div>

@@ -12,6 +12,7 @@ import {
   Sparkles,
   ArrowRight,
   Home,
+  AlertCircle,
 } from 'lucide-react';
 import {
   SuccessMessage,
@@ -42,7 +43,37 @@ const Step4Results = ({ generatedData, onStartOver }) => {
     coverLetterText,
     resumeQuality,
     coverLetterQuality,
+    jobOfferData, // Datos de la oferta extraídos
   } = generatedData;
+
+  // Validar si hay oferta real
+  const hasValidJobOffer = React.useMemo(() => {
+    return (
+      jobOfferData &&
+      jobOfferData.companyName !== 'No especificado' &&
+      jobOfferData.jobTitle !== 'No especificado'
+    );
+  }, [jobOfferData]);
+
+  // Debug: Ver qué datos tenemos
+  React.useEffect(() => {
+    console.log('🎯 Step4Results - Datos recibidos:', {
+      hasResume: !!resume,
+      hasResumeForDB: !!resumeForDB,
+      hasCoverLetter: !!coverLetter,
+      hasJobOfferData: !!jobOfferData,
+      hasValidJobOffer,
+      jobOfferData: jobOfferData,
+      generatedData: generatedData,
+    });
+  }, [
+    resume,
+    resumeForDB,
+    coverLetter,
+    jobOfferData,
+    hasValidJobOffer,
+    generatedData,
+  ]);
 
   // Ocultar confetti después de 5 segundos
   React.useEffect(() => {
@@ -103,6 +134,128 @@ const Step4Results = ({ generatedData, onStartOver }) => {
     };
   };
 
+  // Crear candidatura automáticamente con carta de presentación
+  const createJobApplication = async (resumeId, userEmail) => {
+    try {
+      console.log('📝 Creando candidatura automática...');
+      console.log('📋 Datos disponibles:', {
+        hasJobOfferData: !!jobOfferData,
+        jobOfferData,
+        hasResume: !!resume,
+        resumeId,
+        userEmail,
+      });
+
+      // Validar si hay datos reales de la oferta (no solo "No especificado")
+      const hasRealJobOffer =
+        jobOfferData &&
+        jobOfferData.companyName !== 'No especificado' &&
+        jobOfferData.jobTitle !== 'No especificado';
+
+      if (!hasRealJobOffer) {
+        console.log(
+          '⚠️ No hay oferta de trabajo real, saltando creación de candidatura'
+        );
+        console.log(
+          '💡 El usuario solo describió su perfil sin pegar una oferta'
+        );
+        return null;
+      }
+
+      // Extraer datos de la oferta con validación
+      const companyName =
+        jobOfferData?.companyName || jobOfferData?.company || 'Empresa';
+      const jobTitle =
+        jobOfferData?.jobTitle ||
+        jobOfferData?.title ||
+        resume?.personalInfo?.jobTitle ||
+        'Puesto';
+      const jobDescription =
+        jobOfferData?.description || jobOfferData?.jobDescription || '';
+
+      // Manejar requirements de diferentes formatos
+      let requirements = '';
+      if (Array.isArray(jobOfferData?.requirements?.essential)) {
+        requirements = jobOfferData.requirements.essential.join('\n');
+      } else if (typeof jobOfferData?.requirements === 'string') {
+        requirements = jobOfferData.requirements;
+      }
+
+      // Manejar responsibilities de diferentes formatos
+      let responsibilities = '';
+      if (Array.isArray(jobOfferData?.responsibilities)) {
+        responsibilities = jobOfferData.responsibilities.join('\n');
+      } else if (typeof jobOfferData?.responsibilities === 'string') {
+        responsibilities = jobOfferData.responsibilities;
+      }
+
+      const companyWebsite =
+        jobOfferData?.companyWebsite || jobOfferData?.website || '';
+      const jobUrl = jobOfferData?.jobUrl || jobOfferData?.url || '';
+
+      // Crear candidatura
+      const applicationData = {
+        resumeId: resumeId,
+        userEmail: userEmail,
+        companyName: companyName,
+        jobTitle: jobTitle,
+        jobDescription: jobDescription,
+        requirements: requirements,
+        responsibilities: responsibilities,
+        companyWebsite: companyWebsite,
+        jobUrl: jobUrl,
+        applicationDate: new Date().toISOString().split('T')[0],
+        status: 'draft',
+        notes: 'Candidatura generada automáticamente con Generación Express',
+      };
+
+      console.log('📤 Enviando datos de candidatura:', applicationData);
+      const applicationResult = await LocalDatabase.CreateJobApplication(
+        applicationData
+      );
+
+      console.log('📥 Resultado de creación:', applicationResult);
+
+      if (applicationResult.success) {
+        console.log('✅ Candidatura creada con ID:', applicationResult.data.id);
+
+        // Guardar carta de presentación asociada
+        if (coverLetter && coverLetterText) {
+          const coverLetterData = {
+            resumeId: resumeId,
+            jobApplicationId: applicationResult.data.id,
+            userEmail: userEmail,
+            content: coverLetterText,
+            style: coverLetter.metadata?.tone || 'professional',
+            length:
+              coverLetter.metadata?.wordCount ||
+              coverLetterText.split(/\s+/).length,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          };
+
+          await LocalDatabase.CreateCoverLetter(coverLetterData);
+          console.log('✅ Carta de presentación guardada');
+        }
+
+        return applicationResult.data.id;
+      } else {
+        console.error('❌ Error: CreateJobApplication no fue exitoso');
+        return null;
+      }
+    } catch (error) {
+      console.error('⚠️ Error creando candidatura automática:', error);
+      console.error('⚠️ Stack trace:', error.stack);
+      console.error('⚠️ Error details:', {
+        message: error.message,
+        name: error.name,
+        cause: error.cause,
+      });
+      // No lanzar error para no interrumpir el guardado del CV
+      return null;
+    }
+  };
+
   // Guardar y navegar al editor
   const handleEditResume = async () => {
     try {
@@ -114,7 +267,22 @@ const Step4Results = ({ generatedData, onStartOver }) => {
       // Guardar en IndexedDB
       const savedResume = await LocalDatabase.CreateNewResume(transformedData);
 
-      toast.success('CV guardado exitosamente');
+      // Crear candidatura automática (solo si hay oferta real)
+      const applicationId = await createJobApplication(
+        savedResume.data.id,
+        savedResume.data.userEmail
+      );
+
+      if (applicationId) {
+        toast.success('✅ CV y candidatura guardados exitosamente', {
+          description: 'Puedes gestionar tu candidatura desde el editor',
+        });
+      } else {
+        toast.success('✅ CV guardado exitosamente', {
+          description:
+            'Añade una oferta de trabajo real para crear una candidatura',
+        });
+      }
 
       // Navegar al editor usando el ID numérico
       navigate(`/dashboard/resume/${savedResume.data.id}/edit`);
@@ -135,9 +303,24 @@ const Step4Results = ({ generatedData, onStartOver }) => {
       const transformedData = transformToEditorFormat(resumeForDB);
 
       // Guardar en IndexedDB
-      await LocalDatabase.CreateNewResume(transformedData);
+      const savedResume = await LocalDatabase.CreateNewResume(transformedData);
 
-      toast.success('CV guardado en tu Dashboard');
+      // Crear candidatura automática (solo si hay oferta real)
+      const applicationId = await createJobApplication(
+        savedResume.data.id,
+        savedResume.data.userEmail
+      );
+
+      if (applicationId) {
+        toast.success('✅ CV y candidatura guardados en tu Dashboard', {
+          description: 'Puedes gestionar tu candidatura desde el CV',
+        });
+      } else {
+        toast.success('✅ CV guardado en tu Dashboard', {
+          description:
+            'Para crear candidaturas, genera el CV con una oferta real',
+        });
+      }
 
       // Navegar al dashboard
       navigate('/dashboard');
@@ -171,14 +354,28 @@ const Step4Results = ({ generatedData, onStartOver }) => {
         <div className="space-y-2">
           <h2 className="text-3xl font-bold">¡Generación Completa!</h2>
           <p className="text-muted-foreground max-w-md mx-auto">
-            Tu CV y carta de presentación han sido generados con éxito. Revisa
-            los resultados y decide tu siguiente paso.
+            {hasValidJobOffer
+              ? 'Tu CV y carta de presentación han sido generados con éxito. Revisa los resultados y decide tu siguiente paso.'
+              : 'Tu CV ha sido generado con éxito. Revisa el resultado y decide tu siguiente paso.'}
           </p>
+          {!hasValidJobOffer && (
+            <p className="text-sm text-orange-600 max-w-md mx-auto">
+              💡 No se generó carta de presentación porque no se proporcionó una
+              oferta de trabajo válida. Agrega una oferta real para obtener
+              carta y candidatura automática.
+            </p>
+          )}
         </div>
       </div>
 
       {/* Success Message with stats */}
-      <SuccessMessage title="Todo listo para aplicar">
+      <SuccessMessage
+        title={
+          hasValidJobOffer
+            ? 'Todo listo para aplicar'
+            : 'CV generado exitosamente'
+        }
+      >
         <div className="grid grid-cols-2 gap-4 mt-4">
           <StatCard
             icon={FileText}
@@ -188,11 +385,17 @@ const Step4Results = ({ generatedData, onStartOver }) => {
           />
           <StatCard
             icon={Mail}
-            label="Carta Lista"
-            value="100%"
-            color="text-green-600"
+            label={hasValidJobOffer ? 'Carta Lista' : 'Sin Carta'}
+            value={hasValidJobOffer ? '100%' : 'N/A'}
+            color={hasValidJobOffer ? 'text-green-600' : 'text-gray-400'}
           />
         </div>
+        {!hasValidJobOffer && (
+          <p className="text-sm text-muted-foreground mt-3">
+            Para generar carta de presentación y candidatura, necesitas pegar
+            una oferta de trabajo real en el Paso 2.
+          </p>
+        )}
       </SuccessMessage>
 
       {/* Quality Indicators */}
@@ -224,29 +427,57 @@ const Step4Results = ({ generatedData, onStartOver }) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="cv" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="cv">
-                <FileText className="w-4 h-4 mr-2" />
-                Currículum
-              </TabsTrigger>
-              <TabsTrigger value="cover-letter">
-                <Mail className="w-4 h-4 mr-2" />
-                Carta de Presentación
-              </TabsTrigger>
-            </TabsList>
+          {hasValidJobOffer && coverLetter ? (
+            <Tabs defaultValue="cv" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="cv">
+                  <FileText className="w-4 h-4 mr-2" />
+                  Currículum
+                </TabsTrigger>
+                <TabsTrigger value="cover-letter">
+                  <Mail className="w-4 h-4 mr-2" />
+                  Carta de Presentación
+                </TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="cv" className="space-y-4 mt-6">
+              <TabsContent value="cv" className="space-y-4 mt-6">
+                <ResumePreview resume={resume} />
+              </TabsContent>
+
+              <TabsContent value="cover-letter" className="space-y-4 mt-6">
+                <CoverLetterPreview
+                  coverLetter={coverLetter}
+                  coverLetterText={coverLetterText}
+                />
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <div className="space-y-4 mt-6">
               <ResumePreview resume={resume} />
-            </TabsContent>
-
-            <TabsContent value="cover-letter" className="space-y-4 mt-6">
-              <CoverLetterPreview
-                coverLetter={coverLetter}
-                coverLetterText={coverLetterText}
-              />
-            </TabsContent>
-          </Tabs>
+              {!hasValidJobOffer && (
+                <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-orange-600 mt-0.5" />
+                    <div className="flex-1">
+                      <h4 className="font-medium text-orange-900">
+                        Carta de Presentación No Generada
+                      </h4>
+                      <p className="text-sm text-orange-700 mt-1">
+                        Para obtener una carta de presentación personalizada y
+                        crear candidaturas automáticas, necesitas proporcionar
+                        una oferta de trabajo real en el Paso 2 con al menos:
+                      </p>
+                      <ul className="text-sm text-orange-700 mt-2 space-y-1 list-disc list-inside">
+                        <li>Nombre de la empresa</li>
+                        <li>Título del puesto</li>
+                        <li>Requisitos o responsabilidades</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -288,6 +519,25 @@ const Step4Results = ({ generatedData, onStartOver }) => {
         <p>
           ✏️ Podrás editar todo el contenido más tarde desde el editor completo
         </p>
+        {hasValidJobOffer && (
+          <p className="text-primary font-medium">
+            ✅ Se creará automáticamente una candidatura con la carta de
+            presentación anexada
+          </p>
+        )}
+        {!hasValidJobOffer && (
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg max-w-2xl mx-auto">
+            <p className="text-blue-800 font-medium text-sm">
+              💡 Para aprovechar al máximo la Generación Express:
+            </p>
+            <p className="text-blue-700 text-xs mt-1">
+              Pega una oferta de trabajo completa en el Paso 2 para generar:
+              <br />• Carta de presentación personalizada • Candidatura
+              automática con todos los datos • Mejor alineación del CV con
+              requisitos
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
