@@ -55,7 +55,7 @@ const COMMON_LANGUAGES = [
   { code: 'tr', name: 'Turco', flag: '🇹🇷' },
 ];
 
-function Languages() {
+function Languages({ onSaveHandlerReady }) {
   const [loading, setLoading] = useState(false);
   const { resumeInfo, setResumeInfo } = useContext(ResumeInfoContext);
   const params = useParams();
@@ -141,9 +141,17 @@ function Languages() {
     }
   };
 
-  const onSave = async () => {
+  const onSave = async (silent = false) => {
+    console.log(
+      '💾 onSave ejecutado - silent:',
+      silent,
+      'resumeId:',
+      params?.resumeId
+    );
+    console.log('📋 languagesList actual:', languagesList);
+
     if (!params?.resumeId) {
-      toast.error('ID del CV no válido');
+      if (!silent) toast.error('ID del CV no válido');
       return;
     }
 
@@ -155,8 +163,24 @@ function Languages() {
         (lang) => lang.name && lang.name.trim() !== '' && lang.level
       );
 
+      console.log(
+        '✅ Idiomas válidos encontrados:',
+        validLanguages.length,
+        validLanguages
+      );
+
+      // Si no hay idiomas válidos, guardar array vacío (silenciosamente si es navegación)
       if (validLanguages.length === 0) {
-        toast.error('Añade al menos un idioma con su nivel');
+        if (!silent) {
+          toast.error('Añade al menos un idioma con su nivel');
+          setLoading(false);
+          return;
+        }
+        // En modo silencioso, simplemente guardar array vacío
+        console.log('💾 Guardando array vacío de idiomas');
+        await LocalDatabase.UpdateResumeDetail(params.resumeId, {
+          languages: [],
+        });
         setLoading(false);
         return;
       }
@@ -167,19 +191,37 @@ function Languages() {
         ({ id, ...rest }) => rest
       );
 
+      console.log('💾 Guardando idiomas limpios:', cleanLanguages);
+
       const response = await LocalDatabase.UpdateResumeDetail(params.resumeId, {
         languages: cleanLanguages,
       });
 
-      console.log('✅ Idiomas actualizados:', response);
-      toast.success('Idiomas actualizados correctamente');
+      console.log('✅ Idiomas actualizados en BD:', response);
+      if (!silent) {
+        toast.success('Idiomas actualizados correctamente');
+      }
     } catch (error) {
       console.error('❌ Error actualizando idiomas:', error);
-      toast.error('Error al actualizar idiomas: ' + error.message);
+      if (!silent) {
+        toast.error('Error al actualizar idiomas: ' + error.message);
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  // Registrar el handler de guardado cuando el componente se monta
+  useEffect(() => {
+    if (onSaveHandlerReady) {
+      // Pasar la función de guardado al padre
+      // El padre usa un wrapper especial para almacenarla correctamente en el estado
+      onSaveHandlerReady(async () => {
+        await onSave(true);
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onSaveHandlerReady]);
 
   useEffect(() => {
     setResumeInfo((prev) => ({

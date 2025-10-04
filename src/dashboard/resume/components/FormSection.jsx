@@ -19,8 +19,53 @@ import ThemeColor from './ThemeColor';
 function FormSection() {
   const [activeFormIndex, setActiveFormIndex] = useState(1);
   const [enableNext, setEnableNext] = useState(true);
+  const [languagesSaveHandler, setLanguagesSaveHandler] = useState(null);
 
   const params = useParams();
+
+  // Wrapper para registrar el handler de guardado
+  // Necesario porque setState ejecuta funciones, no las almacena
+  const registerLanguagesSaveHandler = (handler) => {
+    console.log(
+      '📝 Registrando handler de guardado, es función:',
+      typeof handler === 'function'
+    );
+    setLanguagesSaveHandler(() => handler);
+  };
+
+  const handleNavigation = async (direction) => {
+    console.log(
+      '🔄 handleNavigation - direction:',
+      direction,
+      'activeFormIndex:',
+      activeFormIndex
+    );
+    console.log('🔄 languagesSaveHandler existe:', !!languagesSaveHandler);
+    console.log(
+      '🔄 languagesSaveHandler es función:',
+      typeof languagesSaveHandler === 'function'
+    );
+
+    // Si estamos en la sección de idiomas (paso 6) y tenemos el handler de guardado
+    if (activeFormIndex === 6 && languagesSaveHandler) {
+      console.log('💾 Guardando idiomas antes de navegar...');
+      try {
+        // Guardar idiomas antes de navegar
+        await languagesSaveHandler();
+        console.log('✅ Idiomas guardados correctamente antes de navegar');
+      } catch (error) {
+        console.error('❌ Error guardando idiomas:', error);
+        // Continuar con la navegación aunque falle el guardado
+      }
+    }
+
+    // Navegar al siguiente/anterior paso
+    if (direction === 'next') {
+      setActiveFormIndex(activeFormIndex + 1);
+    } else if (direction === 'prev') {
+      setActiveFormIndex(activeFormIndex - 1);
+    }
+  };
 
   return (
     <div>
@@ -41,10 +86,7 @@ function FormSection() {
         </div>
         <div className="flex gap-2">
           {activeFormIndex > 1 && (
-            <Button
-              size="sm"
-              onClick={() => setActiveFormIndex(activeFormIndex - 1)}
-            >
+            <Button size="sm" onClick={() => handleNavigation('prev')}>
               {' '}
               <ArrowLeft />{' '}
             </Button>
@@ -53,7 +95,7 @@ function FormSection() {
             disabled={!enableNext}
             className="flex gap-2"
             size="sm"
-            onClick={() => setActiveFormIndex(activeFormIndex + 1)}
+            onClick={() => handleNavigation('next')}
           >
             {' '}
             Next
@@ -73,7 +115,7 @@ function FormSection() {
       ) : activeFormIndex == 5 ? (
         <Skills />
       ) : activeFormIndex == 6 ? (
-        <Languages />
+        <Languages onSaveHandlerReady={registerLanguagesSaveHandler} />
       ) : activeFormIndex == 7 ? (
         <Navigate to={`/my-resume/${params.resumeId}/view`} />
       ) : null}

@@ -100,6 +100,7 @@ class LocalDatabase {
         experience: this.safeJsonParse(resume.experience, []),
         education: this.safeJsonParse(resume.education, []),
         skills: this.safeJsonParse(resume.skills, []),
+        languages: this.safeJsonParse(resume.languages, []),
       }));
 
       console.log('✅ CVs procesados:', processedResumes.length);
@@ -154,6 +155,7 @@ class LocalDatabase {
         experience: this.safeJsonParse(resume.experience, []),
         education: this.safeJsonParse(resume.education, []),
         skills: this.safeJsonParse(resume.skills, []),
+        languages: this.safeJsonParse(resume.languages, []),
       };
 
       console.log('🔍 Resume PROCESADO:', {
@@ -196,6 +198,9 @@ class LocalDatabase {
       }
       if (processedData.skills && Array.isArray(processedData.skills)) {
         processedData.skills = JSON.stringify(processedData.skills);
+      }
+      if (processedData.languages && Array.isArray(processedData.languages)) {
+        processedData.languages = JSON.stringify(processedData.languages);
       }
 
       // Actualizar campos (Dexie hook se encarga de updatedAt y version)
