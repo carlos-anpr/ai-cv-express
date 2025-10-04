@@ -43,8 +43,16 @@ function Dashboard() {
 
   return (
     <div className="p-10 md:px-20 lg:px-32">
-      <h2 className="font-bold text-3xl">Mis Currículums</h2>
-      <p className="text-gray-600 mt-1">Comienza a crear tu currículum con IA para tu próximo trabajo</p>
+      {/* Header simplificado */}
+      <div className="mb-10">
+        <h2 className="font-bold text-3xl text-gray-900 mb-2">
+          Mis Currículums
+        </h2>
+        <p className="text-gray-600 mt-1">
+          Comienza a crear tu currículum con IA para tu próximo trabajo
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mt-10">
         {/* Express Generation Card - Destacada */}
         <AddExpressCard />

@@ -1,8 +1,8 @@
-import { 
-  Loader2Icon, 
-  MoreVertical, 
-  Briefcase, 
-  FileText, 
+import {
+  Loader2Icon,
+  MoreVertical,
+  Briefcase,
+  FileText,
   Calendar,
   User,
   Eye,
@@ -10,7 +10,7 @@ import {
   Download,
   Trash2,
   ExternalLink,
-  Zap
+  Zap,
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -58,20 +58,20 @@ function ResumeCardItem({ resume, refreshData }) {
 
       try {
         // Obtener candidaturas
-        const applicationsResponse = await LocalDatabase.GetJobApplicationsByResume(
-          resume.id,
-          user.primaryEmailAddress.emailAddress
-        );
-        
+        const applicationsResponse =
+          await LocalDatabase.GetJobApplicationsByResume(
+            resume.id,
+            user.primaryEmailAddress.emailAddress
+          );
+
         const applications = applicationsResponse?.data || [];
-        
+
         // Contar cartas de presentación: cada candidatura puede tener una carta
         let coverLettersCount = 0;
         for (const app of applications) {
           try {
-            const coverLetterResponse = await LocalDatabase.GetCoverLetterByApplication(
-              app.id
-            );
+            const coverLetterResponse =
+              await LocalDatabase.GetCoverLetterByApplication(app.id);
             if (coverLetterResponse?.data) {
               coverLettersCount++;
             }
@@ -115,34 +115,34 @@ function ResumeCardItem({ resume, refreshData }) {
   // Formatear fecha
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', { 
-      day: '2-digit', 
-      month: 'short', 
-      year: 'numeric' 
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
     });
   };
 
   // Obtener nombre completo
-  const fullName = [resume.firstName, resume.lastName]
-    .filter(Boolean)
-    .join(' ') || 'Sin nombre';
+  const fullName =
+    [resume.firstName, resume.lastName].filter(Boolean).join(' ') ||
+    'Sin nombre';
 
   // Detectar si es generación Express
-  const isExpressGeneration = resume.title?.includes('Express') || resume.isExpress || false;
+  const isExpressGeneration =
+    resume.title?.includes('Express') || resume.isExpress || false;
 
   return (
     <div className="group relative">
       {/* Card Principal */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden h-full flex flex-col">
-        
         {/* Header con color temático */}
-        <div 
+        <div
           className="h-2 w-full"
           style={{ backgroundColor: resume?.themeColor || '#3b82f6' }}
         />
 
         {/* Contenido Principal */}
-        <Link 
+        <Link
           to={'/dashboard/resume/' + resume.documentId + '/edit'}
           className="flex-1 p-5 hover:bg-gray-50/50 transition-colors"
         >
@@ -155,7 +155,7 @@ function ResumeCardItem({ resume, refreshData }) {
                 </h3>
               </div>
               {isExpressGeneration && (
-                <span 
+                <span
                   className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-gray-900 text-gray-100 flex-shrink-0 mb-1.5 border border-gray-700"
                   title="Generado con IA Express"
                 >
@@ -167,9 +167,12 @@ function ResumeCardItem({ resume, refreshData }) {
                 {resume.jobTitle || 'Sin puesto'}
               </p>
             </div>
-            
+
             {/* Dropdown Menu - mantiene su posición */}
-            <div className="absolute top-0 right-0 z-10" onClick={(e) => e.preventDefault()}>
+            <div
+              className="absolute top-0 right-0 z-10"
+              onClick={(e) => e.preventDefault()}
+            >
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
@@ -181,7 +184,9 @@ function ResumeCardItem({ resume, refreshData }) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     onClick={() =>
-                      navigation('/dashboard/resume/' + resume.documentId + '/edit')
+                      navigation(
+                        '/dashboard/resume/' + resume.documentId + '/edit'
+                      )
                     }
                     className="cursor-pointer"
                   >
@@ -200,7 +205,9 @@ function ResumeCardItem({ resume, refreshData }) {
                   <DropdownMenuItem
                     onClick={() =>
                       navigation(
-                        '/dashboard/resume/' + resume.documentId + '/job-applications'
+                        '/dashboard/resume/' +
+                          resume.documentId +
+                          '/job-applications'
                       )
                     }
                     className="cursor-pointer"
@@ -218,7 +225,7 @@ function ResumeCardItem({ resume, refreshData }) {
                     Descargar PDF
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
+                  <DropdownMenuItem
                     onClick={() => setOpenAlert(true)}
                     className="cursor-pointer text-red-600 focus:text-red-600"
                   >
@@ -248,20 +255,22 @@ function ResumeCardItem({ resume, refreshData }) {
             <button
               onClick={(e) => {
                 e.preventDefault();
-                navigation('/dashboard/resume/' + resume.documentId + '/job-applications');
+                navigation(
+                  '/dashboard/resume/' + resume.documentId + '/job-applications'
+                );
               }}
               className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-lg p-3 border border-blue-100 hover:from-blue-100 hover:to-blue-200/50 transition-all duration-200 hover:shadow-md cursor-pointer text-left"
             >
               <div className="flex items-center gap-1.5 mb-1">
-                <div 
+                <div
                   className="p-1.5 rounded-md flex-shrink-0"
-                  style={{ 
+                  style={{
                     backgroundColor: resume?.themeColor || '#3b82f6',
-                    opacity: 0.1
+                    opacity: 0.1,
                   }}
                 >
-                  <Briefcase 
-                    className="h-3.5 w-3.5" 
+                  <Briefcase
+                    className="h-3.5 w-3.5"
                     style={{ color: resume?.themeColor || '#3b82f6' }}
                   />
                 </div>
@@ -278,20 +287,22 @@ function ResumeCardItem({ resume, refreshData }) {
             <button
               onClick={(e) => {
                 e.preventDefault();
-                navigation('/dashboard/resume/' + resume.documentId + '/job-applications');
+                navigation(
+                  '/dashboard/resume/' + resume.documentId + '/job-applications'
+                );
               }}
               className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-lg p-3 border border-purple-100 hover:from-purple-100 hover:to-purple-200/50 transition-all duration-200 hover:shadow-md cursor-pointer text-left"
             >
               <div className="flex items-center gap-1.5 mb-1">
-                <div 
+                <div
                   className="p-1.5 rounded-md flex-shrink-0"
-                  style={{ 
+                  style={{
                     backgroundColor: resume?.themeColor || '#3b82f6',
-                    opacity: 0.1
+                    opacity: 0.1,
                   }}
                 >
-                  <FileText 
-                    className="h-3.5 w-3.5" 
+                  <FileText
+                    className="h-3.5 w-3.5"
                     style={{ color: resume?.themeColor || '#3b82f6' }}
                   />
                 </div>
@@ -307,14 +318,14 @@ function ResumeCardItem({ resume, refreshData }) {
         </Link>
 
         {/* Footer con color temático */}
-        <div 
+        <div
           className="px-5 py-3 flex items-center justify-between border-t border-gray-100"
-          style={{ 
-            backgroundColor: `${resume?.themeColor || '#3b82f6'}08`
+          style={{
+            backgroundColor: `${resume?.themeColor || '#3b82f6'}08`,
           }}
         >
           <div className="flex items-center gap-2">
-            <div 
+            <div
               className="w-3 h-3 rounded-full ring-2 ring-white shadow-sm"
               style={{ backgroundColor: resume?.themeColor || '#3b82f6' }}
             />
@@ -322,7 +333,7 @@ function ResumeCardItem({ resume, refreshData }) {
               Color del tema
             </span>
           </div>
-          
+
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -344,16 +355,16 @@ function ResumeCardItem({ resume, refreshData }) {
             <AlertDialogTitle>¿Estás completamente seguro?</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. Esto eliminará permanentemente
-              tu currículum <strong>"{resume.title}"</strong> y todos los datos asociados 
-              (candidaturas, cartas de presentación, etc.).
+              tu currículum <strong>"{resume.title}"</strong> y todos los datos
+              asociados (candidaturas, cartas de presentación, etc.).
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setOpenAlert(false)}>
               Cancelar
             </AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={onDelete} 
+            <AlertDialogAction
+              onClick={onDelete}
               disabled={loading}
               className="bg-red-600 hover:bg-red-700"
             >

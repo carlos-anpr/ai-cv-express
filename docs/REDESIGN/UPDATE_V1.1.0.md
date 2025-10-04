@@ -11,26 +11,28 @@
 Se ha añadido un badge visual que identifica si el CV fue generado mediante el método Express:
 
 ```jsx
-{isExpressGeneration && (
-  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-    <Zap className="h-2.5 w-2.5" />
-    Express
-  </span>
-)}
+{
+  isExpressGeneration && (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+      <Zap className="h-2.5 w-2.5" />
+      Express
+    </span>
+  );
+}
 ```
 
 **Características:**
+
 - ⚡ Icono de rayo (Zap) para indicar velocidad
 - 🎨 Gradiente morado a rosa llamativo
 - 📏 Diseño compacto que no interfiere con el título
 - 🎯 Tooltip explicativo: "Generado con IA Express"
 
 **Detección:**
+
 ```javascript
-const isExpressGeneration = 
-  resume.title?.includes('Express') || 
-  resume.isExpress || 
-  false;
+const isExpressGeneration =
+  resume.title?.includes('Express') || resume.isExpress || false;
 ```
 
 ---
@@ -38,13 +40,16 @@ const isExpressGeneration =
 ### 2. 📝 **Texto Optimizado en Estadísticas**
 
 #### **Antes:**
+
 - "Candidaturas" (12 caracteres) → ❌ Se salía del contenedor
 
 #### **Después:**
+
 - "Aplicaciones" (12 caracteres) → ✅ Ajusta perfectamente
 - "Cartas" (6 caracteres) → ✅ Mantiene coherencia
 
 **Ajustes adicionales:**
+
 ```css
 text-[11px]     /* Reducido de 12px a 11px */
 truncate        /* Corta texto si es necesario */
@@ -59,6 +64,7 @@ flex-shrink-0   /* Icono no se reduce */
 Ahora ambas cards de estadísticas son **botones interactivos** que navegan a la sección correspondiente:
 
 #### **Card "Aplicaciones"**
+
 ```jsx
 <button
   onClick={(e) => {
@@ -72,12 +78,14 @@ Ahora ambas cards de estadísticas son **botones interactivos** que navegan a la
 ```
 
 **Funcionalidad:**
+
 - 🎯 Click lleva a la página de candidaturas
 - 🎨 Hover effect: Gradiente más intenso + sombra
 - 🔄 Transición suave: `transition-all duration-200`
 - 🖱️ Cursor pointer indica interactividad
 
 #### **Card "Cartas"**
+
 ```jsx
 <button
   onClick={(e) => {
@@ -91,6 +99,7 @@ Ahora ambas cards de estadísticas son **botones interactivos** que navegan a la
 ```
 
 **Funcionalidad:**
+
 - 🎯 Click lleva a la página de candidaturas (donde también están las cartas)
 - 🎨 Hover effect: Gradiente morado más intenso + sombra
 - 🔄 Transición suave
@@ -101,6 +110,7 @@ Ahora ambas cards de estadísticas son **botones interactivos** que navegan a la
 ## 🎨 Diseño Visual
 
 ### **Badge Express**
+
 ```
 ┌──────────────────────────┐
 │ Título del CV  ⚡Express │
@@ -109,6 +119,7 @@ Ahora ambas cards de estadísticas son **botones interactivos** que navegan a la
 ```
 
 **Estilos:**
+
 ```css
 /* Badge */
 bg-gradient-to-r from-purple-500 to-pink-500
@@ -128,6 +139,7 @@ h-2.5 w-2.5 (10px x 10px)
 ### **Estadísticas Clickeables**
 
 #### **Estado Normal:**
+
 ```
 ┌─────────────┬─────────────┐
 │ 💼 Aplicac. │ 📄 Cartas   │
@@ -136,6 +148,7 @@ h-2.5 w-2.5 (10px x 10px)
 ```
 
 #### **Estado Hover:**
+
 ```
 ┌─────────────┬─────────────┐
 │ 💼 Aplicac. │ 📄 Cartas   │ ← Gradiente más intenso
@@ -150,45 +163,46 @@ h-2.5 w-2.5 (10px x 10px)
 
 ### **Estadísticas**
 
-| Aspecto | Antes | Después |
-|---------|-------|---------|
-| **Elemento** | `<div>` | `<button>` |
-| **Clickeable** | ❌ No | ✅ Sí |
-| **Hover** | Solo sombra | Gradiente + Sombra |
-| **Navegación** | - | `/job-applications` |
-| **Cursor** | default | pointer |
-| **Texto** | "Candidaturas" | "Aplicaciones" |
-| **Tamaño texto** | 12px | 11px |
+| Aspecto          | Antes          | Después             |
+| ---------------- | -------------- | ------------------- |
+| **Elemento**     | `<div>`        | `<button>`          |
+| **Clickeable**   | ❌ No          | ✅ Sí               |
+| **Hover**        | Solo sombra    | Gradiente + Sombra  |
+| **Navegación**   | -              | `/job-applications` |
+| **Cursor**       | default        | pointer             |
+| **Texto**        | "Candidaturas" | "Aplicaciones"      |
+| **Tamaño texto** | 12px           | 11px                |
 
 ### **Badge Express**
 
-| Característica | Valor |
-|----------------|-------|
-| **Visibilidad** | Solo si es Express |
-| **Posición** | Junto al título |
-| **Colores** | Gradiente purple → pink |
-| **Icono** | ⚡ Zap (rayo) |
-| **Tamaño** | 10px font, badge compacto |
-| **Tooltip** | "Generado con IA Express" |
+| Característica  | Valor                     |
+| --------------- | ------------------------- |
+| **Visibilidad** | Solo si es Express        |
+| **Posición**    | Junto al título           |
+| **Colores**     | Gradiente purple → pink   |
+| **Icono**       | ⚡ Zap (rayo)             |
+| **Tamaño**      | 10px font, badge compacto |
+| **Tooltip**     | "Generado con IA Express" |
 
 ---
 
 ## 🔧 Cambios Técnicos
 
 ### **Nuevo Import**
+
 ```javascript
 import { Zap } from 'lucide-react';
 ```
 
 ### **Nueva Lógica de Detección**
+
 ```javascript
-const isExpressGeneration = 
-  resume.title?.includes('Express') || 
-  resume.isExpress || 
-  false;
+const isExpressGeneration =
+  resume.title?.includes('Express') || resume.isExpress || false;
 ```
 
 ### **Estructura Actualizada**
+
 ```jsx
 <div className="flex items-center gap-2 mb-1">
   <h3>{resume.title}</h3>
@@ -205,18 +219,21 @@ const isExpressGeneration =
 ## 🎯 Beneficios de las Mejoras
 
 ### **1. Badge Express**
+
 - ✅ **Identificación rápida** de CVs generados con IA
 - ✅ **Diferenciación visual** entre métodos de creación
 - ✅ **Valor percibido** del método Express
 - ✅ **Feedback visual** claro
 
 ### **2. Texto Optimizado**
+
 - ✅ **No desborda** el contenedor
 - ✅ **Más legible** con tamaño reducido estratégicamente
 - ✅ **Diseño limpio** sin cortes visuales
 - ✅ **Consistencia** entre ambas cards
 
 ### **3. Estadísticas Clickeables**
+
 - ✅ **Acceso directo** sin menú dropdown
 - ✅ **UX mejorada** con menos clicks
 - ✅ **Feedback visual** claro en hover
@@ -268,6 +285,7 @@ Los cambios mantienen la compatibilidad responsive completa:
 ### **Checklist de Pruebas**
 
 #### **Badge Express**
+
 - [x] Se muestra solo en CVs Express
 - [x] No se muestra en CVs manuales
 - [x] Icono de rayo visible
@@ -276,6 +294,7 @@ Los cambios mantienen la compatibilidad responsive completa:
 - [x] Tooltip funciona
 
 #### **Estadísticas Clickeables**
+
 - [x] Click en "Aplicaciones" navega correctamente
 - [x] Click en "Cartas" navega correctamente
 - [x] Hover effect funciona
@@ -285,6 +304,7 @@ Los cambios mantienen la compatibilidad responsive completa:
 - [x] Funciona en mobile (touch)
 
 #### **Texto Optimizado**
+
 - [x] "Aplicaciones" no desborda
 - [x] "Cartas" se mantiene igual
 - [x] Texto a 11px es legible
@@ -296,12 +316,14 @@ Los cambios mantienen la compatibilidad responsive completa:
 ## 🔄 Migración
 
 ### **Para usuarios existentes:**
+
 - ✅ No requiere cambios en base de datos
 - ✅ CVs existentes funcionan automáticamente
 - ✅ Detección de Express es automática
 - ✅ Navegación mejorada sin cambios en rutas
 
 ### **Para desarrolladores:**
+
 1. ✅ Actualizar archivo: `ResumeCardItem.jsx`
 2. ✅ Import adicional: `Zap` de lucide-react
 3. ✅ No hay breaking changes
@@ -333,12 +355,14 @@ Problemas visuales: 0 ✅
 ## 🚀 Mejoras Futuras Sugeridas
 
 ### **Fase 2.1**
+
 - [ ] Contador de tiempo desde última candidatura
 - [ ] Badge de "Nuevo" en CVs recientes
 - [ ] Animación al hacer click en estadísticas
 - [ ] Preview de candidaturas en tooltip
 
 ### **Fase 2.2**
+
 - [ ] Gráfico de estadísticas (mini chart)
 - [ ] Comparación entre CVs
 - [ ] Exportar estadísticas
@@ -349,6 +373,7 @@ Problemas visuales: 0 ✅
 ## 📸 Ejemplos Visuales
 
 ### **CV Express**
+
 ```
 ┌──────────────────────────────────┐
 │ ████████████████████████████████ │ ← Barra color
@@ -369,6 +394,7 @@ Problemas visuales: 0 ✅
 ```
 
 ### **CV Manual**
+
 ```
 ┌──────────────────────────────────┐
 │ ████████████████████████████████ │ ← Barra color
@@ -410,16 +436,19 @@ Problemas visuales: 0 ✅
 ## 🎓 Lecciones Aprendidas
 
 ### **Diseño**
+
 1. ✅ Textos cortos funcionan mejor en espacios reducidos
 2. ✅ Badges visuales comunican más que texto
 3. ✅ Elementos clickeables necesitan feedback visual claro
 
 ### **UX**
+
 1. ✅ Reducir clicks mejora la experiencia
 2. ✅ Hover effects guían la interacción
 3. ✅ Identificación visual rápida es clave
 
 ### **Código**
+
 1. ✅ Buttons en lugar de divs para interactividad
 2. ✅ e.preventDefault() evita navegación no deseada
 3. ✅ Transiciones suaves mejoran la percepción
@@ -429,12 +458,15 @@ Problemas visuales: 0 ✅
 ## 📞 Información Adicional
 
 **Archivos modificados:**
+
 - `src/dashboard/components/ResumeCardItem.jsx`
 
 **Nuevas dependencias:**
+
 - `Zap` icon de lucide-react
 
 **Compatibilidad:**
+
 - ✅ Todas las versiones anteriores
 - ✅ Todos los navegadores modernos
 - ✅ Mobile y desktop
@@ -451,6 +483,7 @@ Problemas visuales: 0 ✅
 ## 🎉 Resultado Final
 
 Las cards ahora son:
+
 - 🏷️ **Identificables** - Badge Express claro
 - 🖱️ **Interactivas** - Estadísticas clickeables
 - 📏 **Optimizadas** - Texto ajustado perfectamente

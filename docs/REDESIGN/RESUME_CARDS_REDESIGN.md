@@ -11,6 +11,7 @@ Se ha realizado un **rediseño completo y profesional** de las tarjetas (cards) 
 ### 🎯 Diseño Visual Profesional
 
 #### **Antes:**
+
 - ❌ Degradado genérico (rosa → morado → azul)
 - ❌ Icono central grande sin información relevante
 - ❌ Solo mostraba título del CV
@@ -18,6 +19,7 @@ Se ha realizado un **rediseño completo y profesional** de las tarjetas (cards) 
 - ❌ Diseño poco profesional
 
 #### **Después:**
+
 - ✅ Diseño limpio tipo card moderno
 - ✅ Línea superior con color del tema del CV
 - ✅ Información completa del candidato
@@ -30,14 +32,17 @@ Se ha realizado un **rediseño completo y profesional** de las tarjetas (cards) 
 ## 📊 Nueva Estructura de Información
 
 ### **1. Header con Color Temático**
+
 ```jsx
 <div className="h-2 w-full" style={{ backgroundColor: resume?.themeColor }} />
 ```
+
 - Barra de color en la parte superior
 - Usa el color temático elegido para el CV
 - Identificación visual rápida
 
 ### **2. Información Principal**
+
 - **Título del CV**: Destacado con truncamiento inteligente
 - **Puesto de trabajo**: Subtítulo con el cargo
 - **Nombre completo**: Con icono de usuario
@@ -46,6 +51,7 @@ Se ha realizado un **rediseño completo y profesional** de las tarjetas (cards) 
 ### **3. Estadísticas en Grid 2x1**
 
 #### **Candidaturas**
+
 ```jsx
 <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-lg p-3">
   <Briefcase icon />
@@ -53,11 +59,13 @@ Se ha realizado un **rediseño completo y profesional** de las tarjetas (cards) 
   <p className="text-xl font-bold">{stats.applications}</p>
 </div>
 ```
+
 - Fondo azul suave
 - Icono de maletín
 - Contador de candidaturas activas
 
 #### **Cartas de Presentación**
+
 ```jsx
 <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-lg p-3">
   <FileText icon />
@@ -65,18 +73,24 @@ Se ha realizado un **rediseño completo y profesional** de las tarjetas (cards) 
   <p className="text-xl font-bold">{stats.coverLetters}</p>
 </div>
 ```
+
 - Fondo morado suave
 - Icono de documento
 - Contador de cartas generadas
 
 ### **4. Footer Temático**
+
 ```jsx
 <div style={{ backgroundColor: `${resume?.themeColor}08` }}>
-  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: resume?.themeColor }} />
+  <div
+    className="w-3 h-3 rounded-full"
+    style={{ backgroundColor: resume?.themeColor }}
+  />
   <span>Color del tema</span>
   <button>Editar</button>
 </div>
 ```
+
 - Muestra el color del tema con círculo
 - Botón de acceso rápido a edición
 - Fondo con transparencia del color temático
@@ -86,6 +100,7 @@ Se ha realizado un **rediseño completo y profesional** de las tarjetas (cards) 
 ## 🎨 Sistema de Diseño Aplicado
 
 ### **Paleta de Colores**
+
 ```javascript
 // Colores principales
 - Fondo cards: #FFFFFF (blanco)
@@ -103,6 +118,7 @@ Se ha realizado un **rediseño completo y profesional** de las tarjetas (cards) 
 ```
 
 ### **Tipografía**
+
 ```javascript
 // Jerarquía visual
 - Título CV: font-semibold text-base (16px)
@@ -114,6 +130,7 @@ Se ha realizado un **rediseño completo y profesional** de las tarjetas (cards) 
 ```
 
 ### **Espaciado y Layout**
+
 ```javascript
 // Padding interno
 - Card principal: p-5
@@ -136,26 +153,29 @@ Se ha realizado un **rediseño completo y profesional** de las tarjetas (cards) 
 ## 🔧 Implementación Técnica
 
 ### **Archivo Modificado**
+
 ```
 src/dashboard/components/ResumeCardItem.jsx
 ```
 
 ### **Nuevas Dependencias**
+
 ```javascript
 import {
-  Briefcase,      // Icono candidaturas
-  FileText,       // Icono cartas
-  Calendar,       // Icono fecha
-  User,           // Icono usuario
-  Eye,            // Icono ver
-  Edit3,          // Icono editar
-  Download,       // Icono descargar
-  Trash2,         // Icono eliminar
-  ExternalLink    // Icono enlace externo
+  Briefcase, // Icono candidaturas
+  FileText, // Icono cartas
+  Calendar, // Icono fecha
+  User, // Icono usuario
+  Eye, // Icono ver
+  Edit3, // Icono editar
+  Download, // Icono descargar
+  Trash2, // Icono eliminar
+  ExternalLink, // Icono enlace externo
 } from 'lucide-react';
 ```
 
 ### **Estado del Componente**
+
 ```javascript
 const [stats, setStats] = useState({
   applications: 0,
@@ -165,6 +185,7 @@ const [loadingStats, setLoadingStats] = useState(true);
 ```
 
 ### **Lógica de Carga de Estadísticas**
+
 ```javascript
 useEffect(() => {
   const loadStats = async () => {
@@ -173,22 +194,23 @@ useEffect(() => {
       resume.id,
       user.primaryEmailAddress.emailAddress
     );
-    
+
     // 2. Contar cartas de presentación
     let coverLettersCount = 0;
     for (const app of applications) {
-      const coverLetterResponse = await LocalDatabase.GetCoverLetterByApplication(app.id);
+      const coverLetterResponse =
+        await LocalDatabase.GetCoverLetterByApplication(app.id);
       if (coverLetterResponse?.data) {
         coverLettersCount++;
       }
     }
-    
+
     setStats({
       applications: applications.length,
       coverLetters: coverLettersCount,
     });
   };
-  
+
   loadStats();
 }, [resume, user]);
 ```
@@ -198,6 +220,7 @@ useEffect(() => {
 ## 📱 Responsive Design
 
 ### **Grid del Dashboard**
+
 ```javascript
 // Antes
 grid-cols-2 md:grid-cols-3 lg:grid-cols-5
@@ -207,6 +230,7 @@ grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5
 ```
 
 **Breakpoints:**
+
 - `< 640px` (mobile): 1 columna
 - `≥ 640px` (sm): 2 columnas
 - `≥ 768px` (md): 3 columnas
@@ -214,6 +238,7 @@ grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5
 - `≥ 1280px` (xl): 5 columnas
 
 ### **Cards Responsivas**
+
 - Todas las cards mantienen altura consistente: `h-full`
 - Flex column para distribución vertical
 - Truncamiento de texto largo: `line-clamp-2`
@@ -224,27 +249,31 @@ grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5
 ## 🎯 Mejoras de UX/UI
 
 ### **1. Interactividad Mejorada**
+
 ```javascript
 // Hover effects
-hover:shadow-xl       // Card completa
-hover:bg-gray-50/50   // Área clickeable
-hover:bg-gray-100     // Botón dropdown
-hover:underline       // Link editar
+hover: shadow - xl; // Card completa
+hover: bg - gray - 50 / 50; // Área clickeable
+hover: bg - gray - 100; // Botón dropdown
+hover: underline; // Link editar
 ```
 
 ### **2. Estados Visuales**
+
 - **Loading**: Muestra "..." en estadísticas
 - **Hover**: Sombra y fondo suave
 - **Active**: Color temático del CV
 - **Empty**: Cards muestran "0" en estadísticas
 
 ### **3. Feedback Visual**
+
 - Loader animado al cargar CVs
 - Iconos contextuales en cada sección
 - Colores temáticos personalizados
 - Transiciones suaves: `transition-all duration-300`
 
 ### **4. Accesibilidad**
+
 ```javascript
 // Dropdown menu mejorado
 <DropdownMenuLabel>Acciones</DropdownMenuLabel>
@@ -262,15 +291,18 @@ hover:underline       // Link editar
 ## 📈 Información Mostrada
 
 ### **Datos del Candidato**
+
 1. **Nombre completo**: `firstName + lastName`
 2. **Puesto de trabajo**: `jobTitle`
 3. **Fecha de actualización**: Formato español (`dd MMM yyyy`)
 
 ### **Estadísticas en Tiempo Real**
+
 1. **Candidaturas**: Total de job applications del CV
 2. **Cartas de presentación**: Total de cover letters generadas
 
 ### **Información del CV**
+
 1. **Título del CV**: Nombre personalizado
 2. **Color del tema**: Visualización + código hex
 3. **Estado**: Última actualización
@@ -280,21 +312,25 @@ hover:underline       // Link editar
 ## 🚀 Mejoras Futuras Sugeridas
 
 ### **Fase 2 - Estadísticas Avanzadas**
+
 - [ ] Añadir "Tasa de respuesta" (si se implementa seguimiento)
 - [ ] Mostrar "Última actividad" (última candidatura/carta creada)
 - [ ] Badge de "Completo" vs "Incompleto" según secciones rellenadas
 
 ### **Fase 3 - Acciones Rápidas**
+
 - [ ] Botón "Duplicar CV" en el dropdown
 - [ ] "Compartir CV" (generar link público)
 - [ ] "Exportar datos" (JSON/CSV)
 
 ### **Fase 4 - Personalización**
+
 - [ ] Vista de lista vs grid (toggle)
 - [ ] Ordenación personalizada (fecha, nombre, candidaturas)
 - [ ] Filtros por estado o fecha
 
 ### **Fase 5 - Animaciones**
+
 - [ ] Entrada stagger de las cards
 - [ ] Skeleton loader mientras cargan estadísticas
 - [ ] Animación al eliminar card
@@ -305,24 +341,24 @@ hover:underline       // Link editar
 
 ```css
 /* Colores Base */
---white: #FFFFFF;
---gray-50: #F9FAFB;
---gray-100: #F3F4F6;
---gray-200: #E5E7EB;
---gray-400: #9CA3AF;
---gray-500: #6B7280;
---gray-600: #4B5563;
+--white: #ffffff;
+--gray-50: #f9fafb;
+--gray-100: #f3f4f6;
+--gray-200: #e5e7eb;
+--gray-400: #9ca3af;
+--gray-500: #6b7280;
+--gray-600: #4b5563;
 --gray-700: #374151;
 --gray-900: #111827;
 
 /* Colores Funcionales */
---blue-50: #EFF6FF;
---blue-100: #DBEAFE;
---blue-500: #3B82F6;
---purple-50: #FAF5FF;
---purple-100: #F3E8FF;
---red-600: #DC2626;
---red-700: #B91C1C;
+--blue-50: #eff6ff;
+--blue-100: #dbeafe;
+--blue-500: #3b82f6;
+--purple-50: #faf5ff;
+--purple-100: #f3e8ff;
+--red-600: #dc2626;
+--red-700: #b91c1c;
 
 /* Colores Dinámicos */
 --theme-color: resume.themeColor; /* Personalizado por CV */
@@ -333,6 +369,7 @@ hover:underline       // Link editar
 ## 📸 Antes vs Después
 
 ### **Antes**
+
 ```
 ┌─────────────────────┐
 │                     │
@@ -349,6 +386,7 @@ hover:underline       // Link editar
 ```
 
 ### **Después**
+
 ```
 ┌─────────────────────┐
 │ ████████████████    │ ← Color temático
@@ -392,6 +430,7 @@ hover:underline       // Link editar
 ## 🧪 Testing Recomendado
 
 ### **Test Manual**
+
 1. ✅ Verificar que las cards se cargan correctamente
 2. ✅ Comprobar que las estadísticas son precisas
 3. ✅ Probar todas las acciones del dropdown
@@ -400,6 +439,7 @@ hover:underline       // Link editar
 6. ✅ Probar eliminación de CV
 
 ### **Test de Performance**
+
 1. Cargar dashboard con 10+ CVs
 2. Verificar tiempo de carga de estadísticas
 3. Comprobar fluidez de animaciones
@@ -410,6 +450,7 @@ hover:underline       // Link editar
 ## 📚 Referencias de Diseño
 
 Este diseño está inspirado en:
+
 - **Notion**: Cards limpias y organizadas
 - **Figma**: Estadísticas visuales efectivas
 - **Linear**: Jerarquía visual clara
@@ -432,6 +473,7 @@ Este diseño está inspirado en:
 ## 📞 Contacto y Soporte
 
 Para preguntas sobre este rediseño:
+
 - Revisar código en: `src/dashboard/components/ResumeCardItem.jsx`
 - Consultar documentación de Tailwind CSS
 - Referencia de iconos: Lucide React
