@@ -190,11 +190,11 @@ const Step2JobOffer = ({ onNext, onBack, initialData }) => {
         </div>
 
         {/* Banner Informativo */}
-        <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-lg space-y-3">
+        <div className="p-4 bg-gradient-to-r from-gray-50 to-gray-100 border-2 border-gray-300 rounded-lg space-y-3">
           <div className="flex items-start gap-3">
-            <Sparkles className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+            <Sparkles className="w-5 h-5 text-gray-700 mt-0.5 flex-shrink-0" />
             <div className="flex-1 space-y-2">
-              <h3 className="font-semibold text-blue-900">
+              <h3 className="font-semibold text-gray-900">
                 ¿Qué se genera según tus datos?
               </h3>
 
@@ -202,10 +202,10 @@ const Step2JobOffer = ({ onNext, onBack, initialData }) => {
                 <div className="flex items-start gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium text-blue-900">
+                    <p className="font-medium text-gray-900">
                       Con oferta de trabajo:
                     </p>
-                    <p className="text-blue-700">
+                    <p className="text-gray-700">
                       ✓ CV personalizado • ✓ Carta de presentación • ✓
                       Candidatura automática
                     </p>
@@ -215,8 +215,8 @@ const Step2JobOffer = ({ onNext, onBack, initialData }) => {
                 <div className="flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-orange-600 mt-0.5 flex-shrink-0" />
                   <div>
-                    <p className="font-medium text-blue-900">Sin oferta:</p>
-                    <p className="text-blue-700">
+                    <p className="font-medium text-gray-900">Sin oferta:</p>
+                    <p className="text-gray-700">
                       ✓ CV genérico basado en tu perfil
                     </p>
                   </div>
@@ -283,9 +283,9 @@ Beneficios:
 
           {/* Ayuda rápida */}
           {characterCount === 0 && (
-            <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <ClipboardPaste className="w-4 h-4 text-blue-600 flex-shrink-0" />
-              <p className="text-sm text-blue-700">
+            <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-300 rounded-md">
+              <ClipboardPaste className="w-4 h-4 text-gray-700 flex-shrink-0" />
+              <p className="text-sm text-gray-700">
                 Copia la oferta completa desde LinkedIn, InfoJobs, Indeed o
                 cualquier fuente
               </p>

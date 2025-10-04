@@ -177,15 +177,24 @@ function JobApplications() {
               : 'Gestiona tus candidaturas de trabajo'}
           </p>
         </div>
-        <Button
-          onClick={() =>
-            navigate(`/dashboard/resume/${resumeId}/job-applications/new`)
-          }
-          className="bg-blue-600 hover:bg-blue-700"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Nueva Candidatura
-        </Button>
+        <div className="flex gap-3">
+          <Button
+            onClick={() => navigate('/dashboard')}
+            variant="outline"
+            className="border-gray-300 hover:bg-gray-100"
+          >
+            Volver al Dashboard
+          </Button>
+          <Button
+            onClick={() =>
+              navigate(`/dashboard/resume/${resumeId}/job-applications/new`)
+            }
+            className="bg-black hover:bg-black/90 text-white"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nueva Candidatura
+          </Button>
+        </div>
       </div>
 
       {/* Filtros y búsqueda */}

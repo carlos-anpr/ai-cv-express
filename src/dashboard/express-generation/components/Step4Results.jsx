@@ -493,11 +493,11 @@ const Step4Results = ({ generatedData, onStartOver }) => {
                         </ul>
                       </div>
 
-                      <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                        <p className="text-xs font-medium text-blue-900 mb-1">
+                      <div className="bg-gray-50 p-3 rounded-lg border border-gray-300">
+                        <p className="text-xs font-medium text-gray-900 mb-1">
                           💡 Tip para la próxima vez:
                         </p>
-                        <p className="text-xs text-blue-800">
+                        <p className="text-xs text-gray-800">
                           En el Paso 2, pega la oferta completa con:{' '}
                           <strong>
                             empresa, puesto, requisitos y responsabilidades
@@ -558,11 +558,11 @@ const Step4Results = ({ generatedData, onStartOver }) => {
           </p>
         )}
         {!hasValidJobOffer && (
-          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg max-w-2xl mx-auto">
-            <p className="text-blue-800 font-medium text-sm">
+          <div className="mt-3 p-3 bg-gray-50 border border-gray-300 rounded-lg max-w-2xl mx-auto">
+            <p className="text-gray-900 font-medium text-sm">
               💡 Para aprovechar al máximo la Generación Express:
             </p>
-            <p className="text-blue-700 text-xs mt-1">
+            <p className="text-gray-700 text-xs mt-1">
               Pega una oferta de trabajo completa en el Paso 2 para generar:
               <br />• Carta de presentación personalizada • Candidatura
               automática con todos los datos • Mejor alineación del CV con
