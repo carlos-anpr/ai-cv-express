@@ -5,6 +5,7 @@ import { useUser } from '@clerk/clerk-react';
 import LocalDatabase from '../services/LocalDatabase';
 import ResumeCardItem from './components/ResumeCardItem';
 import { toast } from 'sonner';
+import { Loader2Icon } from 'lucide-react';
 
 function Dashboard() {
   const { user } = useUser();
@@ -43,8 +44,8 @@ function Dashboard() {
   return (
     <div className="p-10 md:px-20 lg:px-32">
       <h2 className="font-bold text-3xl">Mis Currículums</h2>
-      <p>Comienza a crear tu currículum con IA para tu próximo trabajo</p>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5 mt-10">
+      <p className="text-gray-600 mt-1">Comienza a crear tu currículum con IA para tu próximo trabajo</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mt-10">
         {/* Express Generation Card - Destacada */}
         <AddExpressCard />
 
@@ -52,8 +53,11 @@ function Dashboard() {
         <AddResume />
 
         {loading ? (
-          <div className="col-span-4 text-center py-8">
-            <p>Cargando CVs...</p>
+          <div className="col-span-full text-center py-12">
+            <div className="inline-flex items-center gap-2 text-gray-500">
+              <Loader2Icon className="animate-spin h-5 w-5" />
+              <p>Cargando CVs...</p>
+            </div>
           </div>
         ) : (
           resumeList.length > 0 &&
