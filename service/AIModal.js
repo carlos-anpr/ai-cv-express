@@ -9,8 +9,15 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 const apiKey = import.meta.env.VITE_GOOGLE_GEMINI_AI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 
+
+
+const geminiModel = import.meta.env.VITE_GOOGLE_GEMINI_MODEL;
+if (!geminiModel) {
+  console.error('[AIModal] Falta configurar VITE_GOOGLE_GEMINI_MODEL en el .env');
+  throw new Error('Falta configurar VITE_GOOGLE_GEMINI_MODEL en el .env');
+}
 const model = genAI.getGenerativeModel({
-  model: 'gemini-2.5-flash-lite',
+  model: geminiModel,
 });
 
 const generationConfig = {
