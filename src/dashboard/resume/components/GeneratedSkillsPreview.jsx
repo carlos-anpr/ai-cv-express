@@ -28,9 +28,19 @@ const GeneratedSkillsPreview = ({
   const [editingIndex, setEditingIndex] = React.useState(null);
   const [editingSkill, setEditingSkill] = React.useState(null);
 
-  const handleEdit = (index) => {
+  // Agrupar skills por categoría para mejor visualización
+  const skillsByCategory = skills.reduce((acc, skill) => {
+    const category = skill.category || 'Otros';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(skill);
+    return acc;
+  }, {});
+
+  const handleEdit = (index, skill) => {
     setEditingIndex(index);
-    setEditingSkill({ ...skills[index] });
+    setEditingSkill({ ...skill });
   };
 
   const handleSaveEdit = () => {
@@ -48,100 +58,118 @@ const GeneratedSkillsPreview = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onCancel}>
-      <DialogContent className="sm:max-w-2xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>✨ Habilidades Generadas</DialogTitle>
+          <DialogTitle>Habilidades Generadas</DialogTitle>
           <DialogDescription>
-            Se han generado {skills.length} habilidades. Puedes editarlas o
-            eliminarlas antes de aplicar.
+            Se han generado {skills.length} habilidades en{' '}
+            {Object.keys(skillsByCategory).length} categorías. Puedes editarlas
+            antes de aplicar.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="py-4 space-y-3">
-          {skills.map((skill, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-3 p-3 border rounded-lg bg-green-50 dark:bg-green-950/20"
-            >
-              {editingIndex === index ? (
-                <>
-                  <div className="flex-1 space-y-2">
-                    <Input
-                      value={editingSkill.name}
-                      onChange={(e) =>
-                        setEditingSkill({
-                          ...editingSkill,
-                          name: e.target.value,
-                        })
-                      }
-                      placeholder="Nombre de la habilidad"
-                    />
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">Nivel:</span>
-                      <Rating
-                        style={{ maxWidth: 120 }}
-                        value={editingSkill.rating}
-                        onChange={(v) =>
-                          setEditingSkill({ ...editingSkill, rating: v })
-                        }
-                      />
+        <div className="py-4 space-y-4">
+          {/* Mostrar agrupadas por categoría */}
+          {Object.entries(skillsByCategory).map(
+            ([category, categorySkills]) => (
+              <div key={category} className="border rounded-lg p-3 bg-gray-50">
+                <h4 className="font-semibold text-sm mb-3 text-primary">
+                  {category} ({categorySkills.length})
+                </h4>
+                <div className="space-y-2">
+                  {categorySkills.map((skill, index) => (
+                    <div
+                      key={skill.id || index}
+                      className="flex items-center gap-3 p-2 bg-white border rounded"
+                    >
+                      {editingIndex === `${category}-${index}` ? (
+                        // Modo edición
+                        <div className="flex-1 space-y-2">
+                          <Input
+                            value={editingSkill.name}
+                            onChange={(e) =>
+                              setEditingSkill({
+                                ...editingSkill,
+                                name: e.target.value,
+                              })
+                            }
+                            placeholder="Nombre de la habilidad"
+                          />
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm">Nivel:</span>
+                            <Rating
+                              style={{ maxWidth: 120 }}
+                              value={editingSkill.rating}
+                              onChange={(v) =>
+                                setEditingSkill({ ...editingSkill, rating: v })
+                              }
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        // Modo vista
+                        <div className="flex-1">
+                          <div className="font-semibold text-sm">
+                            {skill.name}
+                          </div>
+                          <Rating
+                            style={{ maxWidth: 120 }}
+                            value={skill.rating}
+                            readOnly
+                          />
+                        </div>
+                      )}
+                      {/* Botones de acción */}
+                      <div className="flex gap-2">
+                        {editingIndex === `${category}-${index}` ? (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={handleSaveEdit}
+                            >
+                              <Check className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={handleCancelEdit}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() =>
+                                handleEdit(`${category}-${index}`, skill)
+                              }
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onRemove(skill)}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleSaveEdit}
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleCancelEdit}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex-1">
-                    <div className="font-semibold">{skill.name}</div>
-                    <Rating
-                      style={{ maxWidth: 120 }}
-                      value={skill.rating}
-                      readOnly
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleEdit(index)}
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => onRemove(index)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </>
-              )}
-            </div>
-          ))}
-
+                  ))}
+                </div>
+              </div>
+            )
+          )}
           {skills.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               No hay habilidades para mostrar
             </div>
           )}
         </div>
-
         <DialogFooter className="flex-row gap-2 sm:gap-0">
           <Button
             variant="outline"

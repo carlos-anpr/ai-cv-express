@@ -164,18 +164,87 @@ class AIContentEnhancer {
    * @param {string} jobTitle - Título del puesto
    * @returns {Promise<Array>} - Array de skills con nombre y rating
    */
+  /**
+   * Parsea descripción de habilidades en lenguaje natural
+   * Ahora también categoriza automáticamente
+   * @param {string} description - Descripción en texto libre
+   * @param {string} jobTitle - Título del puesto
+   * @returns {Promise<Object>} - Skills parseadas Y categorizadas con lista de categorías
+   */
   async parseSkillsFromText(description, jobTitle) {
-    const prompt = skillsParserPrompt(description, jobTitle);
+    const prompt = `
+Eres un experto en extracción y categorización de habilidades profesionales.
+
+PUESTO DE TRABAJO: ${jobTitle}
+
+DESCRIPCIÓN DEL USUARIO:
+${description}
+
+INSTRUCCIONES:
+1. Extrae TODAS las habilidades mencionadas en la descripción
+2. Asigna un nivel realista (1-5) basándote en las palabras del usuario:
+   - "experto", "avanzado", "dominio" → 5
+   - "experiencia sólida", "buen nivel" → 4
+   - "intermedio", "conocimientos" → 3
+   - "básico", "nociones" → 2
+   - "principiante", "aprendiendo" → 1
+3. Genera 7 categorías GENERALES relevantes para "${jobTitle}"
+4. SIEMPRE incluye "Otros" como última categoría
+5. Asigna cada skill a su categoría más apropiada
+
+FORMATO DE RESPUESTA (JSON estricto):
+{
+  "categories": [
+    "Categoría 1",
+    "Categoría 2",
+    "Categoría 3",
+    "Categoría 4",
+    "Categoría 5",
+    "Categoría 6",
+    "Categoría 7",
+    "Otros"
+  ],
+  "skills": [
+    {
+      "name": "nombre de la habilidad",
+      "rating": número del 1-5,
+      "category": "una de las categorías generadas"
+    }
+  ]
+}
+
+IMPORTANTE:
+- NO inventes habilidades que no estén mencionadas
+- Usa nombres estándar para tecnologías (ej: "JavaScript" no "JS")
+- Las categorías deben ser cortas (1-3 palabras)
+- Todas las skills deben tener categoría asignada
+`;
 
     try {
       const chatSession = AIChatSession();
       const result = await chatSession.sendMessage(prompt);
       const response = JSON.parse(result.response.text());
 
-      return response.skills.map((skill) => ({
+      // Validar y normalizar
+      const skills = (response.skills || []).map((skill) => ({
         name: skill.name,
-        rating: this.normalizeSkillRating(skill.level),
+        rating: this.normalizeSkillRating(skill.rating),
+        category: skill.category || 'Otros',
       }));
+
+      const categories = response.categories || this.getDefaultCategories();
+      // Asegurar que "Otros" esté presente
+      if (!categories.includes('Otros')) {
+        categories.push('Otros');
+      }
+
+      console.log('✅ Skills parseadas con categorías:', skills.length);
+      console.log('✅ Categorías generadas:', categories);
+
+      return {
+        skills: skills,
+        categories: categories,
+      };
     } catch (error) {
       console.error('Error in parseSkillsFromText:', error);
       throw error;
@@ -218,31 +287,119 @@ class AIContentEnhancer {
    * @param {string} jobTitle - Título del puesto para contexto
    * @returns {Promise<Object>} - Skills categorizadas con lista de categorías
    */
+  /**
+   * Categoriza automáticamente una lista de habilidades existentes
+   * Ahora genera categorías específicas del puesto
+   * @param {Array} skills - Array de skills con {name, rating}
+   * @param {string} jobTitle - Título del puesto para contexto
+   * @returns {Promise<Object>} - Skills categorizadas con lista de categorías
+   */
   async categorizeSkills(skills, jobTitle) {
     if (!skills || skills.length === 0) {
-      return { categorizedSkills: [], categories: [] };
+      return {
+        categorizedSkills: [],
+        categories: this.getDefaultCategories(),
+      };
     }
 
     try {
-      const prompt = skillsCategorizationPrompt(skills, jobTitle);
+      const prompt = `
+Eres un experto en categorización de habilidades profesionales.
+
+PUESTO DE TRABAJO: ${jobTitle}
+
+INSTRUCCIONES:
+1. Analiza el puesto "${jobTitle}" y genera EXACTAMENTE 7 categorías relevantes para este tipo de trabajo
+2. Las categorías deben ser GENERALES, como "Backend", "Frontend", "DevOps", NO uses términos como "Backend nivel especializado"
+3. SIEMPRE incluye "Otros" como última categoría para habilidades que no encajen
+4. Categoriza cada una de estas habilidades en las categorías que generaste
+
+HABILIDADES A CATEGORIZAR:
+${skills.map((s) => `- ${s.name} (nivel: ${s.rating}/5)`).join('\n')}
+
+FORMATO DE RESPUESTA (JSON estricto):
+{
+  "categories": [
+    "Categoría 1",
+    "Categoría 2",
+    "Categoría 3",
+    "Categoría 4",
+    "Categoría 5",
+    "Categoría 6",
+    "Categoría 7",
+    "Otros"
+  ],
+  "categorizedSkills": [
+    {
+      "name": "nombre de la habilidad",
+      "rating": número del 1-5,
+      "category": "una de las 7 categorías generadas"
+    }
+  ]
+}
+
+EJEMPLOS DE CATEGORÍAS GENERALES SEGÚN PUESTO:
+- Fontanero: "Instalaciones", "Reparaciones", "Herramientas", "Normativa", "Materiales", "Diagnóstico", "Otros"
+- Desarrollador Backend: "Backend", "Bases de Datos", "APIs", "DevOps", "Testing", "Arquitectura", "Otros"
+- Marketing: "Social Media", "Análisis", "Contenido", "SEO/SEM", "Diseño", "Estrategia", "Otros"
+
+IMPORTANTE:
+- NO uses subcategorías o niveles en el nombre
+- Las categorías deben ser de 1-3 palabras máximo
+- Todas las skills deben tener una categoría asignada
+`;
+
       const chatSession = AIChatSession();
       const result = await chatSession.sendMessage(prompt);
       const response = JSON.parse(result.response.text());
 
-      console.log('📊 Skills categorizadas por IA:', response);
+      console.log('✅ Categorías generadas por IA:', response.categories);
+      console.log(
+        '✅ Skills categorizadas:',
+        response.categorizedSkills.length
+      );
+
+      // Asegurar que todas las skills tengan categoría
+      const validatedSkills = response.categorizedSkills.map((skill) => ({
+        ...skill,
+        category: skill.category || 'Otros',
+      }));
+
+      // Asegurar que "Otros" siempre esté en las categorías
+      const categories = response.categories || [];
+      if (!categories.includes('Otros')) {
+        categories.push('Otros');
+      }
 
       return {
-        categorizedSkills: response.categorizedSkills || [],
-        categories: response.categories || [],
+        categorizedSkills: validatedSkills,
+        categories: categories,
       };
     } catch (error) {
       console.error('Error al categorizar skills:', error);
-      // En caso de error, devolver skills sin categorizar
+      // En caso de error, devolver skills sin categorizar con categorías por defecto
       return {
         categorizedSkills: skills.map((s) => ({ ...s, category: 'Otros' })),
-        categories: ['Otros'],
+        categories: this.getDefaultCategories(),
       };
     }
+  }
+
+  /**
+   * Obtiene categorías genéricas por defecto
+   * Se usan como fallback si la IA falla
+   */
+  getDefaultCategories() {
+    return [
+      'Técnicas',
+      'Herramientas',
+      'Metodologías',
+      'Soft Skills',
+      'Lenguajes',
+      'Frameworks',
+      'Certificaciones',
+      'Otros',
+    ];
   }
 }
 

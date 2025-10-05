@@ -15,7 +15,7 @@ import { ResumeInfoContext } from '@/context/ResumeInfoContext';
 import LocalDatabase from '../../../../services/LocalDatabase';
 import { useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useSkillsGenerator } from '@/hooks/useSkillsGenerator';
+import { useAISkillsGenerator } from '@/hooks/useAISkillsGenerator';
 import SkillsGeneratorInput from '../SkillsGeneratorInput';
 import GeneratedSkillsPreview from '../GeneratedSkillsPreview';
 import AIContentEnhancer from '@/services/AIContentEnhancer';
@@ -26,46 +26,68 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-function Skills() {
-  const [skillsList, setSkillsList] = useState([]);
-  const { resumeId } = useParams();
 
+function Skills() {
+  const { resumeInfo, setResumeInfo } = useContext(ResumeInfoContext);
+  const [skillsList, setSkillsList] = useState(
+    resumeInfo?.skills?.map((skill) => ({
+      ...skill,
+      id: skill.id || `skill-${Date.now()}-${Math.random()}`,
+      category: skill.category || 'Otros',
+    })) || [
+      { id: `skill-${Date.now()}`, name: '', rating: 0, category: 'Otros' },
+    ]
+  );
+  // NUEVO: Estado para las categorías disponibles
+  const [availableCategories, setAvailableCategories] = useState([
+    'Backend',
+    'Frontend',
+    'Bases de Datos',
+    'DevOps',
+    'Testing',
+    'Soft Skills',
+    'Otros',
+  ]);
   const [loading, setLoading] = useState(false);
   const [categorizingSkills, setCategorizingSkills] = useState(false);
-  const { resumeInfo, setResumeInfo } = useContext(ResumeInfoContext);
+  const params = useParams();
+  const resumeId = params?.resumeId;
 
+  // IA generator hook
+  const [skillsDescription, setSkillsDescription] = useState('');
   const {
-    isLoading: isGeneratingSkills,
+    isGeneratingSkills,
     generatedSkills,
+    generatedCategories,
     showPreview,
-    skillsDescription,
-    setSkillsDescription,
     generateSkills,
     editGeneratedSkill,
     removeGeneratedSkill,
     applyGeneratedSkills,
     cancelGeneration,
-  } = useSkillsGenerator();
+  } = useAISkillsGenerator();
 
+  // Cargar categorías únicas de las skills existentes al montar
   useEffect(() => {
-    // Solo cargar una vez al montar el componente
-    if (resumeInfo?.skills && resumeInfo.skills.length > 0) {
-      console.log(
-        '🔄 Cargando skills desde resumeInfo (inicial):',
-        resumeInfo.skills
+    if (skillsList && skillsList.length > 0) {
+      const existingCategories = Array.from(
+        new Set(
+          skillsList
+            .map((skill) => skill.category)
+            .filter((cat) => cat && cat.trim() !== '')
+        )
       );
-      // Asignar IDs únicos si no existen
-      const skillsWithIds = resumeInfo.skills.map((skill, idx) => ({
-        ...skill,
-        id: skill.id || `skill-${Date.now()}-${idx}`,
-      }));
-      setSkillsList(skillsWithIds);
-    } else if (skillsList.length === 0) {
-      console.log('⚠️ No hay skills en resumeInfo, iniciando con skill vacía');
-      setSkillsList([{ id: `skill-${Date.now()}-0`, name: '', rating: 0 }]);
+      if (existingCategories.length > 0) {
+        // Fusionar con categorías por defecto
+        const mergedCategories = Array.from(
+          new Set([...availableCategories, ...existingCategories])
+        );
+        setAvailableCategories(mergedCategories);
+        console.log('✅ Categorías cargadas del CV:', mergedCategories);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Solo ejecutar al montar el componente
+  }, []); // Solo al montar
 
   const handleChange = (index, name, value) => {
     const newEntries = skillsList.slice();
@@ -123,25 +145,26 @@ function Skills() {
       toast.error('Por favor, añade el puesto de trabajo primero');
       return;
     }
-
     if (skillsList.length === 0) {
       toast.error('No hay habilidades para categorizar');
       return;
     }
-
     setCategorizingSkills(true);
     try {
       const skillsToCategory = skillsList
         .filter((skill) => skill.name && skill.name.trim() !== '')
         .map((skill) => ({ name: skill.name, rating: skill.rating }));
-
+      // Llamar a la nueva versión que genera categorías
       const result = await AIContentEnhancer.categorizeSkills(
         skillsToCategory,
         resumeInfo.jobTitle
       );
-
       console.log('📊 Resultado de categorización:', result);
-
+      // NUEVO: Actualizar las categorías disponibles
+      if (result.categories && result.categories.length > 0) {
+        setAvailableCategories(result.categories);
+        console.log('✅ Categorías actualizadas:', result.categories);
+      }
       // Fusionar las categorías con los skills existentes (preservando IDs y flags)
       const categorizedSkillsList = skillsList.map((skill) => {
         const categorized = result.categorizedSkills.find(
@@ -152,18 +175,12 @@ function Skills() {
           category: categorized?.category || 'Otros',
         };
       });
-
       console.log('🔄 Skills categorizadas localmente:', categorizedSkillsList);
-
-      // Actualizar estado local
       setSkillsList(categorizedSkillsList);
-
-      // Actualizar contexto para que se refleje en el preview
       setResumeInfo((prev) => ({
         ...prev,
         skills: categorizedSkillsList,
       }));
-
       // Guardar en base de datos
       const cleanSkills = categorizedSkillsList
         .filter((skill) => skill.name && skill.name.trim() !== '')
@@ -171,15 +188,12 @@ function Skills() {
           // eslint-disable-next-line no-unused-vars
           ({ id, isNew, isUpdated, isDuplicate, ...rest }) => rest
         );
-
       await LocalDatabase.UpdateResumeDetail(resumeId, {
         skills: cleanSkills,
       });
-
       console.log('✅ Skills categorizadas guardadas en DB');
-
       toast.success(
-        `✅ ${result.categorizedSkills.length} habilidades categorizadas`
+        `✅ ${result.categorizedSkills.length} habilidades categorizadas en ${result.categories.length} categorías`
       );
     } catch (error) {
       console.error('Error categorizando skills:', error);
@@ -246,7 +260,6 @@ function Skills() {
       toast.error('Por favor, añade el puesto de trabajo primero');
       return;
     }
-
     try {
       await generateSkills(skillsDescription, resumeInfo.jobTitle);
     } catch (error) {
@@ -256,15 +269,12 @@ function Skills() {
 
   const handleApplyGeneratedSkills = async () => {
     const newSkills = applyGeneratedSkills();
-
     console.log('🔍 DEBUG: newSkills recibidas de IA:', newSkills);
     console.log('🔍 DEBUG: skillsList actual:', skillsList);
-
     if (newSkills.length === 0) {
       toast.error('No hay habilidades para añadir');
       return;
     }
-
     // Sistema inteligente de fusión
     const updatedSkillsList = [...skillsList];
     const existingSkillsMap = new Map(
@@ -273,27 +283,22 @@ function Skills() {
         { skill, index: idx },
       ])
     );
-
     console.log(
       '🔍 DEBUG: existingSkillsMap:',
       Array.from(existingSkillsMap.keys())
     );
-
     let addedCount = 0;
     let updatedCount = 0;
     let skippedCount = 0;
-
     newSkills.forEach((newSkill) => {
       const normalizedName = newSkill.name.toLowerCase().trim();
       const existing = existingSkillsMap.get(normalizedName);
-
       console.log(
         `🔍 DEBUG: Procesando "${newSkill.name}" (normalizado: "${normalizedName}")`
       );
       console.log(`   - ¿Existe? ${existing ? 'SÍ' : 'NO'}`);
-
       if (existing) {
-        // Si existe y el nuevo rating es mayor, actualizar
+        // Si existe y el nuevo rating es mayor, actualizar (incluyendo categoría)
         if (newSkill.rating > existing.skill.rating) {
           console.log(
             `   - ✅ Actualizando: rating ${existing.skill.rating} → ${newSkill.rating}`
@@ -301,32 +306,39 @@ function Skills() {
           updatedSkillsList[existing.index] = {
             ...existing.skill,
             rating: newSkill.rating,
-            isUpdated: true, // Flag para animación
+            category: newSkill.category || existing.skill.category || 'Otros',
+            isUpdated: true,
           };
           updatedCount++;
         } else {
           console.log(
             `   - ⏭️ Omitiendo: rating actual ${existing.skill.rating} >= nuevo ${newSkill.rating}`
           );
-          // Marcar la existente como duplicada para mostrar advertencia
+          // Marcar como duplicada pero actualizar categoría si no tenía
           updatedSkillsList[existing.index] = {
             ...updatedSkillsList[existing.index],
-            isDuplicate: true, // Flag para mostrar icono de advertencia
+            category:
+              updatedSkillsList[existing.index].category ||
+              newSkill.category ||
+              'Otros',
+            isDuplicate: true,
           };
           skippedCount++;
         }
       } else {
-        // Añadir nueva skill con ID único
-        console.log(`   - ✨ Añadiendo como nueva skill`);
+        // Añadir nueva skill con categoría
+        console.log(
+          `   - ✨ Añadiendo como nueva skill con categoría: ${newSkill.category}`
+        );
         updatedSkillsList.push({
           ...newSkill,
           id: `skill-${Date.now()}-${updatedSkillsList.length}`,
-          isNew: true, // Flag para animación
+          category: newSkill.category || 'Otros',
+          isNew: true,
         });
         addedCount++;
       }
     });
-
     console.log(
       '🔍 DEBUG: updatedSkillsList ANTES de setSkillsList:',
       updatedSkillsList
@@ -334,18 +346,24 @@ function Skills() {
     console.log(
       `📊 RESUMEN: ${addedCount} nuevas, ${updatedCount} actualizadas, ${skippedCount} omitidas`
     );
-
-    // Actualizar estado
+    // NUEVO: Si hay categorías generadas, actualizar las disponibles
+    if (generatedCategories && generatedCategories.length > 0) {
+      // Fusionar categorías existentes con nuevas, evitando duplicados
+      const mergedCategories = Array.from(
+        new Set([...availableCategories, ...generatedCategories])
+      );
+      setAvailableCategories(mergedCategories);
+      console.log(
+        '✅ Categorías actualizadas tras aplicar skills:',
+        mergedCategories
+      );
+    }
     setSkillsList(updatedSkillsList);
-
-    // Auto-guardar en la base de datos
     if (!resumeId) {
       toast.error('ID del CV no válido');
       return;
     }
-
     setLoading(true);
-
     try {
       // Limpiar flags, IDs temporales y skills vacías antes de guardar
       const cleanSkills = updatedSkillsList
@@ -354,29 +372,21 @@ function Skills() {
           // eslint-disable-next-line no-unused-vars
           ({ id, isNew, isUpdated, isDuplicate, ...rest }) => rest
         );
-
       console.log('💾 Guardando skills:', cleanSkills);
-
       const response = await LocalDatabase.UpdateResumeDetail(resumeId, {
         skills: cleanSkills,
       });
-
       console.log('✅ Respuesta de BD:', response);
-
-      // Actualizar el contexto inmediatamente
       setResumeInfo((prev) => ({
         ...prev,
         skills: cleanSkills,
       }));
-
       // Mensajes personalizados
       const messages = [];
-      if (addedCount > 0) messages.push(`${addedCount} nueva(s)`);
-      if (updatedCount > 0) messages.push(`${updatedCount} mejorada(s)`);
-      if (skippedCount > 0) messages.push(`${skippedCount} omitida(s)`);
-
-      toast.success(`✅ Habilidades guardadas: ${messages.join(', ')}`);
-
+      if (addedCount > 0) messages.push(`${addedCount} nuevas`);
+      if (updatedCount > 0) messages.push(`${updatedCount} mejoradas`);
+      if (skippedCount > 0) messages.push(`${skippedCount} omitidas`);
+      toast.success('Habilidades guardadas: ' + messages.join(', '));
       // Limpiar flags después de 2 segundos
       setTimeout(() => {
         setSkillsList((prev) =>
@@ -385,7 +395,7 @@ function Skills() {
         );
       }, 2000);
     } catch (error) {
-      console.error('❌ Error actualizando habilidades:', error);
+      console.error('Error actualizando habilidades:', error);
       toast.error('Error al guardar habilidades: ' + error.message);
     } finally {
       setLoading(false);
@@ -492,7 +502,7 @@ function Skills() {
                 <div className="w-48">
                   <label className="text-xs text-gray-500">Categoría</label>
                   <Select
-                    value={item.category || ''}
+                    value={item.category}
                     onValueChange={(value) =>
                       handleCategoryChange(index, value)
                     }
@@ -501,27 +511,12 @@ function Skills() {
                       <SelectValue placeholder="Sin categoría" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Backend Development">
-                        Backend Development
-                      </SelectItem>
-                      <SelectItem value="Frontend Development">
-                        Frontend Development
-                      </SelectItem>
-                      <SelectItem value="Bases de Datos">
-                        Bases de Datos
-                      </SelectItem>
-                      <SelectItem value="DevOps & Herramientas">
-                        DevOps & Herramientas
-                      </SelectItem>
-                      <SelectItem value="Mobile Development">
-                        Mobile Development
-                      </SelectItem>
-                      <SelectItem value="Testing & Quality">
-                        Testing & Quality
-                      </SelectItem>
-                      <SelectItem value="Metodologías">Metodologías</SelectItem>
-                      <SelectItem value="Soft Skills">Soft Skills</SelectItem>
-                      <SelectItem value="Otros">Otros</SelectItem>
+                      {/* NUEVO: Renderizar categorías dinámicas */}
+                      {availableCategories.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
