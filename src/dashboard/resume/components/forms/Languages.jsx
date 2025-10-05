@@ -10,7 +10,7 @@ import {
   Award,
   X,
 } from 'lucide-react';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import LocalDatabase from '../../../../services/LocalDatabase';
 import { toast } from 'sonner';
@@ -55,33 +55,27 @@ const COMMON_LANGUAGES = [
   { code: 'tr', name: 'Turco', flag: '🇹🇷' },
 ];
 
-function Languages({ onSaveHandlerReady }) {
+function Languages() {
   const [loading, setLoading] = useState(false);
   const { resumeInfo, setResumeInfo } = useContext(ResumeInfoContext);
   const params = useParams();
-  const [languagesList, setLanguagesList] = useState([
-    {
-      id: `lang-${Date.now()}-0`,
-      name: '',
-      level: '',
-      certification: '',
-    },
-  ]);
-
-  useEffect(() => {
+  // Solo inicializar una vez desde el contexto
+  const [languagesList, setLanguagesList] = useState(() => {
     if (resumeInfo?.languages && resumeInfo.languages.length > 0) {
-      console.log(
-        '🔄 Cargando idiomas desde resumeInfo:',
-        resumeInfo.languages
-      );
-      const languagesWithIds = resumeInfo.languages.map((lang, idx) => ({
+      return resumeInfo.languages.map((lang, idx) => ({
         ...lang,
         id: lang.id || `lang-${Date.now()}-${idx}`,
       }));
-      setLanguagesList(languagesWithIds);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return [
+      {
+        id: `lang-${Date.now()}-0`,
+        name: '',
+        level: '',
+        certification: '',
+      },
+    ];
+  });
 
   const handleChange = (index, name, value) => {
     setLanguagesList((prevList) => {
@@ -113,123 +107,42 @@ function Languages({ onSaveHandlerReady }) {
   const RemoveLanguageByIndex = async (index) => {
     try {
       const updatedLanguages = languagesList.filter((_, i) => i !== index);
-
-      // Limpiar datos antes de guardar
       const cleanLanguages = updatedLanguages
-        .filter((lang) => lang.name && lang.name.trim() !== '')
-        .map(
-          // eslint-disable-next-line no-unused-vars
-          ({ id, ...rest }) => rest
-        );
-
-      // Actualizar estados
+        .filter((lang) => lang.name && lang.name.trim() !== '' && lang.level)
+        .map(({ id, ...rest }) => rest);
       setLanguagesList(updatedLanguages);
-      setResumeInfo((prev) => ({
-        ...prev,
-        languages: updatedLanguages,
-      }));
-
-      // Guardar en DB
+      setResumeInfo((prev) => ({ ...prev, languages: cleanLanguages }));
       await LocalDatabase.UpdateResumeDetail(params.resumeId, {
         languages: cleanLanguages,
       });
-
       toast.success('Idioma eliminado');
     } catch (error) {
-      console.error('Error al eliminar idioma:', error);
       toast.error('Error al eliminar el idioma');
     }
   };
 
-  const onSave = async (silent = false) => {
-    console.log(
-      '💾 onSave ejecutado - silent:',
-      silent,
-      'resumeId:',
-      params?.resumeId
-    );
-    console.log('📋 languagesList actual:', languagesList);
-
+  const onSave = async () => {
     if (!params?.resumeId) {
-      if (!silent) toast.error('ID del CV no válido');
+      toast.error('ID del CV no válido');
       return;
     }
-
     setLoading(true);
-
     try {
-      // Validar que haya al menos un idioma con nombre y nivel
       const validLanguages = languagesList.filter(
         (lang) => lang.name && lang.name.trim() !== '' && lang.level
       );
-
-      console.log(
-        '✅ Idiomas válidos encontrados:',
-        validLanguages.length,
-        validLanguages
-      );
-
-      // Si no hay idiomas válidos, guardar array vacío (silenciosamente si es navegación)
-      if (validLanguages.length === 0) {
-        if (!silent) {
-          toast.error('Añade al menos un idioma con su nivel');
-          setLoading(false);
-          return;
-        }
-        // En modo silencioso, simplemente guardar array vacío
-        console.log('💾 Guardando array vacío de idiomas');
-        await LocalDatabase.UpdateResumeDetail(params.resumeId, {
-          languages: [],
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Limpiar IDs temporales antes de guardar
-      const cleanLanguages = validLanguages.map(
-        // eslint-disable-next-line no-unused-vars
-        ({ id, ...rest }) => rest
-      );
-
-      console.log('💾 Guardando idiomas limpios:', cleanLanguages);
-
-      const response = await LocalDatabase.UpdateResumeDetail(params.resumeId, {
+      const cleanLanguages = validLanguages.map(({ id, ...rest }) => rest);
+      await LocalDatabase.UpdateResumeDetail(params.resumeId, {
         languages: cleanLanguages,
       });
-
-      console.log('✅ Idiomas actualizados en BD:', response);
-      if (!silent) {
-        toast.success('Idiomas actualizados correctamente');
-      }
+      setResumeInfo((prev) => ({ ...prev, languages: cleanLanguages }));
+      toast.success('Idiomas actualizados correctamente');
     } catch (error) {
-      console.error('❌ Error actualizando idiomas:', error);
-      if (!silent) {
-        toast.error('Error al actualizar idiomas: ' + error.message);
-      }
+      toast.error('Error al actualizar idiomas: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
-
-  // Registrar el handler de guardado cuando el componente se monta
-  useEffect(() => {
-    if (onSaveHandlerReady) {
-      // Pasar la función de guardado al padre
-      // El padre usa un wrapper especial para almacenarla correctamente en el estado
-      onSaveHandlerReady(async () => {
-        await onSave(true);
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onSaveHandlerReady]);
-
-  useEffect(() => {
-    setResumeInfo((prev) => ({
-      ...prev,
-      languages: languagesList,
-    }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [languagesList]);
 
   // Función para obtener la bandera del idioma
   const getLanguageFlag = (languageName) => {

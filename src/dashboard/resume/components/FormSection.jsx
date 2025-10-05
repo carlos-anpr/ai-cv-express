@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import PersonalDetail from './forms/PersonalDetail';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,19 +19,18 @@ import ThemeColor from './ThemeColor';
 function FormSection() {
   const [activeFormIndex, setActiveFormIndex] = useState(1);
   const [enableNext, setEnableNext] = useState(true);
-  const [languagesSaveHandler, setLanguagesSaveHandler] = useState(null);
+  const languagesSaveHandlerRef = useRef(null);
 
   const params = useParams();
 
-  // Wrapper para registrar el handler de guardado
-  // Necesario porque setState ejecuta funciones, no las almacena
-  const registerLanguagesSaveHandler = (handler) => {
+  // Wrapper para registrar el handler de guardado usando useRef para evitar re-renders
+  const registerLanguagesSaveHandler = useCallback((handler) => {
     console.log(
       '📝 Registrando handler de guardado, es función:',
       typeof handler === 'function'
     );
-    setLanguagesSaveHandler(() => handler);
-  };
+    languagesSaveHandlerRef.current = handler;
+  }, []);
 
   const handleNavigation = async (direction) => {
     console.log(
@@ -40,18 +39,21 @@ function FormSection() {
       'activeFormIndex:',
       activeFormIndex
     );
-    console.log('🔄 languagesSaveHandler existe:', !!languagesSaveHandler);
+    console.log(
+      '🔄 languagesSaveHandler existe:',
+      !!languagesSaveHandlerRef.current
+    );
     console.log(
       '🔄 languagesSaveHandler es función:',
-      typeof languagesSaveHandler === 'function'
+      typeof languagesSaveHandlerRef.current === 'function'
     );
 
     // Si estamos en la sección de idiomas (paso 6) y tenemos el handler de guardado
-    if (activeFormIndex === 6 && languagesSaveHandler) {
+    if (activeFormIndex === 6 && languagesSaveHandlerRef.current) {
       console.log('💾 Guardando idiomas antes de navegar...');
       try {
         // Guardar idiomas antes de navegar
-        await languagesSaveHandler();
+        await languagesSaveHandlerRef.current();
         console.log('✅ Idiomas guardados correctamente antes de navegar');
       } catch (error) {
         console.error('❌ Error guardando idiomas:', error);
