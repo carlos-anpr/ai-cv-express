@@ -777,22 +777,58 @@ const ResumePreview = ({ resume }) => (
     {/* Languages */}
     {resume.languages && resume.languages.length > 0 && (
       <Section title="Idiomas">
-        <div className="flex flex-wrap gap-2">
-          {resume.languages.map((lang, index) => (
-            <Badge key={index} variant="outline">
-              {lang.name}
-              {lang.level && (
-                <span className="ml-1 text-xs text-gray-600">
-                  ({lang.level})
-                </span>
-              )}
-              {lang.certification && (
-                <span className="ml-1 text-xs text-blue-600">
-                  {lang.certification}
-                </span>
-              )}
-            </Badge>
-          ))}
+        <div className="flex flex-col gap-3">
+          {resume.languages.map((lang, index) => {
+            const levelRaw = lang.level || '';
+            const level = levelRaw.trim().toUpperCase();
+            // Considerar nativo si contiene la palabra nativo/native (cualquier case)
+            const isNative = /nativo|native/.test(
+              levelRaw.trim().toLowerCase()
+            );
+            // Si es C2 y contiene nativo, también 100%
+            const isC2Native =
+              level.startsWith('C2') &&
+              /nativo|native/.test(levelRaw.trim().toLowerCase());
+            let levelPercent = 0;
+            if (isNative || isC2Native) {
+              levelPercent = 100;
+            } else if (level === 'C2') {
+              levelPercent = 95;
+            } else if (level === 'C1') {
+              levelPercent = 85;
+            } else if (level === 'B2') {
+              levelPercent = 75;
+            } else if (level === 'B1') {
+              levelPercent = 60;
+            } else if (level === 'A2') {
+              levelPercent = 40;
+            } else if (level === 'A1') {
+              levelPercent = 20;
+            }
+            return (
+              <div key={index} className="flex items-center gap-3">
+                <Badge variant="outline">
+                  {lang.name}
+                  {lang.level && (
+                    <span className="ml-1 text-xs text-gray-600">
+                      ({lang.level})
+                    </span>
+                  )}
+                  {lang.certification && (
+                    <span className="ml-1 text-xs text-blue-600">
+                      {lang.certification}
+                    </span>
+                  )}
+                </Badge>
+                <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-2 bg-blue-600 transition-all"
+                    style={{ width: `${levelPercent}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </Section>
     )}

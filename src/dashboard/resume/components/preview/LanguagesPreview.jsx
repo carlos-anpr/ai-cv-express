@@ -21,6 +21,15 @@ function LanguagesPreview({ resumeInfo }) {
 
   // Función para obtener el porcentaje visual del nivel
   const getLevelPercentage = (level) => {
+    if (!level) return 0;
+    const norm = level.trim().toUpperCase();
+    if (
+      norm === 'NATIVO' ||
+      norm === 'NATIVE' ||
+      /nativo|native/.test(level.trim().toLowerCase())
+    ) {
+      return 100;
+    }
     const percentages = {
       A1: 20,
       A2: 35,
@@ -29,7 +38,7 @@ function LanguagesPreview({ resumeInfo }) {
       C1: 85,
       C2: 100,
     };
-    return percentages[level] || 0;
+    return percentages[norm] || 0;
   };
 
   // Función para obtener la bandera del idioma

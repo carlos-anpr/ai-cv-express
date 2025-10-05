@@ -10,7 +10,7 @@ import {
   Award,
   X,
 } from 'lucide-react';
-import React, { useContext, useEffect, useState, useRef } from 'react';
+import React, { useContext, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import LocalDatabase from '../../../../services/LocalDatabase';
 import { toast } from 'sonner';
@@ -33,7 +33,12 @@ const LANGUAGE_LEVELS = [
     description: 'Intermedio Alto',
   },
   { value: 'C1', label: 'C1 - Avanzado', description: 'Avanzado' },
-  { value: 'C2', label: 'C2 - Nativo/Bilingüe', description: 'Nativo' },
+  { value: 'C2', label: 'C2 - Muy Avanzado', description: 'Muy Avanzado' },
+  {
+    value: 'NATIVO',
+    label: 'Nativo (lengua materna)',
+    description: 'Lengua materna',
+  },
 ];
 
 // Idiomas comunes con sus códigos y banderas emoji
@@ -109,14 +114,18 @@ function Languages() {
       const updatedLanguages = languagesList.filter((_, i) => i !== index);
       const cleanLanguages = updatedLanguages
         .filter((lang) => lang.name && lang.name.trim() !== '' && lang.level)
-        .map(({ id, ...rest }) => rest);
+        .map((lang) => {
+          // eslint-disable-next-line no-unused-vars
+          const { id, ...rest } = lang;
+          return rest;
+        });
       setLanguagesList(updatedLanguages);
       setResumeInfo((prev) => ({ ...prev, languages: cleanLanguages }));
       await LocalDatabase.UpdateResumeDetail(params.resumeId, {
         languages: cleanLanguages,
       });
       toast.success('Idioma eliminado');
-    } catch (error) {
+    } catch {
       toast.error('Error al eliminar el idioma');
     }
   };
@@ -131,7 +140,11 @@ function Languages() {
       const validLanguages = languagesList.filter(
         (lang) => lang.name && lang.name.trim() !== '' && lang.level
       );
-      const cleanLanguages = validLanguages.map(({ id, ...rest }) => rest);
+      const cleanLanguages = validLanguages.map((lang) => {
+        // eslint-disable-next-line no-unused-vars
+        const { id, ...rest } = lang;
+        return rest;
+      });
       await LocalDatabase.UpdateResumeDetail(params.resumeId, {
         languages: cleanLanguages,
       });
@@ -325,11 +338,15 @@ function Languages() {
                         <span className="flex items-center gap-2">
                           <span
                             className={`w-2 h-2 rounded-full ${
-                              level.value.startsWith('A')
+                              level.value === 'NATIVO'
+                                ? 'bg-blue-600'
+                                : level.value.startsWith('A')
                                 ? 'bg-red-500'
                                 : level.value.startsWith('B')
                                 ? 'bg-yellow-500'
-                                : 'bg-green-500'
+                                : level.value.startsWith('C')
+                                ? 'bg-green-500'
+                                : 'bg-gray-400'
                             }`}
                           />
                           <span className="font-medium">{level.label}</span>
