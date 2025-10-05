@@ -95,7 +95,7 @@ const transformToEditorFormat = (data) => {
   if (typeof data.languages === 'string') {
     try {
       languages = JSON.parse(data.languages);
-    } catch (e) {
+    } catch {
       languages = [];
     }
   } else if (Array.isArray(data.languages)) {
