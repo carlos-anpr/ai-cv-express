@@ -85,6 +85,44 @@ const Step4Results = ({ generatedData, onStartOver }) => {
 
   // Transformar datos de Express a formato del editor
   const transformToEditorFormat = (data) => {
+    // Refuerzo: lista de idiomas comunes para detectar en skills
+    const COMMON_LANGUAGES = [
+      'español',
+      'inglés',
+      'francés',
+      'alemán',
+      'italiano',
+      'portugués',
+      'chino',
+      'japonés',
+      'coreano',
+      'árabe',
+      'ruso',
+      'neerlandés',
+      'sueco',
+      'polaco',
+      'turco',
+      'spanish',
+      'english',
+      'french',
+      'german',
+      'italian',
+      'portuguese',
+      'chinese',
+      'japanese',
+      'korean',
+      'arabic',
+      'russian',
+      'dutch',
+      'swedish',
+      'polish',
+      'turkish',
+    ];
+    // LOG: Entrada original
+    console.log(
+      '[LANGUAGES] Entrada original en transformToEditorFormat:',
+      data.languages
+    );
     // Parsear si vienen como strings JSON
     const experience =
       typeof data.experience === 'string'
@@ -106,6 +144,75 @@ const Step4Results = ({ generatedData, onStartOver }) => {
         : Array.isArray(data.skills)
         ? data.skills
         : [];
+
+    // --- LANGUAGES ---
+    let languages = [];
+    if (typeof data.languages === 'string') {
+      try {
+        languages = JSON.parse(data.languages);
+        console.log('[LANGUAGES] Parseado desde string:', languages);
+      } catch (e) {
+        console.warn('[LANGUAGES] Error al parsear string:', data.languages, e);
+        languages = [];
+      }
+    } else if (Array.isArray(data.languages)) {
+      languages = data.languages;
+      console.log('[LANGUAGES] Usando array directo:', languages);
+    } else {
+      console.warn('[LANGUAGES] Formato inesperado:', data.languages);
+    }
+    // Normalizar formato: [{ name, level, certification? }]
+    languages = (languages || []).map((lang) => {
+      if (typeof lang === 'string') {
+        const match = lang.match(/(.+?)\s*\(([^)]+)\)/);
+        if (match) {
+          return {
+            name: match[1].trim(),
+            level: match[2].trim(),
+            certification: '',
+          };
+        }
+        return { name: lang.trim(), level: '', certification: '' };
+      }
+      return {
+        name: lang.name || '',
+        level: lang.level || '',
+        certification: lang.certification || '',
+      };
+    });
+    // Refuerzo: buscar idiomas en skills si el array de languages está vacío
+    if ((!languages || languages.length === 0) && Array.isArray(skills)) {
+      const detectedLangs = skills
+        .filter((skill) => {
+          if (!skill.name) return false;
+          const name = skill.name.toLowerCase();
+          return COMMON_LANGUAGES.some((lang) => name.includes(lang));
+        })
+        .map((skill) => {
+          // Intentar extraer nivel si está en el nombre, ej: "Inglés (C1)"
+          const match = skill.name.match(/(.+?)\s*\(([^)]+)\)/);
+          return {
+            name: match ? match[1].trim() : skill.name.trim(),
+            level: match ? match[2].trim() : skill.level || '',
+            certification: skill.certification || '',
+          };
+        });
+      if (detectedLangs.length > 0) {
+        languages = detectedLangs;
+        console.log(
+          '[LANGUAGES][REFUERZO] Detectados en skills:',
+          detectedLangs
+        );
+      }
+    }
+    // Validar formato final para la BD: array de objetos {name, level, certification}
+    languages = (languages || []).map((lang) => ({
+      name: lang.name || '',
+      level: lang.level || '',
+      certification: lang.certification || '',
+    }));
+    console.log('[LANGUAGES] Final para guardar en BD:', languages);
+    console.log('[LANGUAGES] Normalizado para guardar:', languages);
 
     return {
       ...data,
@@ -131,6 +238,7 @@ const Step4Results = ({ generatedData, onStartOver }) => {
         description: edu.description || '',
       })),
       skills: skills,
+      languages: languages,
     };
   };
 
@@ -258,11 +366,13 @@ const Step4Results = ({ generatedData, onStartOver }) => {
 
   // Guardar y navegar al editor
   const handleEditResume = async () => {
+    console.log('[SAVE] handleEditResume - resumeForDB:', resumeForDB);
     try {
       setIsSaving(true);
 
       // Transformar al formato del editor
       const transformedData = transformToEditorFormat(resumeForDB);
+      console.log('[SAVE] Datos transformados para guardar:', transformedData);
 
       // Guardar en IndexedDB
       const savedResume = await LocalDatabase.CreateNewResume(transformedData);
@@ -296,11 +406,13 @@ const Step4Results = ({ generatedData, onStartOver }) => {
 
   // Guardar y volver al dashboard
   const handleSaveAndDashboard = async () => {
+    console.log('[SAVE] handleSaveAndDashboard - resumeForDB:', resumeForDB);
     try {
       setIsSaving(true);
 
       // Transformar al formato del editor
       const transformedData = transformToEditorFormat(resumeForDB);
+      console.log('[SAVE] Datos transformados para guardar:', transformedData);
 
       // Guardar en IndexedDB
       const savedResume = await LocalDatabase.CreateNewResume(transformedData);
@@ -616,9 +728,9 @@ const ResumePreview = ({ resume }) => (
     {/* Summary */}
     {resume.summary && (
       <Section title="Resumen Profesional">
-        <p className="text-sm text-muted-foreground leading-relaxed">
+        <div className="text-sm text-muted-foreground leading-relaxed">
           {resume.summary}
-        </p>
+        </div>
       </Section>
     )}
 
@@ -654,6 +766,29 @@ const ResumePreview = ({ resume }) => (
               {skill.rating && (
                 <span className="ml-1">
                   {'⭐'.repeat(Math.min(skill.rating, 5))}
+                </span>
+              )}
+            </Badge>
+          ))}
+        </div>
+      </Section>
+    )}
+
+    {/* Languages */}
+    {resume.languages && resume.languages.length > 0 && (
+      <Section title="Idiomas">
+        <div className="flex flex-wrap gap-2">
+          {resume.languages.map((lang, index) => (
+            <Badge key={index} variant="outline">
+              {lang.name}
+              {lang.level && (
+                <span className="ml-1 text-xs text-gray-600">
+                  ({lang.level})
+                </span>
+              )}
+              {lang.certification && (
+                <span className="ml-1 text-xs text-blue-600">
+                  {lang.certification}
                 </span>
               )}
             </Badge>

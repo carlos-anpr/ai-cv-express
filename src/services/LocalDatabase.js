@@ -39,6 +39,7 @@ class LocalDatabase {
         experience: JSON.stringify(data.experience || []),
         education: JSON.stringify(data.education || []),
         skills: JSON.stringify(data.skills || []),
+        languages: JSON.stringify(data.languages || []),
         createdAt: now,
         updatedAt: now,
         version: 1,
