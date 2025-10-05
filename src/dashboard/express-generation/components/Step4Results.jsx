@@ -30,21 +30,219 @@ import { useWindowSize } from '@/hooks/useWindowSize';
  * Cuarto paso: Mostrar resultados y opciones finales
  */
 
+// --- Declaración ÚNICA de transformToEditorFormat fuera del componente ---
+const transformToEditorFormat = (data) => {
+  const COMMON_LANGUAGES = [
+    'español',
+    'inglés',
+    'francés',
+    'alemán',
+    'italiano',
+    'portugués',
+    'chino',
+    'japonés',
+    'coreano',
+    'árabe',
+    'ruso',
+    'neerlandés',
+    'sueco',
+    'polaco',
+    'turco',
+    'spanish',
+    'english',
+    'french',
+    'german',
+    'italian',
+    'portuguese',
+    'chinese',
+    'japanese',
+    'korean',
+    'arabic',
+    'russian',
+    'dutch',
+    'swedish',
+    'polish',
+    'turkish',
+  ];
+  const RATING_TO_LEVEL = {
+    5: 'Nativo',
+    4: 'B2',
+    3: 'B1',
+    2: 'A2',
+    1: 'A1',
+  };
+  // Parsear arrays
+  const experience =
+    typeof data.experience === 'string'
+      ? JSON.parse(data.experience)
+      : Array.isArray(data.experience)
+      ? data.experience
+      : [];
+  const education =
+    typeof data.education === 'string'
+      ? JSON.parse(data.education)
+      : Array.isArray(data.education)
+      ? data.education
+      : [];
+  const skills =
+    typeof data.skills === 'string'
+      ? JSON.parse(data.skills)
+      : Array.isArray(data.skills)
+      ? data.skills
+      : [];
+  // --- LANGUAGES ---
+  let languages = [];
+  if (typeof data.languages === 'string') {
+    try {
+      languages = JSON.parse(data.languages);
+    } catch (e) {
+      languages = [];
+    }
+  } else if (Array.isArray(data.languages)) {
+    languages = data.languages;
+  }
+  // Normalizar formato: [{ name, level, certification? }]
+  languages = (languages || []).map((lang) => {
+    if (typeof lang === 'string') {
+      const match = lang.match(/(.+?)\s*\(([^)]+)\)/);
+      if (match) {
+        return {
+          name: match[1].trim(),
+          level: match[2].trim(),
+          certification: '',
+        };
+      }
+      return { name: lang.trim(), level: '', certification: '' };
+    }
+    let level = lang.level || '';
+    if (!level && typeof lang.rating === 'number') {
+      level = RATING_TO_LEVEL[lang.rating] || 'B1';
+    }
+    return {
+      name: lang.name || '',
+      level: level,
+      certification: lang.certification || '',
+    };
+  });
+  // Refuerzo: buscar idiomas en skills si el array de languages está vacío
+  if ((!languages || languages.length === 0) && Array.isArray(skills)) {
+    const detectedLangs = skills
+      .filter((skill) => {
+        if (!skill.name) return false;
+        const name = skill.name.toLowerCase();
+        return COMMON_LANGUAGES.some((lang) => name.includes(lang));
+      })
+      .map((skill) => {
+        const match = skill.name.match(/(.+?)\s*\(([^)]+)\)/);
+        let level = '';
+        if (match) {
+          level = match[2].trim();
+        } else if (skill.level) {
+          level = skill.level;
+        } else if (typeof skill.rating === 'number') {
+          level = RATING_TO_LEVEL[skill.rating] || 'B1';
+        }
+        return {
+          name: match ? match[1].trim() : skill.name.trim(),
+          level: level,
+          certification: skill.certification || '',
+        };
+      });
+    if (detectedLangs.length > 0) {
+      languages = detectedLangs;
+    }
+  }
+  // Si falta el nivel, intenta completarlo desde skills
+  languages = (languages || []).map((lang) => {
+    let level = lang.level || '';
+    let certification = lang.certification || '';
+    if (!level && lang.name && Array.isArray(skills)) {
+      const found = skills.find(
+        (s) =>
+          s.name &&
+          s.name.trim().toLowerCase() === lang.name.trim().toLowerCase()
+      );
+      if (found) {
+        if (found.level) {
+          level = found.level;
+        } else if (typeof found.rating === 'number') {
+          level = RATING_TO_LEVEL[found.rating] || 'B1';
+        }
+        if (!certification && found.certification) {
+          certification = found.certification;
+        }
+      }
+    }
+    return {
+      name: lang.name || '',
+      level: level,
+      certification: certification,
+    };
+  });
+  return {
+    ...data,
+    experience: experience.map((exp) => ({
+      title: exp.title || '',
+      companyName: exp.company || '',
+      city: exp.location?.split(',')[0]?.trim() || '',
+      state: exp.location?.split(',')[1]?.trim() || '',
+      startDate: exp.startDate || '',
+      endDate: exp.endDate || '',
+      currentlyWorking: exp.current || false,
+      workSummary: [exp.description || '', ...(exp.achievements || [])]
+        .filter(Boolean)
+        .map((item, idx) => `${idx === 0 ? '' : '• '}${item}`)
+        .join('\n'),
+    })),
+    education: education.map((edu) => ({
+      universityName: edu.institution || '',
+      degree: edu.degree || '',
+      major: '',
+      startDate: edu.graduationYear ? `${edu.graduationYear - 4}` : '',
+      endDate: edu.graduationYear?.toString() || '',
+      description: edu.description || '',
+    })),
+    skills: skills,
+    languages: languages,
+  };
+};
+
 const Step4Results = ({ generatedData, onStartOver }) => {
   const navigate = useNavigate();
   const [isSaving, setIsSaving] = useState(false);
   const [showConfetti, setShowConfetti] = useState(true);
   const { width, height } = useWindowSize();
 
+  // Extraer datos base
   const {
     resume,
-    resumeForDB,
+    resumeForDB: originalResumeForDB,
     coverLetter,
     coverLetterText,
     resumeQuality,
     coverLetterQuality,
     jobOfferData, // Datos de la oferta extraídos
   } = generatedData;
+
+  // Transformar y asegurar que resumeForDB tenga el campo languages correcto
+  const resumeForDB = React.useMemo(() => {
+    if (!originalResumeForDB) return null;
+    // Usar la función de transformación para asegurar que languages esté bien
+    const transformed = transformToEditorFormat(originalResumeForDB);
+    return {
+      ...originalResumeForDB,
+      languages: transformed.languages,
+    };
+  }, [originalResumeForDB]);
+
+  // El preview debe usar resumeForDB transformado
+  const resumePreviewData = React.useMemo(() => {
+    if (!resumeForDB) return resume;
+    return {
+      ...resume,
+      languages: resumeForDB.languages,
+    };
+  }, [resume, resumeForDB]);
 
   // Validar si hay oferta real
   const hasValidJobOffer = React.useMemo(() => {
@@ -82,165 +280,6 @@ const Step4Results = ({ generatedData, onStartOver }) => {
     }, 5000);
     return () => clearTimeout(timer);
   }, []);
-
-  // Transformar datos de Express a formato del editor
-  const transformToEditorFormat = (data) => {
-    // Refuerzo: lista de idiomas comunes para detectar en skills
-    const COMMON_LANGUAGES = [
-      'español',
-      'inglés',
-      'francés',
-      'alemán',
-      'italiano',
-      'portugués',
-      'chino',
-      'japonés',
-      'coreano',
-      'árabe',
-      'ruso',
-      'neerlandés',
-      'sueco',
-      'polaco',
-      'turco',
-      'spanish',
-      'english',
-      'french',
-      'german',
-      'italian',
-      'portuguese',
-      'chinese',
-      'japanese',
-      'korean',
-      'arabic',
-      'russian',
-      'dutch',
-      'swedish',
-      'polish',
-      'turkish',
-    ];
-    // LOG: Entrada original
-    console.log(
-      '[LANGUAGES] Entrada original en transformToEditorFormat:',
-      data.languages
-    );
-    // Parsear si vienen como strings JSON
-    const experience =
-      typeof data.experience === 'string'
-        ? JSON.parse(data.experience)
-        : Array.isArray(data.experience)
-        ? data.experience
-        : [];
-
-    const education =
-      typeof data.education === 'string'
-        ? JSON.parse(data.education)
-        : Array.isArray(data.education)
-        ? data.education
-        : [];
-
-    const skills =
-      typeof data.skills === 'string'
-        ? JSON.parse(data.skills)
-        : Array.isArray(data.skills)
-        ? data.skills
-        : [];
-
-    // --- LANGUAGES ---
-    let languages = [];
-    if (typeof data.languages === 'string') {
-      try {
-        languages = JSON.parse(data.languages);
-        console.log('[LANGUAGES] Parseado desde string:', languages);
-      } catch (e) {
-        console.warn('[LANGUAGES] Error al parsear string:', data.languages, e);
-        languages = [];
-      }
-    } else if (Array.isArray(data.languages)) {
-      languages = data.languages;
-      console.log('[LANGUAGES] Usando array directo:', languages);
-    } else {
-      console.warn('[LANGUAGES] Formato inesperado:', data.languages);
-    }
-    // Normalizar formato: [{ name, level, certification? }]
-    languages = (languages || []).map((lang) => {
-      if (typeof lang === 'string') {
-        const match = lang.match(/(.+?)\s*\(([^)]+)\)/);
-        if (match) {
-          return {
-            name: match[1].trim(),
-            level: match[2].trim(),
-            certification: '',
-          };
-        }
-        return { name: lang.trim(), level: '', certification: '' };
-      }
-      return {
-        name: lang.name || '',
-        level: lang.level || '',
-        certification: lang.certification || '',
-      };
-    });
-    // Refuerzo: buscar idiomas en skills si el array de languages está vacío
-    if ((!languages || languages.length === 0) && Array.isArray(skills)) {
-      const detectedLangs = skills
-        .filter((skill) => {
-          if (!skill.name) return false;
-          const name = skill.name.toLowerCase();
-          return COMMON_LANGUAGES.some((lang) => name.includes(lang));
-        })
-        .map((skill) => {
-          // Intentar extraer nivel si está en el nombre, ej: "Inglés (C1)"
-          const match = skill.name.match(/(.+?)\s*\(([^)]+)\)/);
-          return {
-            name: match ? match[1].trim() : skill.name.trim(),
-            level: match ? match[2].trim() : skill.level || '',
-            certification: skill.certification || '',
-          };
-        });
-      if (detectedLangs.length > 0) {
-        languages = detectedLangs;
-        console.log(
-          '[LANGUAGES][REFUERZO] Detectados en skills:',
-          detectedLangs
-        );
-      }
-    }
-    // Validar formato final para la BD: array de objetos {name, level, certification}
-    languages = (languages || []).map((lang) => ({
-      name: lang.name || '',
-      level: lang.level || '',
-      certification: lang.certification || '',
-    }));
-    console.log('[LANGUAGES] Final para guardar en BD:', languages);
-    console.log('[LANGUAGES] Normalizado para guardar:', languages);
-
-    return {
-      ...data,
-      experience: experience.map((exp) => ({
-        title: exp.title || '',
-        companyName: exp.company || '',
-        city: exp.location?.split(',')[0]?.trim() || '',
-        state: exp.location?.split(',')[1]?.trim() || '',
-        startDate: exp.startDate || '',
-        endDate: exp.endDate || '',
-        currentlyWorking: exp.current || false,
-        workSummary: [exp.description || '', ...(exp.achievements || [])]
-          .filter(Boolean)
-          .map((item, idx) => `${idx === 0 ? '' : '• '}${item}`)
-          .join('\n'),
-      })),
-      education: education.map((edu) => ({
-        universityName: edu.institution || '',
-        degree: edu.degree || '',
-        major: '',
-        startDate: edu.graduationYear ? `${edu.graduationYear - 4}` : '',
-        endDate: edu.graduationYear?.toString() || '',
-        description: edu.description || '',
-      })),
-      skills: skills,
-      languages: languages,
-    };
-  };
 
   // Crear candidatura automáticamente con carta de presentación
   const createJobApplication = async (resumeId, userEmail) => {
@@ -553,7 +592,7 @@ const Step4Results = ({ generatedData, onStartOver }) => {
               </TabsList>
 
               <TabsContent value="cv" className="space-y-4 mt-6">
-                <ResumePreview resume={resume} />
+                <ResumePreview resume={resumePreviewData} />
               </TabsContent>
 
               <TabsContent value="cover-letter" className="space-y-4 mt-6">
@@ -565,7 +604,7 @@ const Step4Results = ({ generatedData, onStartOver }) => {
             </Tabs>
           ) : (
             <div className="space-y-4 mt-6">
-              <ResumePreview resume={resume} />
+              <ResumePreview resume={resumePreviewData} />
               {!hasValidJobOffer && (
                 <div className="mt-6 p-5 bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-300 rounded-xl shadow-sm">
                   <div className="flex items-start gap-4">
@@ -780,30 +819,39 @@ const ResumePreview = ({ resume }) => (
         <div className="flex flex-col gap-3">
           {resume.languages.map((lang, index) => {
             const levelRaw = lang.level || '';
-            const level = levelRaw.trim().toUpperCase();
-            // Considerar nativo si contiene la palabra nativo/native (cualquier case)
-            const isNative = /nativo|native/.test(
-              levelRaw.trim().toLowerCase()
-            );
-            // Si es C2 y contiene nativo, también 100%
-            const isC2Native =
-              level.startsWith('C2') &&
-              /nativo|native/.test(levelRaw.trim().toLowerCase());
+            const level = levelRaw.trim();
+            // Detección mejorada de nativo
+            const isNative = /nativo|native|lengua materna/i.test(level);
             let levelPercent = 0;
-            if (isNative || isC2Native) {
+            if (isNative) {
               levelPercent = 100;
-            } else if (level === 'C2') {
-              levelPercent = 95;
-            } else if (level === 'C1') {
-              levelPercent = 85;
-            } else if (level === 'B2') {
-              levelPercent = 75;
-            } else if (level === 'B1') {
-              levelPercent = 60;
-            } else if (level === 'A2') {
-              levelPercent = 40;
-            } else if (level === 'A1') {
-              levelPercent = 20;
+            } else {
+              const levelUpper = level.toUpperCase();
+              if (levelUpper === 'C2' || levelUpper.startsWith('C2')) {
+                levelPercent = 95;
+              } else if (levelUpper === 'C1' || levelUpper.startsWith('C1')) {
+                levelPercent = 85;
+              } else if (
+                levelUpper === 'B2' ||
+                levelUpper.startsWith('B2') ||
+                /avanzado/i.test(level)
+              ) {
+                levelPercent = 75;
+              } else if (
+                levelUpper === 'B1' ||
+                levelUpper.startsWith('B1') ||
+                /intermedio/i.test(level)
+              ) {
+                levelPercent = 60;
+              } else if (levelUpper === 'A2' || levelUpper.startsWith('A2')) {
+                levelPercent = 40;
+              } else if (
+                levelUpper === 'A1' ||
+                levelUpper.startsWith('A1') ||
+                /básico/i.test(level)
+              ) {
+                levelPercent = 20;
+              }
             }
             return (
               <div key={index} className="flex items-center gap-3">
@@ -822,10 +870,15 @@ const ResumePreview = ({ resume }) => (
                 </Badge>
                 <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
                   <div
-                    className="h-2 bg-blue-600 transition-all"
+                    className={`h-2 transition-all ${
+                      levelPercent === 100 ? 'bg-green-600' : 'bg-blue-600'
+                    }`}
                     style={{ width: `${levelPercent}%` }}
                   />
                 </div>
+                <span className="text-xs text-muted-foreground min-w-[3rem]">
+                  {levelPercent}%
+                </span>
               </div>
             );
           })}

@@ -2,6 +2,11 @@ import { Languages as LanguagesIcon } from 'lucide-react';
 import React from 'react';
 
 function LanguagesPreview({ resumeInfo }) {
+  // Log temporal para depuración
+  console.log(
+    '[LanguagesPreview] resumeInfo.languages:',
+    resumeInfo?.languages
+  );
   // Función para obtener el color según el nivel
   const getLevelColor = (level) => {
     switch (level) {
