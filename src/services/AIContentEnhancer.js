@@ -12,10 +12,7 @@ import {
   experienceExpansionPrompt,
   experienceGenerationPrompt,
 } from './prompts/enhancementPrompts';
-import {
-  skillsParserPrompt,
-  skillsCategorizationPrompt,
-} from './prompts/skillsPrompts';
+import {} from './prompts/skillsPrompts';
 
 class AIContentEnhancer {
   /**

@@ -102,55 +102,66 @@ const transformToEditorFormat = (data) => {
     languages = data.languages;
   }
   // Normalizar formato: [{ name, level, certification? }]
-  languages = (languages || []).map((lang) => {
-    if (typeof lang === 'string') {
-      const match = lang.match(/(.+?)\s*\(([^)]+)\)/);
-      if (match) {
-        return {
-          name: match[1].trim(),
-          level: match[2].trim(),
-          certification: '',
-        };
+  languages = (languages || [])
+    .map((lang) => {
+      if (typeof lang === 'string') {
+        const match = lang.match(/(.+?)\s*\(([^)]+)\)/);
+        if (match) {
+          return {
+            name: match[1].trim(),
+            level: match[2].trim(),
+            certification: '',
+          };
+        }
+        return { name: lang.trim(), level: '', certification: '' };
       }
-      return { name: lang.trim(), level: '', certification: '' };
-    }
-    let level = lang.level || '';
-    if (!level && typeof lang.rating === 'number') {
-      level = RATING_TO_LEVEL[lang.rating] || 'B1';
-    }
-    return {
-      name: lang.name || '',
-      level: level,
-      certification: lang.certification || '',
-    };
-  });
+      let level = lang.level || '';
+      if (!level && typeof lang.rating === 'number') {
+        level = RATING_TO_LEVEL[lang.rating] || null; // null si no hay mapping
+      }
+      return {
+        name: lang.name || '',
+        level: level,
+        certification: lang.certification || '',
+      };
+    })
+    .filter((lang) => lang.level && lang.level.trim() !== ''); // Solo idiomas con nivel definido
   // Refuerzo: buscar idiomas en skills si el array de languages está vacío
   if ((!languages || languages.length === 0) && Array.isArray(skills)) {
     const detectedLangs = skills
-      .filter((skill) => {
-        if (!skill.name) return false;
-        const name = skill.name.toLowerCase();
-        return COMMON_LANGUAGES.some((lang) => name.includes(lang));
-      })
       .map((skill) => {
-        const match = skill.name.match(/(.+?)\s*\(([^)]+)\)/);
-        let level = '';
+        if (!skill.name) return null;
+        const nameLower = skill.name.toLowerCase();
+        const isLanguage = COMMON_LANGUAGES.some((lang) =>
+          nameLower.includes(lang)
+        );
+        if (!isLanguage) return null;
+        const match = skill.name.match(/(.+) \((.+)\)/);
+        let level;
         if (match) {
           level = match[2].trim();
         } else if (skill.level) {
           level = skill.level;
         } else if (typeof skill.rating === 'number') {
-          level = RATING_TO_LEVEL[skill.rating] || 'B1';
+          level = RATING_TO_LEVEL[skill.rating] || null;
         }
-        return {
-          name: match ? match[1].trim() : skill.name.trim(),
-          level: level,
-          certification: skill.certification || '',
-        };
-      });
+        if (level) {
+          return {
+            name: match ? match[1].trim() : skill.name.trim(),
+            level: level,
+            certification: skill.certification,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean); // Solo idiomas con nivel definido
     if (detectedLangs.length > 0) {
       languages = detectedLangs;
     }
+  }
+  // Si no hay ningún idioma, asume Español como nativo (opcional, puedes quitar si no lo deseas)
+  if (!languages || languages.length === 0) {
+    languages = [{ name: 'Español', level: 'Nativo', certification: '' }];
   }
   // Si falta el nivel, intenta completarlo desde skills
   languages = (languages || []).map((lang) => {
@@ -818,6 +829,8 @@ const ResumePreview = ({ resume }) => (
       <Section title="Idiomas">
         <div className="flex flex-col gap-3">
           {resume.languages.map((lang, index) => {
+            // Si no se pudo determinar un nivel, no mostrar el idioma.
+            if (!lang.level || lang.level.trim() === '') return null;
             const levelRaw = lang.level || '';
             const level = levelRaw.trim();
             // Detección mejorada de nativo
@@ -853,6 +866,8 @@ const ResumePreview = ({ resume }) => (
                 levelPercent = 20;
               }
             }
+            // Si el nivel es 0%, no mostrar el idioma
+            if (levelPercent === 0) return null;
             return (
               <div key={index} className="flex items-center gap-3">
                 <Badge variant="outline">
