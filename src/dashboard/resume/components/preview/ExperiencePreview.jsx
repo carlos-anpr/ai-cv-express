@@ -26,10 +26,22 @@ function ExperiencePreview({ resumeInfo }) {
           >
             {experience?.title}
           </h2>
-          <h2 className="text-xs flex justify-between">
-            {experience?.companyName}, {experience?.city}, {experience?.state}
-            <span>
-              {experience?.startDate} -
+          <h2 className="text-xs flex justify-between items-center mt-0.5">
+            <span
+              className="font-semibold text-primary"
+              style={{ color: resumeInfo?.themeColor }}
+            >
+              {experience?.companyName}
+            </span>
+            <span className="text-gray-700 ml-2">
+              {experience?.city}
+              {experience?.state ? `, ${experience?.state}` : ''}
+            </span>
+            <span
+              className="font-semibold text-primary ml-2"
+              style={{ color: resumeInfo?.themeColor }}
+            >
+              {experience?.startDate} -{' '}
               {experience?.currentlyWorking
                 ? 'Actualidad'
                 : experience?.endDate}
