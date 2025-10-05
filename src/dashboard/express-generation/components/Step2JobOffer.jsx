@@ -60,30 +60,40 @@ const Step2JobOffer = ({ onNext, onBack, initialData }) => {
       );
     }
 
-    // Validación de campos clave mencionados
-    const hasCompany = /empresa|company|organization/i.test(rawText);
-    const hasPosition = /puesto|position|cargo|rol|role|job/i.test(rawText);
-    const hasRequirements =
-      /requisito|requirement|experiencia|experience|habilidad|skill/i.test(
-        rawText
-      );
+    // CAMBIO: Solo validar si NO hay datos extraídos aún
+    if (length >= 100 && !extractedData) {
+      // Validar solo si no se ha extraído nada todavía
+      const hasCompany = /empresa|company|organization/i.test(rawText);
+      const hasPosition = /puesto|position|cargo|rol|role|job/i.test(rawText);
 
-    if (length >= 100 && !hasCompany) {
-      warnings.push(
-        'No se detecta nombre de empresa. Sin empresa no se creará candidatura.'
-      );
+      if (!hasCompany) {
+        warnings.push(
+          'Verifica que incluyas el nombre de la empresa en la descripción.'
+        );
+      }
+      if (!hasPosition) {
+        warnings.push('Verifica que incluyas el título del puesto.');
+      }
     }
 
-    if (length >= 100 && !hasPosition) {
-      warnings.push(
-        'No se detecta título del puesto. Añádelo para mejor resultado.'
-      );
-    }
-
-    if (length >= 200 && !hasRequirements) {
-      warnings.push(
-        'No se detectan requisitos. La carta será menos personalizada.'
-      );
+    // Si YA hay datos extraídos, validar con ellos
+    if (extractedData?.data) {
+      if (
+        !extractedData.data.companyName ||
+        extractedData.data.companyName === 'No especificado'
+      ) {
+        warnings.push(
+          'No se detectó nombre de empresa. Sin empresa no se creará candidatura.'
+        );
+      }
+      if (
+        !extractedData.data.jobTitle ||
+        extractedData.data.jobTitle === 'No especificado'
+      ) {
+        warnings.push(
+          'No se detectó título del puesto. Añádelo para mejor resultado.'
+        );
+      }
     }
 
     setValidation({

@@ -1,6 +1,5 @@
 /**
  * Express Job Offer Extractor Prompt
- *
  * Extrae información estructurada de ofertas de trabajo pegadas en formato libre.
  */
 
@@ -11,33 +10,44 @@ export const expressJobExtractorPrompt = (rawJobOfferText) => {
 IMPORTANTE:
 - Lee CUIDADOSAMENTE todo el texto antes de extraer
 - Identifica correctamente empresa, puesto, ubicación, requisitos
-- BUSCA el título del puesto incluso si no dice explícitamente "Puesto:" o "Título:"
-- El título suele estar en la primera línea o después de "Oferta de trabajo:" o "Buscamos:"
+- BUSCA el título del puesto incluso si no dice explícitamente "Puesto" o "Título"
+- El título suele estar en la primera línea o después de "Oferta de trabajo" o "Buscamos"
 - Si menciona empresa/compañía de cualquier forma, extráela (puede estar en firma, contacto, etc.)
 - Si algo no está presente después de leer TODO el texto, marca como "No especificado"
-- Normaliza formatos (ej: "50k-60k", "50.000€-60.000€/año")
+- Normaliza formatos (ej: 50k-60k, 50.000-60.000/año)
 - Detecta modalidad de trabajo (remoto/híbrido/presencial)`,
 
     prompt: `Analiza CUIDADOSAMENTE la siguiente oferta de trabajo y extrae información estructurada en formato JSON:
 
 OFERTA DE TRABAJO:
-"""
 ${rawJobOfferText}
-"""
 
 INSTRUCCIONES DE EXTRACCIÓN:
+
 1. Lee TODO el texto completo primero
-2. El título del puesto puede estar:
+
+2. El **título del puesto** puede estar:
    - En la primera línea
-   - Después de "Oferta de trabajo:", "Buscamos:", "Puesto:"
+   - Después de "Oferta de trabajo", "Buscamos", "Puesto"
    - Entre paréntesis como "(Nivel Mid)"
    Ejemplo: "Desarrollador Java Backend (Nivel Mid)" → jobTitle: "Desarrollador Java Backend"
-3. La empresa puede estar:
-   - Al final en firma/contacto (empleo@empresaX.com → "empresaX")
+
+3. La **empresa** puede estar:
+   - Al final en firma/contacto: empleo@empresaX.com → empresaX
    - Mencionada como "nuestra empresa", "nuestro equipo"
    - Si NO hay nombre de empresa real, usa "No especificado"
-4. Los requisitos están en secciones como "Requisitos:", "Requirements:", "Necesitas:"
-5. Las responsabilidades están en "Responsabilidades:", "Funciones:", "Harás:"
+
+4. **DESCRIPCIÓN DEL PUESTO (CRÍTICO)**:
+   - Busca secciones como "Descripción del puesto", "Sobre el rol", "Qué harás", "Acerca de la posición"
+   - **SI NO ENCUENTRAS una descripción específica del puesto**, usa el contenido de los REQUISITOS como descripción
+   - La descripción NO puede estar vacía - es obligatorio tener contenido aquí
+   - Si solo hay requisitos técnicos sin contexto del rol, combínalos en una descripción coherente
+
+5. Los **requisitos** están en secciones como "Requisitos", "Requirements", "Necesitas":
+   - **essential**: Marcados como "obligatorio", "requerido", "must have", "esencial"
+   - **desired**: Marcados como "valorable", "deseable", "nice to have", "se valora"
+
+6. Las **responsabilidades** están en "Responsabilidades", "Funciones", "Harás"
 
 Extrae la siguiente información y devuélvela en formato JSON válido:
 
@@ -45,6 +55,7 @@ Extrae la siguiente información y devuélvela en formato JSON válido:
   "companyName": "Nombre de la empresa",
   "companyDescription": "Breve descripción de la empresa si está disponible, sino 'No especificado'",
   "jobTitle": "Título exacto del puesto",
+  "jobDescription": "Descripción completa del rol - SI ESTÁ VACÍO, USA LOS REQUISITOS AQUÍ",
   "location": {
     "city": "Ciudad",
     "country": "País",
@@ -57,66 +68,51 @@ Extrae la siguiente información y devuélvela en formato JSON válido:
     "max": 0,
     "currency": "EUR",
     "period": "anual|mensual",
-    "display": "Formato legible (ej: '45.000€ - 55.000€/año')"
+    "display": "Formato legible (ej: '45.000 - 55.000€/año')"
   },
   "requirements": {
-    "essential": [
-      "Requisito esencial 1",
-      "Requisito esencial 2"
-    ],
-    "desired": [
-      "Requisito deseable 1",
-      "Requisito deseable 2"
-    ],
+    "essential": ["Requisito esencial 1", "Requisito esencial 2"],
+    "desired": ["Requisito deseable 1", "Requisito deseable 2"],
     "experience": "Años de experiencia requeridos o 'No especificado'",
     "education": "Nivel educativo requerido o 'No especificado'"
   },
   "responsibilities": [
     "Responsabilidad 1",
-    "Responsabilidad 2",
-    "Máximo 8 responsabilidades principales"
+    "Responsabilidad 2"
   ],
-  "benefits": [
-    "Beneficio 1",
-    "Beneficio 2",
-    "Si no hay, array vacío"
-  ],
-  "technicalSkills": [
-    "Habilidad técnica 1",
-    "Habilidad técnica 2",
-    "Extraídas de requisitos"
-  ],
-  "softSkills": [
-    "Habilidad blanda 1",
-    "Habilidad blanda 2"
-  ],
+  "benefits": ["Beneficio 1", "Beneficio 2"],
+  "technicalSkills": ["Habilidad técnica 1", "Habilidad técnica 2"],
+  "softSkills": ["Habilidad blanda 1", "Habilidad blanda 2"],
   "jobLevel": "junior|mid|senior|lead|director",
   "industry": "Industria o sector",
   "applicationDeadline": "Fecha límite si se menciona, sino null",
   "postedDate": "Fecha de publicación si se menciona, sino null"
 }
 
-REGLAS PARA CLASIFICACIÓN:
-- workMode: "remoto" si menciona "100% remoto", "híbrido" si menciona "2-3 días oficina", sino "presencial"
-- jobLevel: Basado en título y años de experiencia requeridos
-  * junior: 0-2 años, títulos con "Junior", "Trainee"
-  * mid: 2-5 años, sin calificativo especial
-  * senior: 5+ años, títulos con "Senior", "Lead"
-  * lead/director: Roles de liderazgo, "Team Lead", "Manager", "Director"
+**REGLA CRÍTICA PARA jobDescription**:
+- Si no hay una sección clara de "descripción del puesto", construye una descripción combinando:
+  1. El contexto del título del puesto
+  2. Los requisitos esenciales
+  3. Las responsabilidades mencionadas
+- jobDescription NUNCA debe estar vacío o ser "No especificado"
+- Si realmente no hay información suficiente, copia directamente los requisitos esenciales
 
-REGLAS PARA REQUISITOS:
-- essential: Marcados como "obligatorio", "requerido", "must have", "esencial"
-- desired: Marcados como "valorable", "deseable", "nice to have", "se valora"
+REGLAS PARA CLASIFICACIÓN:
+- **workMode**: "remoto" si menciona "100% remoto", "híbrido" si menciona "2-3 días oficina", sino "presencial"
+- **jobLevel**: Basado en título y años de experiencia requeridos
+  - junior: 0-2 años
+  - mid: 2-5 años, sin calificativo especial
+  - senior: 5+ años, títulos con "Senior", "Lead"
+  - lead/director: Roles de liderazgo, "Team Lead", "Manager", "Director"
 
 REGLAS PARA SALARIO:
 - Si no se menciona: min: 0, max: 0, display: "No especificado"
-- Normaliza formatos: "50k" = 50000, "50.000€" = 50000
-- Detecta periodo: /año, /mes, anual, mensual
+- Normaliza formatos: 50k → 50000, 50.000 → 50000
+- Detecta periodo: "año", "mes", "anual", "mensual"
 
 Si algo no está mencionado explícitamente, usa "No especificado" o valores por defecto apropiados.
 
 Responde ÚNICAMENTE con el JSON, sin texto adicional.`,
-
     responseFormat: 'application/json',
   };
 };
@@ -179,7 +175,7 @@ const calculateCompleteness = (data) => {
   let maxScore = 10;
 
   if (data.companyName && data.companyName !== 'No especificado') score++;
-  if (data.jobTitle && data.jobTitle.length > 3) score++;
+  if (data.jobTitle && data.jobTitle.length >= 3) score++;
   if (data.location?.city) score++;
   if (data.requirements?.essential?.length > 0) score++;
   if (data.responsibilities?.length > 0) score++;
@@ -208,13 +204,33 @@ const calculateCompleteness = (data) => {
 };
 
 /**
- * Normaliza los datos extraídos
+ * Normaliza los datos extrados con fallback para jobDescription
  */
 export const normalizeJobOfferData = (data) => {
+  // Si jobDescription está vacío o es "No especificado", usar requirements como fallback
+  let jobDescription = data.jobDescription?.trim() || '';
+
+  if (!jobDescription || jobDescription === 'No especificado') {
+    // Construir descripción desde los requisitos
+    const essentialReqs = Array.isArray(data.requirements?.essential)
+      ? data.requirements.essential.filter(Boolean)
+      : [];
+
+    if (essentialReqs.length > 0) {
+      jobDescription = `Este puesto requiere: ${essentialReqs.join(', ')}.`;
+    } else {
+      // Si tampoco hay requisitos, usar una descripción genérica basada en el título
+      jobDescription = `Posición de ${data.jobTitle || 'desarrollo'} en ${
+        data.companyName || 'la empresa'
+      }.`;
+    }
+  }
+
   return {
     companyName: data.companyName?.trim() || 'No especificado',
     companyDescription: data.companyDescription?.trim() || 'No especificado',
     jobTitle: data.jobTitle?.trim() || 'No especificado',
+    jobDescription: jobDescription, // Usar la versión procesada con fallback
     location: {
       city: data.location?.city?.trim() || 'No especificado',
       country: data.location?.country?.trim() || 'No especificado',
@@ -264,37 +280,37 @@ export const generateJobOfferSuggestions = (data, completeness) => {
 
   if (completeness.percentage < 60) {
     suggestions.push(
-      '⚠️ La oferta parece incompleta. Considera pegar más información si está disponible.'
+      'La oferta parece incompleta. Considera pegar más información si está disponible.'
     );
   }
 
   if (data.requirements.essential.length === 0) {
     suggestions.push(
-      '💡 No se detectaron requisitos claros. El CV se generará basado en el título del puesto.'
+      'No se detectaron requisitos claros. El CV se generará basado en el título del puesto.'
     );
   }
 
   if (data.salaryRange.min === 0) {
     suggestions.push(
-      'ℹ️ No se especifica salario. Esto es normal en muchas ofertas.'
+      'No se especifica salario. Esto es normal en muchas ofertas.'
     );
   }
 
   if (data.technicalSkills.length < 3) {
     suggestions.push(
-      '💡 Se detectaron pocas habilidades técnicas. El CV resaltará tus skills generales.'
+      'Se detectaron pocas habilidades técnicas. El CV resaltará tus skills generales.'
     );
   }
 
   if (data.location.isRemote) {
     suggestions.push(
-      '✅ Trabajo remoto detectado. Esto se reflejará en la candidatura.'
+      'Trabajo remoto detectado. Esto se reflejará en la candidatura.'
     );
   }
 
   if (data.benefits.length > 0) {
     suggestions.push(
-      `✨ Se detectaron ${data.benefits.length} beneficios. Genial para la carta de presentación.`
+      `Se detectaron ${data.benefits.length} beneficios. Genial para la carta de presentación.`
     );
   }
 
