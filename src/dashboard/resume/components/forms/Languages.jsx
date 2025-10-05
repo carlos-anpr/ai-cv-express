@@ -236,45 +236,45 @@ function Languages({ onSaveHandlerReady }) {
     const lang = COMMON_LANGUAGES.find(
       (l) => l.name.toLowerCase() === languageName.toLowerCase()
     );
-    return lang?.flag || '🌐';
+    return lang?.flag || null;
   };
 
-  // Función para obtener el color según el nivel
+  // Función para obtener el color según el nivel (tema oscuro)
   const getLevelColor = (level) => {
     switch (level) {
       case 'A1':
       case 'A2':
-        return 'bg-red-50 text-red-700 border-red-200';
+        return 'bg-red-900/10 text-red-700 border-red-800/20';
       case 'B1':
       case 'B2':
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+        return 'bg-yellow-900/10 text-yellow-700 border-yellow-800/20';
       case 'C1':
       case 'C2':
-        return 'bg-green-50 text-green-700 border-green-200';
+        return 'bg-green-900/10 text-green-700 border-green-800/20';
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+        return 'bg-gray-900/10 text-gray-700 border-gray-800/20';
     }
   };
 
   return (
-    <div className="p-5 shadow-lg rounded-lg border-t-primary border-t-4 mt-10">
-      {/* Header con icono y descripción */}
+    <div className="p-5 shadow-lg rounded-lg border-t-primary border-t-4 mt-10 bg-white">
+      {/* Header con icono y descripción - tema oscuro */}
       <div className="flex items-center gap-3 mb-2">
-        <div className="p-2 bg-blue-50 rounded-lg">
-          <LanguagesIcon className="h-6 w-6 text-blue-600" />
+        <div className="p-2 bg-gradient-to-br from-gray-700 to-gray-900 rounded-lg">
+          <LanguagesIcon className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h2 className="font-bold text-lg">Idiomas</h2>
+          <h2 className="font-bold text-lg text-gray-900">Idiomas</h2>
           <p className="text-sm text-gray-600">
             Añade los idiomas que dominas y tu nivel de competencia
           </p>
         </div>
       </div>
 
-      {/* Info box con sugerencia */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-5 flex items-start gap-2">
-        <Globe className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-        <div className="text-xs text-blue-700">
+      {/* Info box con sugerencia - tema oscuro suave */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-5 flex items-start gap-2">
+        <Globe className="h-4 w-4 text-gray-700 mt-0.5 flex-shrink-0" />
+        <div className="text-xs text-gray-700">
           <strong>💡 Consejo:</strong> Los idiomas son clave en procesos de
           selección internacionales. Usa los niveles CEFR estándar (A1-C2) o
           indica si eres nativo. Si tienes certificaciones oficiales (TOEFL,
@@ -286,17 +286,19 @@ function Languages({ onSaveHandlerReady }) {
         {languagesList?.map((item, index) => (
           <div
             key={item.id || index}
-            className="border-2 border-gray-200 rounded-xl p-4 hover:border-blue-300 transition-all bg-white shadow-sm"
+            className="border-2 border-gray-200 rounded-xl p-4 hover:border-gray-400 transition-all bg-white shadow-sm hover:shadow-md"
           >
-            {/* Header de la card con badge de número */}
+            {/* Header de la card con badge de número - tema oscuro */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                <div className="w-8 h-8 bg-gradient-to-br from-gray-700 to-gray-900 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-md">
                   {index + 1}
                 </div>
-                <span className="text-lg">
-                  {item.name ? getLanguageFlag(item.name) : '🌐'}
-                </span>
+                {item.name && getLanguageFlag(item.name) ? (
+                  <span className="text-lg">{getLanguageFlag(item.name)}</span>
+                ) : (
+                  <Globe className="h-5 w-5 text-gray-700" />
+                )}
                 {item.level && (
                   <span
                     className={`px-2 py-0.5 rounded-full text-xs font-semibold border ${getLevelColor(
@@ -312,7 +314,7 @@ function Languages({ onSaveHandlerReady }) {
                   variant="ghost"
                   size="sm"
                   onClick={() => RemoveLanguageByIndex(index)}
-                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -322,8 +324,8 @@ function Languages({ onSaveHandlerReady }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Selector de idioma con autocompletado visual */}
               <div className="md:col-span-2">
-                <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1">
-                  <Globe className="h-3.5 w-3.5" />
+                <label className="text-sm font-medium text-gray-800 mb-1.5 flex items-center gap-1">
+                  <Globe className="h-3.5 w-3.5 text-gray-700" />
                   Idioma *
                 </label>
                 <Select
@@ -353,7 +355,7 @@ function Languages({ onSaveHandlerReady }) {
                     ))}
                     <SelectItem value="Otro">
                       <span className="flex items-center gap-2">
-                        <span className="text-lg">🌐</span>
+                        <Globe className="h-4 w-4 text-gray-700" />
                         Otro idioma...
                       </span>
                     </SelectItem>
@@ -372,8 +374,8 @@ function Languages({ onSaveHandlerReady }) {
 
               {/* Selector de nivel CEFR */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1">
-                  <LanguagesIcon className="h-3.5 w-3.5" />
+                <label className="text-sm font-medium text-gray-800 mb-1.5 flex items-center gap-1">
+                  <LanguagesIcon className="h-3.5 w-3.5 text-gray-700" />
                   Nivel de dominio *
                 </label>
                 <Select
@@ -427,10 +429,10 @@ function Languages({ onSaveHandlerReady }) {
 
               {/* Campo de certificación opcional */}
               <div>
-                <label className="text-sm font-medium text-gray-700 mb-1.5 flex items-center gap-1">
-                  <Award className="h-3.5 w-3.5" />
+                <label className="text-sm font-medium text-gray-800 mb-1.5 flex items-center gap-1">
+                  <Award className="h-3.5 w-3.5 text-gray-700" />
                   Certificación
-                  <span className="text-xs text-gray-400 font-normal">
+                  <span className="text-xs text-gray-500 font-normal">
                     (opcional)
                   </span>
                 </label>
@@ -476,30 +478,34 @@ function Languages({ onSaveHandlerReady }) {
         ))}
       </div>
 
-      {/* Botones de acción */}
+      {/* Botones de acción - tema oscuro */}
       <div className="mt-6 flex flex-col sm:flex-row gap-3">
         <Button
           variant="outline"
           onClick={AddNewLanguage}
-          className="flex-1 border-blue-300 text-blue-600 hover:bg-blue-50"
+          className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
         >
           <Plus className="h-4 w-4 mr-2" />
           Añadir Idioma
         </Button>
         {languagesList.length > 1 && (
-          <Button variant="outline" onClick={RemoveLanguage} className="flex-1">
+          <Button
+            variant="outline"
+            onClick={RemoveLanguage}
+            className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400"
+          >
             <X className="h-4 w-4 mr-2" />
             Quitar Último
           </Button>
         )}
       </div>
 
-      {/* Botón de guardar principal */}
+      {/* Botón de guardar principal - tema oscuro profesional */}
       <div className="mt-6 pt-4 border-t border-gray-200">
         <Button
           disabled={loading}
           onClick={onSave}
-          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
+          className="w-full bg-gradient-to-r from-gray-800 to-gray-900 hover:from-gray-700 hover:to-gray-800 text-white"
           size="lg"
         >
           {loading ? (
