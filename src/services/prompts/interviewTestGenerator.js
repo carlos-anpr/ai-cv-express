@@ -236,7 +236,7 @@ VALIDACIÓN FINAL:
 - Verifica que mencionas al menos 2 tecnologías específicas de los requisitos en las preguntas técnicas
 - Verifica que el nivel de dificultad coincide con el nivel detectado
 - Verifica que las preguntas NO sean genéricas tipo "¿Qué es X?"
-- Verifica que hay exactamente 2 técnicas, 2 comportamentales, 1 empresa
+- Verifica que hay exactamente 3 técnicas, 1 comportamentales, 1 empresa
 - Verifica que todo está en castellano
 `.trim();
 
