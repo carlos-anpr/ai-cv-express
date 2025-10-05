@@ -1,3 +1,12 @@
+// Helper para normalizar niveles
+const normalizeLevel = (level) => {
+  if (!level) return '';
+  const normalized = level.trim().toUpperCase();
+  if (/NATIVO|NATIVE|LENGUA MATERNA/.test(normalized)) return 'NATIVO';
+  const match = normalized.match(/^([ABC][12])/);
+  if (match) return match[1];
+  return normalized;
+};
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ResumeInfoContext } from '@/context/ResumeInfoContext';
@@ -305,7 +314,7 @@ function Languages() {
                   Nivel de dominio *
                 </label>
                 <Select
-                  value={item.level}
+                  value={normalizeLevel(item.level)}
                   onValueChange={(value) => handleChange(index, 'level', value)}
                 >
                   <SelectTrigger className="w-full">
@@ -314,17 +323,20 @@ function Languages() {
                         <span className="flex items-center gap-2">
                           <span
                             className={`w-2 h-2 rounded-full ${
-                              item.level.startsWith('A')
+                              normalizeLevel(item.level) === 'NATIVO'
+                                ? 'bg-blue-600'
+                                : normalizeLevel(item.level).startsWith('A')
                                 ? 'bg-red-500'
-                                : item.level.startsWith('B')
+                                : normalizeLevel(item.level).startsWith('B')
                                 ? 'bg-yellow-500'
-                                : 'bg-green-500'
+                                : normalizeLevel(item.level).startsWith('C')
+                                ? 'bg-green-500'
+                                : 'bg-gray-400'
                             }`}
                           />
-                          {
-                            LANGUAGE_LEVELS.find((l) => l.value === item.level)
-                              ?.label
-                          }
+                          {LANGUAGE_LEVELS.find(
+                            (l) => l.value === normalizeLevel(item.level)
+                          )?.label || item.level}
                         </span>
                       )}
                     </SelectValue>
