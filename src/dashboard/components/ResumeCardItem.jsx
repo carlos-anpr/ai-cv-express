@@ -10,6 +10,7 @@ import {
   Download,
   Trash2,
   ExternalLink,
+  Globe,
   Zap,
 } from 'lucide-react';
 import React, { useState, useEffect } from 'react';
@@ -223,6 +224,17 @@ function ResumeCardItem({ resume, refreshData }) {
                   >
                     <Download className="h-4 w-4 mr-2" />
                     Descargar PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      navigation(
+                        `/dashboard/resume/${resume.documentId}/edit?tab=webpage`
+                      )
+                    }
+                    className="cursor-pointer"
+                  >
+                    <Globe className="h-4 w-4 mr-2" />
+                    Ver como Página Web
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

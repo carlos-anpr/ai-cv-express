@@ -1203,6 +1203,40 @@ class LocalDatabase {
 // Instancia global del servicio
 const localDB = new LocalDatabase();
 
+// ---------------------------------------------
+// Web Page Config - Persistencia y recuperación
+// ---------------------------------------------
+
+/**
+ * Guarda la configuración de la página web del CV
+ */
+LocalDatabase.prototype.SaveWebPageConfig = async function (resumeId, config) {
+  try {
+    // Reutilizar UpdateResumeDetail para persistir webPageConfig dentro del registro
+    const payload = { webPageConfig: config };
+    const updated = await this.UpdateResumeDetail(resumeId, payload);
+    console.log('✅ Configuración web guardada localmente:', updated);
+    return updated;
+  } catch (error) {
+    console.error('❌ Error guardando configuración web:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene la configuración de la página web del CV
+ */
+LocalDatabase.prototype.GetWebPageConfig = async function (resumeId) {
+  try {
+    const response = await this.GetResumeById(resumeId);
+    const resume = response.data;
+    return { data: resume.webPageConfig || null };
+  } catch (error) {
+    console.error('❌ Error cargando configuración web:', error);
+    throw error;
+  }
+};
+
 // Exportar tanto la clase como la instancia
 export { LocalDatabase };
 export default localDB;

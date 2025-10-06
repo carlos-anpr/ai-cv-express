@@ -23,10 +23,19 @@ const GetResumeById = (id) =>
 
 const DeleteResumeById = (id) => axiosClient.delete('/user-resumes/' + id);
 
+// Operaciones de página web del CV
+const SaveWebPageConfig = (resumeId, data) =>
+  axiosClient.put(`/user-resumes/${resumeId}`, { webPageConfig: data });
+
+const GetWebPageConfig = (resumeId) =>
+  axiosClient.get(`/user-resumes/${resumeId}?populate=webPageConfig`);
+
 export default {
   CreateNewResume,
   GetUserResumes,
   UpdateResumeDetail,
   GetResumeById,
   DeleteResumeById,
+  SaveWebPageConfig,
+  GetWebPageConfig,
 };

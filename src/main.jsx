@@ -15,6 +15,7 @@ import EditJobApplication from './dashboard/resume/[resumeId]/job-applications/[
 import CoverLetterApplication from './dashboard/resume/[resumeId]/job-applications/[applicationId]/cover-letter';
 import InterviewSimulation from './dashboard/resume/[resumeId]/job-applications/[applicationId]/interview-simulation';
 import MyResume from './my-resume/[resumeId]/view';
+import PublicWebResume from './web-resume/[resumeId]';
 import { initializeDatabase } from './services/IndexedDBService';
 import './index.css';
 
@@ -79,6 +80,10 @@ const router = createBrowserRouter([
   {
     path: '/my-resume/:resumeId/view',
     element: <MyResume />,
+  },
+  {
+    path: '/web-resume/:resumeId',
+    element: <PublicWebResume />,
   },
 ]);
 

@@ -30,7 +30,7 @@ function Summary({ enableNext }) {
       ...prevResumeInfo,
       summary,
     }));
-  }, [summary]);
+  }, [summary, setResumeInfo]);
 
   // Controlar el estado del botón Next y guardar automáticamente
   useEffect(() => {

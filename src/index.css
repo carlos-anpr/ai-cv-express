@@ -179,3 +179,87 @@ ol {
   list-style: decimal !important;
   padding-left: 2em;
 }
+
+/* Mejoras para botones de tabs profesionales */
+[data-state='active'] {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+}
+
+button[data-slot='button'] {
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+button[data-slot='button']:hover {
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+button[data-slot='button']:active {
+  transform: translateY(0);
+}
+
+/* Eliminar hover azul predeterminado en tabs */
+[role='tablist'] button:hover {
+  background: hsl(var(--muted));
+}
+
+[role='tablist'] button[data-state='active']:hover {
+  background: hsl(var(--primary));
+}
+
+/* Estilos adicionales para WebPagePreview con tema oscuro */
+
+/* Scrollbar personalizado para tema oscuro */
+.bg-gray-900::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.bg-gray-900::-webkit-scrollbar-track {
+  background: #1f2937;
+  border-radius: 4px;
+}
+
+.bg-gray-900::-webkit-scrollbar-thumb {
+  background: #4b5563;
+  border-radius: 4px;
+}
+
+.bg-gray-900::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}
+
+/* Animación para botones hover */
+button[data-slot='button']:hover {
+  transform: translateY(-1px);
+  transition: all 0.2s ease;
+}
+
+button[data-slot='button']:active {
+  transform: translateY(0);
+}
+
+/* Mejora de sombras para cards oscuros */
+.bg-gray-900 {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3),
+    0 2px 4px -1px rgba(0, 0, 0, 0.2);
+}
+
+/* Gradiente animado para iframe container */
+@keyframes gradient-shift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.from-gray-800 {
+  background-size: 200% 200%;
+  animation: gradient-shift 10s ease infinite;
+}
