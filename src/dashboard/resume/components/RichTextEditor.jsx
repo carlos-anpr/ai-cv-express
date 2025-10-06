@@ -5,50 +5,37 @@ import React, { useContext, useState } from 'react';
 import {
   BtnBold,
   BtnBulletList,
-  BtnClearFormatting,
   BtnItalic,
   BtnLink,
   BtnNumberedList,
   BtnStrikeThrough,
-  BtnStyles,
   BtnUnderline,
   Editor,
   EditorProvider,
-  HtmlButton,
   Separator,
   Toolbar,
 } from 'react-simple-wysiwyg';
 import { AIChatSession } from './../../../../service/AIModal';
 import { toast } from 'sonner';
-import { useAIContentEnhancement } from '../../../hooks/useAIContentEnhancement';
-import AIOptionsDialog from './AIOptionsDialog';
 import AIPreviewPanel from './AIPreviewPanel';
+
 const PROMPT =
   'Título del puesto: {positionTitle}. Según el título del puesto, dame entre 5-7 puntos clave para describir mi experiencia en el currículum (No añadas nivel de experiencia y no uses formato JSON array). Dame el resultado en formato JSON con la estructura { jobTitle: "{positionTitle}", points: ["punto1","punto2",...]}. Toda la respuesta debe estar en castellano (español).';
+
 function RichTextEditor({ onRichTextEditorChange, index, defaultValue }) {
-  const [value, setValue] = useState(defaultValue);
+  const [value, setValue] = useState(defaultValue || '');
   const { resumeInfo } = useContext(ResumeInfoContext);
   const [loading, setLoading] = useState(false);
 
-  // Hook para mejora de contenido con IA
-  const {
-    isLoading: isEnhancing,
-    showOptions,
-    showPreview,
-    improvedContent,
-    setShowOptions,
-    setShowPreview,
-    detectMode,
-    enhanceExperience,
-    applyImprovedContent,
-    cancelImprovement,
-    regenerateContent,
-  } = useAIContentEnhancement();
+  // Estados para preview modal
+  const [showPreview, setShowPreview] = useState(false);
+  const [improvedContent, setImprovedContent] = useState('');
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
-  // Función para generar desde cero (comportamiento original)
+  // Función para generar desde cero
   const generateFromScratch = async () => {
     if (!resumeInfo?.experience[index]?.title) {
-      toast('Por favor añade el título del puesto');
+      toast.error('Por favor añade el título del puesto primero');
       return;
     }
     setLoading(true);
@@ -60,78 +47,163 @@ function RichTextEditor({ onRichTextEditorChange, index, defaultValue }) {
 
       const chatSession = AIChatSession();
       const result = await chatSession.sendMessage(prompt);
-      console.log(JSON.parse(result.response.text()).points);
       const resp = JSON.parse(result.response?.text());
 
       const listaItems = resp?.points
-        .map((elemento) => `<li>${elemento}</li>`)
+        ?.map((elemento) => `<li>${elemento}</li>`)
         .join('');
       const listaHTML = `<ul>${listaItems}</ul>`;
 
       setValue(listaHTML);
       onRichTextEditorChange({ target: { value: listaHTML } });
+      toast.success('✨ Contenido generado correctamente');
     } catch (error) {
-      console.error('Error generating:', error);
+      console.error('Error generando:', error);
       toast.error('Error al generar contenido');
     } finally {
       setLoading(false);
     }
   };
 
-  // Detectar modo del botón (generar vs mejorar)
-  const contentMode = detectMode(value);
-  const aiButtonText =
-    contentMode === 'enhance' ? 'Mejorar con IA' : 'Generar con IA';
-
-  // Handler para clic en el botón de IA
-  const handleAIAction = async () => {
-    if (!resumeInfo?.experience[index]?.title) {
-      toast('Por favor añade el título del puesto');
+  // Función MEJORAR con CONTEXTO COMPLETO y PREVIEW MODAL
+  const improveExistingContent = async () => {
+    const currentExperience = resumeInfo?.experience?.[index];
+    if (!currentExperience) {
+      toast.error('No se encontró la experiencia');
       return;
     }
 
-    if (contentMode === 'enhance') {
-      // Mostrar opciones de mejora
-      setShowOptions(true);
+    const jobTitle = currentExperience.title;
+    const companyName = currentExperience.companyName || '';
+    const currentContent = value;
+    const mainJobTitle = resumeInfo?.jobTitle || jobTitle;
+
+    // Obtener TODO el contexto previo del CV
+    const allExperiences = resumeInfo?.experience || [];
+    const previousExperiences = allExperiences
+      .filter((_, idx) => idx !== index)
+      .map((exp) => `- ${exp.title} en ${exp.companyName || 'empresa'}`)
+      .join('\n');
+
+    const skillsList =
+      resumeInfo?.skills?.map((skill) => skill.name).join(', ') ||
+      'habilidades técnicas';
+
+    const education = resumeInfo?.education?.[0]
+      ? `${resumeInfo.education[0].degree} en ${resumeInfo.education[0].major}`
+      : '';
+
+    setLoading(true);
+
+    try {
+      const prompt = `Eres un experto en redacción de CVs profesionales y reclutamiento.
+
+**CONTEXTO DEL CANDIDATO:**
+- Puesto objetivo principal: "${mainJobTitle}"
+- Educación: ${education || 'No especificada'}
+- Habilidades clave: ${skillsList}
+${previousExperiences ? `- Otras experiencias:\n${previousExperiences}` : ''}
+
+**EXPERIENCIA A MEJORAR:**
+- Puesto: "${jobTitle}"
+- Empresa: "${companyName}"
+
+**DESCRIPCIÓN ACTUAL:**
+${currentContent}
+
+**INSTRUCCIONES CRÍTICAS:**
+1. Mejora SOLO el contenido existente, NO inventes información falsa
+2. NO añadas tecnologías, proyectos o logros que no estén mencionados
+3. Mejora la redacción para que sea más profesional e impactante
+4. Adapta la descripción para que sea relevante al puesto objetivo "${mainJobTitle}"
+5. Usa verbos de acción potentes (desarrollé, lideré, implementé, optimicé, etc.)
+6. Cuantifica cuando sea posible basándote en lo que YA está escrito
+7. Mantén el formato HTML <ul><li>...</li></ul>
+8. Máximo 5-7 puntos concisos
+
+**FORMATO DE RESPUESTA:**
+Devuelve SOLO el HTML mejorado con estructura <ul><li>...</li></ul>, sin explicaciones.
+
+IMPORTANTE: NO inventes datos. Si el contenido actual es vago, mejora la redacción pero mantén la misma información.`;
+
+      const chatSession = AIChatSession();
+      const result = await chatSession.sendMessage(prompt);
+      let improvedHTML = result.response.text().trim();
+
+      // Limpiar posibles wrappings JSON
+      if (improvedHTML.startsWith('{') || improvedHTML.startsWith('[')) {
+        try {
+          const jsonResp = JSON.parse(improvedHTML);
+          improvedHTML =
+            jsonResp.html ||
+            jsonResp.content ||
+            jsonResp.points?.map((p) => `<li>${p}</li>`).join('') ||
+            improvedHTML;
+          if (!improvedHTML.includes('<ul>')) {
+            improvedHTML = `<ul>${improvedHTML}</ul>`;
+          }
+        } catch {
+          // Si falla el parse, usar como está
+        }
+      }
+
+      // Mostrar preview modal
+      setImprovedContent(improvedHTML);
+      setShowPreview(true);
+    } catch (error) {
+      console.error('Error mejorando contenido:', error);
+      toast.error('Error al mejorar el contenido');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Aplicar mejora desde modal
+  const handleApplyImproved = () => {
+    setValue(improvedContent);
+    onRichTextEditorChange({ target: { value: improvedContent } });
+    setShowPreview(false);
+    toast.success('✨ Mejora aplicada correctamente');
+  };
+
+  // Regenerar mejora
+  const handleRegenerate = async () => {
+    setIsRegenerating(true);
+    setShowPreview(false);
+    await improveExistingContent();
+    setIsRegenerating(false);
+  };
+
+  // Cancelar mejora
+  const handleCancelImprovement = () => {
+    setShowPreview(false);
+    setImprovedContent('');
+  };
+
+  // Detectar si hay contenido
+  const hasContent = () => {
+    if (!value) return false;
+    const textContent = value.replace(/<[^>]*>/g, '').trim();
+    return textContent.length > 0;
+  };
+
+  // Handler principal del botón AI
+  const handleAIAction = async () => {
+    if (!resumeInfo?.experience?.[index]?.title) {
+      toast.error('Por favor añade el título del puesto primero');
+      return;
+    }
+
+    if (hasContent()) {
+      // Si hay contenido: MEJORAR con preview
+      await improveExistingContent();
     } else {
-      // Generar desde cero (comportamiento actual)
+      // Si no hay contenido: GENERAR desde cero
       await generateFromScratch();
     }
   };
 
-  // Handler para selección de opción de mejora
-  const handleOptionSelect = async (option) => {
-    const jobTitle = resumeInfo.experience[index].title;
-    const companyName =
-      resumeInfo.experience[index].companyName || 'la empresa';
-
-    try {
-      await enhanceExperience(value, jobTitle, companyName, option);
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
-
-  // Handler para aplicar contenido mejorado
-  const handleApplyImproved = () => {
-    const newContent = applyImprovedContent();
-    setValue(newContent);
-    onRichTextEditorChange({ target: { value: newContent } });
-    toast.success('Contenido mejorado aplicado');
-  };
-
-  // Handler para regenerar
-  const handleRegenerate = async () => {
-    const jobTitle = resumeInfo.experience[index].title;
-    const companyName =
-      resumeInfo.experience[index].companyName || 'la empresa';
-
-    try {
-      await regenerateContent('experience', value, jobTitle, companyName);
-    } catch (error) {
-      console.error('Error:', error);
-    }
-  };
+  const buttonText = hasContent() ? 'Mejorar con IA' : 'Generar con IA';
 
   return (
     <div>
@@ -141,18 +213,18 @@ function RichTextEditor({ onRichTextEditorChange, index, defaultValue }) {
           variant="outline"
           size="sm"
           onClick={handleAIAction}
-          disabled={loading || isEnhancing}
+          disabled={loading || isRegenerating}
           className="flex gap-2 border-primary text-primary"
         >
-          {loading || isEnhancing ? (
+          {loading || isRegenerating ? (
             <LoaderCircle className="animate-spin" />
           ) : (
-            <>
-              <WandSparkles className="h-4 w-4" /> {aiButtonText}
-            </>
+            <WandSparkles className="h-4 w-4" />
           )}
+          {buttonText}
         </Button>
       </div>
+
       <EditorProvider>
         <Editor
           value={value}
@@ -175,47 +247,16 @@ function RichTextEditor({ onRichTextEditorChange, index, defaultValue }) {
         </Editor>
       </EditorProvider>
 
-      {/* Diálogo de opciones de mejora */}
-      <AIOptionsDialog
-        isOpen={showOptions}
-        onClose={() => setShowOptions(false)}
-        onSelect={handleOptionSelect}
-        title="¿Cómo quieres mejorar tu experiencia?"
-        options={[
-          {
-            id: 'improve',
-            icon: '✨',
-            label: 'Mejorar puntos actuales',
-            description: 'Hace tu descripción más profesional',
-          },
-          {
-            id: 'expand',
-            icon: '📈',
-            label: 'Ampliar con más detalles',
-            description: 'Añade contexto y métricas sugeridas',
-          },
-          {
-            id: 'reorganize',
-            icon: '🔄',
-            label: 'Reorganizar profesionalmente',
-            description: 'Ordena por impacto y relevancia',
-          },
-        ]}
-      />
-
-      {/* Panel de preview */}
+      {/* MODAL DE PREVIEW */}
       <AIPreviewPanel
         isOpen={showPreview}
-        title="✨ Experiencia Mejorada"
+        title="✨ Descripción Mejorada"
         content={improvedContent}
         originalContent={value}
         onApply={handleApplyImproved}
         onRegenerate={handleRegenerate}
-        onCancel={() => {
-          cancelImprovement();
-          setShowPreview(false);
-        }}
-        isLoading={isEnhancing}
+        onCancel={handleCancelImprovement}
+        isLoading={loading || isRegenerating}
         showComparison={true}
       />
     </div>
