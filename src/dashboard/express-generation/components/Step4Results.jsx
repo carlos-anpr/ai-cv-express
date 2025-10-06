@@ -64,6 +64,7 @@ const transformToEditorFormat = (data) => {
     'polish',
     'turkish',
   ];
+
   const RATING_TO_LEVEL = {
     5: 'Nativo',
     4: 'B2',
@@ -71,6 +72,7 @@ const transformToEditorFormat = (data) => {
     2: 'A2',
     1: 'A1',
   };
+
   // Parsear arrays
   const experience =
     typeof data.experience === 'string'
@@ -78,18 +80,21 @@ const transformToEditorFormat = (data) => {
       : Array.isArray(data.experience)
       ? data.experience
       : [];
+
   const education =
     typeof data.education === 'string'
       ? JSON.parse(data.education)
       : Array.isArray(data.education)
       ? data.education
       : [];
+
   const skills =
     typeof data.skills === 'string'
       ? JSON.parse(data.skills)
       : Array.isArray(data.skills)
       ? data.skills
       : [];
+
   // --- LANGUAGES ---
   let languages = [];
   if (typeof data.languages === 'string') {
@@ -101,6 +106,7 @@ const transformToEditorFormat = (data) => {
   } else if (Array.isArray(data.languages)) {
     languages = data.languages;
   }
+
   // Normalizar formato: [{ name, level, certification? }]
   languages = (languages || [])
     .map((lang) => {
@@ -117,7 +123,7 @@ const transformToEditorFormat = (data) => {
       }
       let level = lang.level || '';
       if (!level && typeof lang.rating === 'number') {
-        level = RATING_TO_LEVEL[lang.rating] || null; // null si no hay mapping
+        level = RATING_TO_LEVEL[lang.rating] || null;
       }
       return {
         name: lang.name || '',
@@ -125,7 +131,8 @@ const transformToEditorFormat = (data) => {
         certification: lang.certification || '',
       };
     })
-    .filter((lang) => lang.level && lang.level.trim() !== ''); // Solo idiomas con nivel definido
+    .filter((lang) => lang.level && lang.level.trim() !== '');
+
   // Refuerzo: buscar idiomas en skills si el array de languages está vacío
   if ((!languages || languages.length === 0) && Array.isArray(skills)) {
     const detectedLangs = skills
@@ -154,15 +161,18 @@ const transformToEditorFormat = (data) => {
         }
         return null;
       })
-      .filter(Boolean); // Solo idiomas con nivel definido
+      .filter(Boolean);
+
     if (detectedLangs.length > 0) {
       languages = detectedLangs;
     }
   }
-  // Si no hay ningún idioma, asume Español como nativo (opcional, puedes quitar si no lo deseas)
+
+  // Si no hay ningún idioma, asume Español como nativo
   if (!languages || languages.length === 0) {
     languages = [{ name: 'Español', level: 'Nativo', certification: '' }];
   }
+
   // Si falta el nivel, intenta completarlo desde skills
   languages = (languages || []).map((lang) => {
     let level = lang.level || '';
@@ -190,6 +200,7 @@ const transformToEditorFormat = (data) => {
       certification: certification,
     };
   });
+
   return {
     ...data,
     experience: experience.map((exp) => ({
@@ -200,10 +211,19 @@ const transformToEditorFormat = (data) => {
       startDate: exp.startDate || '',
       endDate: exp.endDate || '',
       currentlyWorking: exp.current || false,
-      workSummary: [exp.description || '', ...(exp.achievements || [])]
-        .filter(Boolean)
-        .map((item, idx) => `${idx === 0 ? '' : '• '}${item}`)
-        .join('\n'),
+      // ✅ FIX: Generar HTML con <ul><li> en lugar de texto plano
+      workSummary: (() => {
+        const items = [
+          exp.description || '',
+          ...(exp.achievements || []),
+        ].filter(Boolean);
+
+        if (items.length === 0) return '';
+
+        // Generar HTML con <ul><li> para que el RichTextEditor lo formatee correctamente
+        const liItems = items.map((item) => `<li>${item}</li>`).join('');
+        return `<ul>${liItems}</ul>`;
+      })(),
     })),
     education: education.map((edu) => ({
       universityName: edu.institution || '',

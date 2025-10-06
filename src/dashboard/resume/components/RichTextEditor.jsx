@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ResumeInfoContext } from '@/context/ResumeInfoContext';
 import { LoaderCircle, WandSparkles } from 'lucide-react';
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import {
   BtnBold,
   BtnBulletList,
@@ -23,6 +23,7 @@ const PROMPT =
   'Título del puesto: {positionTitle}. Según el título del puesto, dame entre 5-7 puntos clave para describir mi experiencia en el currículum (No añadas nivel de experiencia y no uses formato JSON array). Dame el resultado en formato JSON con la estructura { jobTitle: "{positionTitle}", points: ["punto1","punto2",...]}. Toda la respuesta debe estar en castellano (español).';
 
 function RichTextEditor({ onRichTextEditorChange, index, defaultValue }) {
+  // **IMPORTANTE**: Inicializar con defaultValue correctamente
   const [value, setValue] = useState(defaultValue || '');
   const { resumeInfo } = useContext(ResumeInfoContext);
   const [loading, setLoading] = useState(false);
@@ -31,6 +32,13 @@ function RichTextEditor({ onRichTextEditorChange, index, defaultValue }) {
   const [showPreview, setShowPreview] = useState(false);
   const [improvedContent, setImprovedContent] = useState('');
   const [isRegenerating, setIsRegenerating] = useState(false);
+
+  // **FIX CLAVE**: Actualizar value cuando defaultValue cambia (al cargar de BD)
+  useEffect(() => {
+    if (defaultValue) {
+      setValue(defaultValue);
+    }
+  }, [defaultValue]);
 
   // Función para generar desde cero
   const generateFromScratch = async () => {
