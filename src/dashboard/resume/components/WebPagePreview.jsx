@@ -19,12 +19,13 @@ import { generateResumeHTML } from '@/lib/webResumeUtils';
 /**
  * WebPagePreview Component
  * Preview interactivo del CV como página web con diseño profesional
- * Estilo consistente con HomePage (tonos grises claros, diseño limpio)
+ * Sistema OPTIMIZADO: Matching instantáneo + IA selectiva
  */
 const WebPagePreview = ({ resumeInfo }) => {
   const [viewMode, setViewMode] = useState('desktop');
   const [htmlContent, setHtmlContent] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const iframeRef = useRef(null);
 
   // Tema fijo azul (modern)
@@ -36,20 +37,33 @@ const WebPagePreview = ({ resumeInfo }) => {
     gradient: 'from-blue-600 to-purple-600',
   };
 
-  // Generar HTML del CV cuando cambia la información
+  // Generar HTML de forma ASÍNCRONA con sistema optimizado
   useEffect(() => {
-    console.log('🔄 WebPagePreview: Regenerando HTML...', {
-      hasResumeInfo: !!resumeInfo,
-      firstName: resumeInfo?.firstName,
-    });
+    const generateHTML = async () => {
+      console.log('🔄 WebPagePreview: Regenerando HTML...', {
+        hasResumeInfo: !!resumeInfo,
+        firstName: resumeInfo?.firstName,
+      });
 
-    if (resumeInfo) {
-      const html = generateResumeHTML(resumeInfo, fixedTheme);
-      setHtmlContent(html);
-      console.log('✅ HTML generado correctamente');
-    } else {
-      console.warn('⚠️ resumeInfo es null o undefined');
-    }
+      if (!resumeInfo) {
+        console.warn('⚠️ resumeInfo es null o undefined');
+        return;
+      }
+
+      setIsGenerating(true);
+      try {
+        const html = await generateResumeHTML(resumeInfo, fixedTheme);
+        setHtmlContent(html);
+        console.log('✅ HTML generado correctamente');
+      } catch (error) {
+        console.error('❌ Error generando HTML:', error);
+        toast.error('Error al generar la página web: ' + error.message);
+      } finally {
+        setIsGenerating(false);
+      }
+    };
+
+    generateHTML();
   }, [
     resumeInfo,
     resumeInfo?.firstName,
@@ -135,13 +149,17 @@ const WebPagePreview = ({ resumeInfo }) => {
     );
   }
 
-  if (!htmlContent) {
+  // Mostrar spinner mientras genera con sistema optimizado
+  if (isGenerating || !htmlContent) {
     return (
       <div className="flex items-center justify-center min-h-[500px] bg-muted/30 rounded-lg border border-border">
         <div className="text-center space-y-3">
-          <Globe className="w-12 h-12 mx-auto text-primary animate-pulse" />
-          <p className="text-muted-foreground text-lg">
-            Generando página web...
+          <Globe className="w-12 h-12 mx-auto text-primary animate-spin" />
+          <p className="text-muted-foreground text-lg font-medium">
+            Generando diseño personalizado...
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Adaptando colores, iconos y estructura según tu perfil
           </p>
         </div>
       </div>
@@ -150,9 +168,7 @@ const WebPagePreview = ({ resumeInfo }) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 h-full">
-      {/* ============================================
-          COLUMNA IZQUIERDA: Panel de Controles
-          ============================================ */}
+      {/* COLUMNA IZQUIERDA: Panel de Controles */}
       <aside className="space-y-4">
         {/* Card: Header Info */}
         <Card className="border-border/50 shadow-sm">
@@ -275,15 +291,14 @@ const WebPagePreview = ({ resumeInfo }) => {
             <div className="space-y-2 text-xs text-muted-foreground pl-6">
               <p>• HTML completamente standalone</p>
               <p>• Funciona sin conexión a internet</p>
+              <p>• Diseño adaptado a tu perfil</p>
               <p>• Compatible con todos los navegadores</p>
             </div>
           </CardContent>
         </Card>
       </aside>
 
-      {/* ============================================
-          COLUMNA DERECHA: Preview del CV
-          ============================================ */}
+      {/* COLUMNA DERECHA: Preview del CV */}
       <div className="relative">
         <div className="sticky top-4">
           <Card className="border-border/50 shadow-sm overflow-hidden">

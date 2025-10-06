@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import LocalDatabase from '../../../src/services/LocalDatabase';
 import { Loader2 } from 'lucide-react';
-import generateResumeHTML from '@/lib/webResumeUtils';
+import { generateResumeHTML } from '@/lib/webResumeUtils';
 
 /**
  * Página pública para visualizar CV como web
