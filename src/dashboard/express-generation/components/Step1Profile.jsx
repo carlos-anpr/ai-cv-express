@@ -175,9 +175,9 @@ Tengo experiencia en metodologías ágiles, CI/CD, y trabajo en equipo. Me apasi
 
           {/* Mensajes de validación */}
           {validation.errors.length > 0 && characterCount > 0 && (
-            <div className="flex items-start gap-2 p-3 bg-destructive/10 border border-destructive/20 rounded-md animate-in fade-in duration-200">
-              <AlertCircle className="w-4 h-4 text-destructive mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-destructive">
+            <div className="flex items-start gap-2 p-3 bg-destructive/5 border border-destructive/10 rounded-md animate-in fade-in duration-200">
+              <AlertCircle className="w-4 h-4 text-destructive/80 mt-0.5 flex-shrink-0" />
+              <div className="text-sm text-destructive/80">
                 {validation.errors[0]}
               </div>
             </div>
