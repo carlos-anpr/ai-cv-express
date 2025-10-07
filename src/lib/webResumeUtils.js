@@ -6,6 +6,63 @@
 
 import { AIChatSession } from '../../service/AIModal';
 
+// (debug logs removed for production)
+
+// Simple in-memory cache to avoid repeating AI calls for identical experience text
+// Key format: `${jobTitleTarget}::${baseText}`
+const skillCache = new Map();
+const SKILL_CACHE_KEY = 'ai_resume_skill_cache_v1';
+
+// Load cache from sessionStorage if present
+function loadSkillCacheFromSession() {
+  try {
+    const raw = sessionStorage.getItem(SKILL_CACHE_KEY);
+    if (!raw) return;
+    const obj = JSON.parse(raw);
+    if (obj && typeof obj === 'object') {
+      Object.entries(obj).forEach(([k, v]) => {
+        if (Array.isArray(v) && v.length > 0) skillCache.set(k, v);
+      });
+    }
+  } catch {
+    // ignore parsing/session errors
+  }
+}
+
+function saveSkillCacheToSession() {
+  try {
+    const obj = {};
+    for (const [k, v] of skillCache.entries()) {
+      if (Array.isArray(v) && v.length > 0) obj[k] = v;
+    }
+    sessionStorage.setItem(SKILL_CACHE_KEY, JSON.stringify(obj));
+  } catch {
+    // ignore storage errors
+  }
+}
+
+function getSkillCache(key) {
+  return skillCache.get(key) || null;
+}
+
+function setSkillCache(key, value) {
+  if (!key) return;
+  if (!Array.isArray(value) || value.length === 0) return;
+  skillCache.set(key, value);
+  try {
+    saveSkillCacheToSession();
+  } catch {
+    // ignore save errors
+  }
+}
+
+// initialize cache from sessionStorage
+try {
+  loadSkillCacheFromSession();
+} catch {
+  /* ignore */
+}
+
 /**
  * Biblioteca de iconos SVG paths (Lucide) por categoría
  */
@@ -145,11 +202,254 @@ export const groupSkillsByCategory = (skills) => {
 };
 
 /**
+ * Categorización de habilidades por texto (misma IA del editor)
+ */
+async function categorizeSkillsByText(freeText, jobTitleTarget) {
+  const sysPrompt = `
+Eres un experto en extracción y categorización de habilidades para CVs técnicos.
+Dado el TEXTO, devuelve un JSON:
+[
+  { "category": "Backend", "skills": [ { "name": "Node.js" }, { "name": "Express" } ] },
+  { "category": "Bases de Datos", "skills": [ { "name": "PostgreSQL" } ] }
+]
+- No inventes tecnologías.
+- Usa categorías: Backend, Frontend, Bases de Datos, DevOps/Cloud, Testing, Arquitectura, Seguridad, Data/AI, Metodologías, Soft Skills, Otros.
+- Responde SOLO el JSON.
+  `.trim();
+
+  const composed = [
+    jobTitleTarget ? `Puesto objetivo: ${jobTitleTarget}` : '',
+    freeText || '',
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+
+  try {
+    // Obtener la sesión (misma forma que el editor) y enviar mensaje
+    const chat = AIChatSession();
+    const result = await chat.sendMessage(`${sysPrompt}\n\n${composed}`);
+
+    // Reuse centralized raw extraction and parsing helpers
+    const raw = extractRawFromResult(result);
+    const cleansed = String(raw || '')
+      .replace(/^```json/i, '')
+      .replace(/^```/i, '')
+      .replace(/```$/i, '')
+      .trim();
+    const parsed = parseCategoriesFromCleansed(cleansed);
+    return parsed;
+  } catch (e) {
+    console.error('Error categorizando skills:', e);
+    return [];
+  }
+}
+
+/**
+ * Extrae el texto raw de la respuesta del adaptador (soporta varias formas)
+ */
+function extractRawFromResult(result) {
+  // 1) Adaptador “editor”: cuando viene “response” del SDK con candidates
+  if (result?.response && Array.isArray(result.response.candidates)) {
+    return result.response.candidates[0]?.content?.parts?.[0]?.text || '';
+  }
+  // 2) Adaptador llano: result.text ya es string
+  if (typeof result?.text === 'string') return result.text;
+  // 3) Degradar a candidates a nivel raíz si existiera
+  if (Array.isArray(result?.candidates)) {
+    return result.candidates[0]?.content?.parts?.[0]?.text || '';
+  }
+  // 4) String directo
+  if (typeof result === 'string') return result;
+  return '';
+}
+
+/**
+ * Parsea el contenido 'cleansed' hacia un array de categorías en el formato esperado
+ */
+function parseCategoriesFromCleansed(cleansed) {
+  let parsed = null;
+  try {
+    parsed = JSON.parse(cleansed);
+  } catch {
+    parsed = null;
+  }
+
+  // Fallback: soportar formato "Categoría: a, b, c" por línea
+  if (!Array.isArray(parsed)) {
+    const lines = String(cleansed || '')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
+    parsed = lines
+      .map((line) => {
+        const i = line.indexOf(':');
+        if (i === -1) return null;
+        const cat = line.slice(0, i).trim();
+        const skills = line
+          .slice(i + 1)
+          .split(',')
+          .map((s) => ({ name: s.trim() }))
+          .filter((s) => s.name);
+        return cat && skills.length ? { category: cat, skills } : null;
+      })
+      .filter(Boolean);
+  }
+
+  if (!Array.isArray(parsed)) parsed = [];
+  parsed = parsed.filter(
+    (c) =>
+      c &&
+      c.category &&
+      Array.isArray(c.skills) &&
+      c.skills.some((s) => s?.name)
+  );
+  return parsed;
+}
+
+/**
+ * Envío batch: recibe un array de textos (baseText) y devuelve un array con el mismo orden
+ * donde cada entrada es un array de categorías para esa experiencia.
+ */
+async function categorizeSkillsBatch(baseTextArray, jobTitleTarget) {
+  if (!Array.isArray(baseTextArray) || baseTextArray.length === 0) return [];
+
+  const sysPrompt = `
+Eres un experto en extracción y categorización de habilidades para CVs técnicos.
+Recibirás un ARRAY de EXPERIENCIAS indexadas. Devuelve SOLO un JSON con formato:
+[
+  { "index": 0, "categories": [ {"category":"Backend","skills":[{"name":"Node.js"}] }, ... ] },
+  { "index": 1, "categories": [ ... ] }
+]
+- Asegúrate de mantener el orden por índice.
+- No inventes tecnologías.
+- Usa categorías: Backend, Frontend, Bases de Datos, DevOps/Cloud, Testing, Arquitectura, Seguridad, Data/AI, Metodologías, Soft Skills, Otros.
+`.trim();
+
+  const composedList = baseTextArray
+    .map((t, i) => `EXPERIENCIA ${i}: ${String(t || '').slice(0, 1200)}`)
+    .join('\n\n---\n\n');
+
+  const composed = [
+    jobTitleTarget ? `Puesto objetivo: ${jobTitleTarget}` : '',
+    composedList,
+  ]
+    .filter(Boolean)
+    .join('\n\n');
+
+  try {
+    const chat = AIChatSession();
+    const result = await chat.sendMessage(`${sysPrompt}\n\n${composed}`);
+    const raw = extractRawFromResult(result);
+    const cleansed = String(raw || '')
+      .replace(/^```json/i, '')
+      .replace(/^```/i, '')
+      .replace(/```$/i, '')
+      .trim();
+
+    const parsed = (() => {
+      try {
+        return JSON.parse(cleansed);
+      } catch {
+        return null;
+      }
+    })();
+
+    // If parser returns array of {index, categories}
+    if (
+      Array.isArray(parsed) &&
+      parsed.every(
+        (p) => p && typeof p.index === 'number' && Array.isArray(p.categories)
+      )
+    ) {
+      // Map to results array
+      const out = Array.from({ length: baseTextArray.length }, () => []);
+      for (const item of parsed) {
+        const idx = Number(item.index);
+        if (Number.isInteger(idx) && idx >= 0 && idx < out.length) {
+          out[idx] = (
+            Array.isArray(item.categories) ? item.categories : []
+          ).filter((c) => c && c.category && Array.isArray(c.skills));
+        }
+      }
+      return out.map((cats) =>
+        cats.filter(
+          (c) =>
+            c &&
+            c.category &&
+            Array.isArray(c.skills) &&
+            c.skills.some((s) => s?.name)
+        )
+      );
+    }
+
+    // If parsed is an array of arrays (assume same order)
+    if (
+      Array.isArray(parsed) &&
+      parsed.length === baseTextArray.length &&
+      parsed.every((p) => Array.isArray(p))
+    ) {
+      return parsed.map((arr) =>
+        Array.isArray(arr)
+          ? arr.filter(
+              (c) =>
+                c &&
+                c.category &&
+                Array.isArray(c.skills) &&
+                c.skills.some((s) => s?.name)
+            )
+          : []
+      );
+    }
+
+    // If parsed is a flat array of category objects and length matches one experience => treat as first
+    if (Array.isArray(parsed) && baseTextArray.length === 1) {
+      // Prefer to reuse the single-item categorizer as a fallback (keeps behavior consistent)
+      try {
+        const single = await categorizeSkillsByText(
+          baseTextArray[0],
+          jobTitleTarget
+        );
+        return [single];
+      } catch {
+        return [parseCategoriesFromCleansed(cleansed)];
+      }
+    }
+
+    // Last resort: try to parse using the generic parser expecting an array of categories for each
+    const fallback = parseCategoriesFromCleansed(cleansed);
+    // return fallback for first experience and empty arrays for rest
+    return [fallback].concat(
+      Array.from({ length: Math.max(0, baseTextArray.length - 1) }, () => [])
+    );
+  } catch (err) {
+    console.warn('[BATCH] error', err);
+    return baseTextArray.map(() => []);
+  }
+}
+
+/**
+ * Render de chips de habilidades categorizadas
+ */
+function renderExperienceSkillTags(categories) {
+  if (!Array.isArray(categories) || categories.length === 0) return '';
+  const chips = [];
+  for (const cat of categories) {
+    const list = (cat?.skills || [])
+      .map((s) => s?.name)
+      .filter(Boolean)
+      .join(', ');
+    if (!cat?.category || !list) continue;
+    chips.push(`<span class="tag">${cat.category}: ${list}</span>`);
+  }
+  if (chips.length === 0) return '';
+  // Keep only production-safe output
+  return `<div class="timeline-tags">${chips.join('')}</div>`;
+}
+
+/**
  * Genera el HTML PROFESIONAL Y ELEGANTE del CV
  */
-export const generateResumeHTML = async (resumeInfo, theme) => {
-  console.log('🎨 Generando CV web profesional...');
-
+export const generateResumeHTML = async (resumeInfo) => {
   const {
     firstName = '',
     lastName = '',
@@ -185,20 +485,58 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
     })
   );
 
-  // Estadísticas
+  // Languages section uses simple name + level cards (no flags/progress)
+
+  // Render simple language cards without progress bars in a two-column grid
+  const languagesSection =
+    languages && Array.isArray(languages) && languages.length > 0
+      ? `
+    <!-- Languages Section -->
+    <section id="idiomas">
+      <div class="container">
+        <div class="section-header">
+          <h2 class="section-title">Idiomas</h2>
+          <p class="section-subtitle">Competencias lingüísticas</p>
+        </div>
+        <div class="languages-grid">
+          ${languages
+            .map((language) => {
+              const name = language?.name || '';
+              const level = language?.level || '';
+              return `
+                <div class="language-card">
+                  <h3 class="language-name">${name}</h3>
+                  <p class="language-level">${level}</p>
+                </div>
+              `;
+            })
+            .join('')}
+        </div>
+      </div>
+    </section>
+  `
+      : '';
+
+  // Estadísticas (parseo seguro año)
   const yearsExp =
     experience?.length > 0
       ? Math.max(
           ...experience
             .map((exp) => {
-              const start = exp.startDate
-                ? parseInt(exp.startDate.split('-')[0])
-                : 0;
+              const parseYear = (val) => {
+                try {
+                  if (!val) return 0;
+                  const parts = String(val).split('-');
+                  const y = parseInt(parts[0], 10);
+                  return Number.isFinite(y) ? y : 0;
+                } catch {
+                  return 0;
+                }
+              };
+              const start = parseYear(exp.startDate);
               const end = exp.currentlyWorking
                 ? new Date().getFullYear()
-                : exp.endDate
-                ? parseInt(exp.endDate.split('-')[0])
-                : 0;
+                : parseYear(exp.endDate);
               return end - start;
             })
             .filter((y) => y > 0)
@@ -208,7 +546,73 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
   const projectsCount = experience?.length * 4 || 5;
   const techCount = skills?.length || 0;
 
-  return `
+  // Categorización por experiencia usando batch prompt para reducir llamadas
+  const jobTitleTarget = jobTitle || '';
+  // Experience count logged in dev previously; removed for production
+  // Caché simple en memoria por hash del texto para reducir llamadas
+  // (skillCache está definido en módulo)
+  const stripHtml = (t) =>
+    String(t || '')
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  // Prepare arrays
+  const baseTexts = [];
+  const keys = [];
+  for (const exp of experience || []) {
+    const baseTextRaw = [
+      exp?.title,
+      exp?.companyName,
+      exp?.workSummery || exp?.workSummary,
+    ]
+      .filter(Boolean)
+      .join('. ');
+    const baseText = stripHtml(baseTextRaw);
+    baseTexts.push(baseText);
+    keys.push(`${jobTitleTarget}::${baseText}`);
+  }
+
+  // Check cache and collect missing
+  const categoriesPerExp = Array.from({ length: baseTexts.length }, () => []);
+  const toFetch = [];
+  const toFetchIdx = [];
+  baseTexts.forEach((bt, i) => {
+    if (!bt) return; // leave empty
+    const k = keys[i];
+    const cached = getSkillCache(k);
+    if (cached && Array.isArray(cached) && cached.length > 0) {
+      categoriesPerExp[i] = cached;
+    } else {
+      toFetch.push(bt);
+      toFetchIdx.push(i);
+    }
+  });
+
+  // If there are items to fetch, call the batch prompt once
+  if (toFetch.length > 0) {
+    const batchResults = await categorizeSkillsBatch(toFetch, jobTitleTarget);
+    batchResults.forEach((cats, j) => {
+      const idx = toFetchIdx[j];
+      const key = keys[idx];
+      const safeCats = Array.isArray(cats) ? cats : [];
+      categoriesPerExp[idx] = safeCats;
+      if (safeCats.length > 0) {
+        setSkillCache(key, safeCats);
+      }
+    });
+  }
+
+  // Build final categorizedByExperience with rendered tags
+  const categorizedByExperience = baseTexts.map((bt, idx) => {
+    const cats = categoriesPerExp[idx] || [];
+    const tagsHTML = bt ? renderExperienceSkillTags(cats) : '';
+    return { tagsHTML };
+  });
+
+  // Build the final HTML in a variable so we can debug its content before returning
+
+  const htmlOut = `
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -219,12 +623,7 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --color-primary: ${primaryColor};
             --color-secondary: ${secondaryColor};
@@ -236,548 +635,104 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
             --color-text-lighter: #94a3b8;
             --color-border: #e2e8f0;
         }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--color-bg);
-            color: var(--color-text);
-            line-height: 1.6;
-            font-size: 15px;
-            overflow-x: hidden;
-        }
-
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--color-bg); color: var(--color-text); line-height: 1.6; font-size: 15px; overflow-x: hidden; }
         /* Navigation */
-        .nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--color-border);
-            z-index: 1000;
-            transition: all 0.3s ease;
-        }
-
-        .nav.scrolled {
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            height: 70px;
-        }
-
-        .nav-logo {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.25rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .nav-menu {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-        }
-
-        .nav-link {
-            text-decoration: none;
-            color: var(--color-text-light);
-            font-weight: 500;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-            position: relative;
-            padding: 0.25rem 0;
-        }
-
-        .nav-link::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
-            transition: width 0.3s ease;
-        }
-
-        .nav-link:hover {
-            color: var(--color-primary);
-        }
-
-        .nav-link:hover::after,
-        .nav-link.active::after {
-            width: 100%;
-        }
-
+        .nav { position: fixed; top:0; left:0; right:0; background: rgba(255,255,255,.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--color-border); z-index:1000; transition: all .3s ease; }
+        .nav.scrolled { box-shadow: 0 4px 6px -1px rgba(0,0,0,.1); }
+        .nav-container { max-width:1200px; margin:0 auto; padding:0 2rem; display:flex; justify-content:space-between; align-items:center; height:70px; }
+        .nav-logo { font-family:'Playfair Display', serif; font-size:1.25rem; font-weight:700; background: linear-gradient(135deg,var(--color-primary),var(--color-secondary)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .nav-menu { display:flex; gap:2rem; list-style:none; }
+        .nav-link { text-decoration:none; color:var(--color-text-light); font-weight:500; font-size:.9rem; transition:all .3s ease; position:relative; padding:.25rem 0; }
+        .nav-link::after { content:''; position:absolute; bottom:0; left:0; width:0; height:2px; background: linear-gradient(90deg,var(--color-primary),var(--color-accent)); transition:width .3s ease; }
+        .nav-link:hover { color:var(--color-primary); }
+        .nav-link:hover::after, .nav-link.active::after { width:100%; }
         /* Container */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        /* Hero Section */
-        .hero {
-            padding: calc(70px + 4rem) 2rem 4rem;
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e0e7ff 100%);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
-            border-radius: 50%;
-            animation: float 20s ease-in-out infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(30px, 30px) scale(1.1); }
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
-            max-width: 800px;
-            margin: 0 auto;
-            text-align: center;
-            animation: fadeInUp 0.8s ease-out;
-        }
-
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: 2rem;
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--color-primary);
-            margin-bottom: 1.5rem;
-        }
-
-        .hero-badge::before {
-            content: '';
-            width: 8px;
-            height: 8px;
-            background: var(--color-accent);
-            border-radius: 50%;
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.5; transform: scale(1.2); }
-        }
-
-        .hero-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 3.5rem;
-            font-weight: 700;
-            line-height: 1.2;
-            margin-bottom: 1.5rem;
-            background: linear-gradient(135deg, var(--color-text) 0%, var(--color-primary) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .hero-subtitle {
-            font-size: 1.25rem;
-            color: var(--color-text-light);
-            margin-bottom: 2rem;
-            font-weight: 400;
-        }
-
-        .hero-description {
-            font-size: 1rem;
-            color: var(--color-text-light);
-            line-height: 1.8;
-            margin-bottom: 3rem;
-            max-width: 600px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .hero-stats {
-            display: flex;
-            justify-content: center;
-            gap: 3rem;
-            margin-top: 3rem;
-        }
-
-        .stat {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            display: block;
-            margin-bottom: 0.25rem;
-        }
-
-        .stat-label {
-            font-size: 0.85rem;
-            color: var(--color-text-light);
-            font-weight: 500;
-        }
-
+        .container { max-width:1200px; margin:0 auto; padding:0 2rem; }
+        /* Hero */
+        .hero { padding: calc(70px + 4rem) 2rem 4rem; background: linear-gradient(135deg,#f8fafc 0%,#f1f5f9 50%,#e0e7ff 100%); position:relative; overflow:hidden; }
+        .hero::before { content:''; position:absolute; top:-50%; right:-20%; width:600px; height:600px; background: radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 70%); border-radius:50%; animation: float 20s ease-in-out infinite; }
+        @keyframes float { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(30px,30px) scale(1.1);} }
+        .hero-content { position:relative; z-index:1; max-width:800px; margin:0 auto; text-align:center; animation: fadeInUp .8s ease-out; }
+        @keyframes fadeInUp { from{opacity:0; transform: translateY(30px);} to{opacity:1; transform: translateY(0);} }
+        .hero-badge { display:inline-flex; align-items:center; gap:.5rem; padding:.5rem 1rem; background: linear-gradient(135deg, rgba(99,102,241,.1), rgba(139,92,246,.1)); border:1px solid rgba(99,102,241,.2); border-radius:2rem; font-size:.85rem; font-weight:500; color:var(--color-primary); margin-bottom:1.5rem; }
+        .hero-badge::before { content:''; width:8px; height:8px; background: var(--color-accent); border-radius:50%; animation: pulse 2s ease-in-out infinite; }
+        @keyframes pulse { 0%,100%{opacity:1; transform: scale(1);} 50%{opacity:.5; transform: scale(1.2);} }
+        .hero-title { font-family:'Playfair Display', serif; font-size:3.5rem; font-weight:700; line-height:1.2; margin-bottom:1.5rem; background: linear-gradient(135deg, var(--color-text) 0%, var(--color-primary) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .hero-subtitle { font-size:1.25rem; color:var(--color-text-light); margin-bottom:2rem; font-weight:400; }
+        .hero-description { font-size:1rem; color:var(--color-text-light); line-height:1.8; margin-bottom:3rem; max-width:600px; margin-left:auto; margin-right:auto; }
+        .hero-stats { display:flex; justify-content:center; gap:3rem; margin-top:3rem; }
+        .stat { text-align:center; }
+        .stat-value { font-size:2rem; font-weight:700; background: linear-gradient(135deg,var(--color-primary),var(--color-secondary)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; display:block; margin-bottom:.25rem; }
+        .stat-label { font-size:.85rem; color:var(--color-text-light); font-weight:500; }
         /* Contact Info */
-        .contact-info {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            flex-wrap: wrap;
-            margin-top: 2rem;
-        }
-
-        .contact-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--color-text-light);
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
-            padding: 0.5rem 1rem;
-            border-radius: 0.75rem;
-        }
-
-        .contact-item:hover {
-            color: var(--color-primary);
-            background: rgba(99, 102, 241, 0.05);
-            transform: translateY(-2px);
-        }
-
-        .contact-icon {
-            width: 18px;
-            height: 18px;
-            stroke: currentColor;
-            stroke-width: 2;
-            fill: none;
-        }
-
+        .contact-info { display:flex; justify-content:center; gap:2rem; flex-wrap:wrap; margin-top:2rem; }
+        .contact-item { display:flex; align-items:center; gap:.5rem; color:var(--color-text-light); text-decoration:none; font-size:.9rem; transition:all .3s ease; padding:.5rem 1rem; border-radius:.75rem; }
+        .contact-item:hover { color:var(--color-primary); background: rgba(99,102,241,.05); transform: translateY(-2px); }
+        .contact-icon { width:18px; height:18px; stroke: currentColor; stroke-width:2; fill:none; }
         /* Section */
-        section {
-            padding: 4rem 0;
-        }
-
-        .section-header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        .section-title {
-            font-family: 'Playfair Display', serif;
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 1rem;
-            position: relative;
-            display: inline-block;
-        }
-
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: -0.5rem;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 3px;
-            background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
-            border-radius: 2px;
-        }
-
-        .section-subtitle {
-            color: var(--color-text-light);
-            font-size: 1rem;
-            margin-top: 1.5rem;
-        }
-
+        section { padding:4rem 0; }
+        .section-header { text-align:center; margin-bottom:3rem; }
+        .section-title { font-family:'Playfair Display', serif; font-size:2.5rem; font-weight:700; margin-bottom:1rem; position:relative; display:inline-block; }
+        .section-title::after { content:''; position:absolute; bottom:-.5rem; left:50%; transform: translateX(-50%); width:60px; height:3px; background: linear-gradient(90deg,var(--color-primary),var(--color-accent)); border-radius:2px; }
+        .section-subtitle { color:var(--color-text-light); font-size:1rem; margin-top:1.5rem; }
         /* Timeline */
-        .timeline {
-            position: relative;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .timeline-item {
-            position: relative;
-            padding-left: 3rem;
-            padding-bottom: 3rem;
-        }
-
-        .timeline-item:last-child {
-            padding-bottom: 0;
-        }
-
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: -3rem;
-            width: 2px;
-            background: linear-gradient(180deg, var(--color-primary) 0%, var(--color-accent) 100%);
-            opacity: 0.3;
-        }
-
-        .timeline-item:last-child::before {
-            background: linear-gradient(180deg, var(--color-primary) 0%, transparent 100%);
-        }
-
-        .timeline-dot {
-            position: absolute;
-            left: -6px;
-            top: 0.5rem;
-            width: 14px;
-            height: 14px;
-            background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
-            border: 3px solid var(--color-surface);
-            border-radius: 50%;
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .timeline-item:hover .timeline-dot {
-            transform: scale(1.3);
-            box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.15);
-        }
-
-        .timeline-content {
-            background: var(--color-surface);
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            border: 1px solid var(--color-border);
-        }
-
-        .timeline-item:hover .timeline-content {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            transform: translateX(4px);
-            border-color: rgba(99, 102, 241, 0.2);
-        }
-
-        .timeline-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .timeline-title {
-            font-size: 1.15rem;
-            font-weight: 600;
-            color: var(--color-text);
-            margin-bottom: 0.25rem;
-        }
-
-        .timeline-company {
-            font-size: 0.95rem;
-            color: var(--color-primary);
-            font-weight: 500;
-        }
-
-        .timeline-date {
-            font-size: 0.85rem;
-            color: var(--color-text-lighter);
-            font-weight: 500;
-            padding: 0.25rem 0.75rem;
-            background: rgba(99, 102, 241, 0.05);
-            border-radius: 0.5rem;
-        }
-
-        .timeline-description {
-            color: var(--color-text-light);
-            line-height: 1.7;
-            margin-bottom: 1rem;
-        }
-
+        .timeline { position:relative; max-width:900px; margin:0 auto; }
+        .timeline-item { position:relative; padding-left:3rem; padding-bottom:3rem; }
+        .timeline-item:last-child { padding-bottom:0; }
+        .timeline-item::before { content:''; position:absolute; left:0; top:0; bottom:-3rem; width:2px; background: linear-gradient(180deg,var(--color-primary) 0%, var(--color-accent) 100%); opacity:.3; }
+        .timeline-item:last-child::before { background: linear-gradient(180deg, var(--color-primary) 0%, transparent 100%); }
+        .timeline-dot { position:absolute; left:-6px; top:.5rem; width:14px; height:14px; background: linear-gradient(135deg,var(--color-primary),var(--color-accent)); border:3px solid var(--color-surface); border-radius:50%; box-shadow:0 0 0 4px rgba(99,102,241,.1); transition:all .3s ease; }
+        .timeline-item:hover .timeline-dot { transform: scale(1.3); box-shadow:0 0 0 6px rgba(99,102,241,.15); }
+        .timeline-content { background: var(--color-surface); padding:2rem; border-radius:1rem; box-shadow:0 1px 2px 0 rgba(0,0,0,.05); transition:all .3s ease; border:1px solid var(--color-border); }
+        .timeline-item:hover .timeline-content { box-shadow:0 10px 15px -3px rgba(0,0,0,.1); transform: translateX(4px); border-color: rgba(99,102,241,.2); }
+        .timeline-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem; flex-wrap:wrap; gap:1rem; }
+        .timeline-title { font-size:1.15rem; font-weight:600; color:var(--color-text); margin-bottom:.25rem; }
+        .timeline-company { font-size:.95rem; color:var(--color-primary); font-weight:500; }
+        .timeline-date { font-size:.85rem; color:var(--color-text-lighter); font-weight:500; padding:.25rem .75rem; background: rgba(99,102,241,.05); border-radius:.5rem; }
+        .timeline-description { color:var(--color-text-light); line-height:1.7; margin-bottom:1rem; }
+        .timeline-tags { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--color-border); }
+      .tag { display:inline-block; font-size:.75rem; font-weight:500; padding:.35rem .75rem; background: linear-gradient(135deg, rgba(99,102,241,.08), rgba(139,92,246,.08)); color: var(--color-primary); border: 1px solid rgba(99,102,241,.2); border-radius:.5rem; transition: all .2s ease; line-height:1.4; }
+        .tag:hover { background: linear-gradient(135deg, rgba(99,102,241,.15), rgba(139,92,246,.15)); border-color: rgba(99,102,241,.4); transform: translateY(-1px); }
         /* Skills Grid */
-        .skills-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .skill-category {
-            background: var(--color-surface);
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            border: 1px solid var(--color-border);
-        }
-
-        .skill-category:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            transform: translateY(-4px);
-            border-color: rgba(99, 102, 241, 0.2);
-        }
-
-        .skill-category-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            color: var(--color-text);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .skill-category-icon {
-            width: 24px;
-            height: 24px;
-            stroke: var(--color-primary);
-            stroke-width: 2;
-            fill: none;
-        }
-
-        .skill-item {
-            margin-bottom: 1.5rem;
-        }
-
-        .skill-item:last-child {
-            margin-bottom: 0;
-        }
-
-        .skill-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .skill-name {
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--color-text);
-        }
-
-        .skill-level {
-            font-size: 0.8rem;
-            color: var(--color-text-lighter);
-            font-weight: 500;
-        }
-
-        .skill-bar {
-            height: 6px;
-            background: var(--color-border);
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .skill-progress {
-            height: 100%;
-            background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
-            border-radius: 3px;
-            transition: width 1s ease-out;
-        }
-
+        .skills-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap:2rem; max-width:1000px; margin:0 auto; }
+        .skill-category { background: var(--color-surface); padding:2rem; border-radius:1rem; box-shadow:0 1px 2px 0 rgba(0,0,0,.05); transition:all .3s ease; border:1px solid var(--color-border); }
+        .skill-category:hover { box-shadow:0 10px 15px -3px rgba(0,0,0,.1); transform: translateY(-4px); border-color: rgba(99,102,241,.2); }
+        .skill-category-title { font-size:1.1rem; font-weight:600; margin-bottom:1.5rem; color:var(--color-text); display:flex; align-items:center; gap:.5rem; }
+        .skill-category-icon { width:24px; height:24px; stroke: var(--color-primary); stroke-width:2; fill:none; }
+        .skill-item { margin-bottom:1.5rem; }
+        .skill-item:last-child { margin-bottom:0; }
+        .skill-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.5rem; }
+        .skill-name { font-size:.9rem; font-weight:500; color:var(--color-text); }
+        .skill-level { font-size:.8rem; color:var(--color-text-lighter); font-weight:500; }
+        .skill-bar { height:6px; background: var(--color-border); border-radius:3px; overflow:hidden; }
+        .skill-progress { height:100%; background: linear-gradient(90deg,var(--color-primary),var(--color-accent)); border-radius:3px; transition: width 1s ease-out; }
+  /* Languages grid */
+  .languages-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:1rem; max-width:1000px; margin:0 auto; }
+  .language-card { background: var(--color-surface); padding:1rem; border-radius:.75rem; border:1px solid var(--color-border); box-shadow:0 1px 2px rgba(0,0,0,.04); }
+  .language-name { font-size:1rem; font-weight:600; color:var(--color-text); margin-bottom:.25rem; }
+  .language-level { font-size:.9rem; color:var(--color-text-light); }
         /* Education */
-        .education-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-
-        .education-card {
-            background: var(--color-surface);
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            border: 1px solid var(--color-border);
-        }
-
-        .education-card:hover {
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-            transform: translateY(-4px);
-            border-color: rgba(99, 102, 241, 0.2);
-        }
-
-        .education-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--color-text);
-            margin-bottom: 0.5rem;
-        }
-
-        .education-institution {
-            font-size: 0.95rem;
-            color: var(--color-primary);
-            font-weight: 500;
-            margin-bottom: 0.5rem;
-        }
-
-        .education-date {
-            font-size: 0.85rem;
-            color: var(--color-text-lighter);
-            font-weight: 500;
-        }
-
+        .education-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap:2rem; max-width:900px; margin:0 auto; }
+        .education-card { background: var(--color-surface); padding:2rem; border-radius:1rem; box-shadow:0 1px 2px 0 rgba(0,0,0,.05); transition:all .3s ease; border:1px solid var(--color-border); }
+        .education-card:hover { box-shadow:0 10px 15px -3px rgba(0,0,0,.1); transform: translateY(-4px); border-color: rgba(99,102,241,.2); }
+        .education-title { font-size:1.1rem; font-weight:600; color:var(--color-text); margin-bottom:.5rem; }
+        .education-institution { font-size:.95rem; color:var(--color-primary); font-weight:500; margin-bottom:.5rem; }
+        .education-date { font-size:.85rem; color:var(--color-text-lighter); font-weight:500; }
         /* Footer */
-        footer {
-            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-            color: #e2e8f0;
-            padding: 3rem 0;
-            text-align: center;
-        }
-
-        .footer-content {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        .footer-text {
-            color: #cbd5e1;
-            margin-bottom: 2rem;
-        }
-
+        footer { background: linear-gradient(135deg,#1e293b 0%, #334155 100%); color:#e2e8f0; padding:3rem 0; text-align:center; }
+        .footer-content { max-width:800px; margin:0 auto; }
+        .footer-text { color:#cbd5e1; margin-bottom:2rem; }
         /* Responsive */
         @media (max-width: 768px) {
-            .nav-menu { display: none; }
-            .hero-title { font-size: 2.5rem; }
-            .hero-stats { flex-direction: column; gap: 1.5rem; }
-            .section-title { font-size: 2rem; }
-            .timeline-item { padding-left: 2rem; }
-            .skills-grid, .education-grid { grid-template-columns: 1fr; }
-            .contact-info { flex-direction: column; }
+          .nav-menu { display:none; }
+          .hero-title { font-size:2.5rem; }
+          .hero-stats { flex-direction:column; gap:1.5rem; }
+          .section-title { font-size:2rem; }
+          .timeline-item { padding-left:2rem; }
+          .skills-grid, .education-grid { grid-template-columns:1fr; }
+          .contact-info { flex-direction:column; }
+          .timeline-tags { gap:.4rem; }
+          .tag { font-size:.7rem; padding:.3rem .6rem; }
         }
     </style>
 </head>
@@ -798,13 +753,10 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
     <!-- Hero Section -->
     <section id="inicio" class="hero">
         <div class="hero-content">
-            <div class="hero-badge">
-                Disponible para nuevas oportunidades
-            </div>
+            <div class="hero-badge">Disponible para nuevas oportunidades</div>
             <h1 class="hero-title">${fullName}</h1>
             <p class="hero-subtitle">${jobTitle || 'Profesional'}</p>
             ${summary ? `<p class="hero-description">${summary}</p>` : ''}
-            
             <div class="contact-info">
                 ${
                   email
@@ -874,8 +826,12 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
             
             <div class="timeline">
                 ${experience
-                  .map(
-                    (exp) => `
+                  .map((exp, idx) => {
+                    const desc = exp.workSummery || exp.workSummary || '';
+                    const tagsHTML =
+                      categorizedByExperience[idx]?.tagsHTML || '';
+                    // render-time debug removed for production
+                    return `
                     <div class="timeline-item">
                         <div class="timeline-dot"></div>
                         <div class="timeline-content">
@@ -895,14 +851,15 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
                     }</span>
                             </div>
                             ${
-                              exp.workSummery
-                                ? `<p class="timeline-description">${exp.workSummery}</p>`
+                              desc
+                                ? `<p class="timeline-description">${desc}</p>`
                                 : ''
                             }
+                            ${tagsHTML}
                         </div>
                     </div>
-                `
-                  )
+                    `;
+                  })
                   .join('')}
             </div>
         </div>
@@ -961,6 +918,8 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
     `
         : ''
     }
+
+  ${languagesSection}
 
     ${
       education && education.length > 0
@@ -1054,4 +1013,8 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
 </body>
 </html>
   `.trim();
+
+  // Production: no verbose HTML dump. Errors will still surface via console.error/console.warn.
+
+  return htmlOut;
 };
