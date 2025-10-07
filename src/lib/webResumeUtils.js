@@ -280,15 +280,78 @@ const getSectionTitles = (jobTitle) => {
 
 /**
  * Rating a nivel y porcentaje
+ * Accepts numbers (1-5), decimals, fractions like "3/5", star strings (★★★),
+ * or textual levels ("Experto", "Avanzado", "Intermedio", "Básico").
  */
 const getRatingData = (rating) => {
-  const numRating = parseFloat(rating) || 0;
-  if (numRating >= 4.5) return { level: 'Experto', percentage: 95 };
-  if (numRating >= 4.0) return { level: 'Experto', percentage: 90 };
-  if (numRating >= 3.5) return { level: 'Avanzado', percentage: 85 };
-  if (numRating >= 3.0) return { level: 'Avanzado', percentage: 80 };
-  if (numRating >= 2.5) return { level: 'Intermedio', percentage: 75 };
-  return { level: 'Básico', percentage: 65 };
+  let val = 0;
+
+  if (rating == null) {
+    val = 0;
+  } else if (typeof rating === 'number') {
+    val = rating;
+  } else {
+    const s = String(rating).trim();
+    // Stars like ★★★ -> count
+    const starMatches = s.match(/[★⭐]/g);
+    if (starMatches) {
+      val = Math.min(5, starMatches.length);
+    } else if (/^\d+(?:\.\d+)?\s*\/\s*\d+$/.test(s)) {
+      // fraction like 3/5
+      try {
+        const [a, b] = s.split('/').map((x) => parseFloat(x.trim()));
+        if (!Number.isNaN(a) && !Number.isNaN(b) && b > 0) {
+          // normalize to 5-point scale
+          val = (a / b) * 5;
+        }
+      } catch {
+        val = 0;
+      }
+    } else if (/^\d+(?:\.\d+)?$/.test(s)) {
+      // plain numeric string
+      val = parseFloat(s);
+    } else {
+      // textual mapping
+      const low = s.toLowerCase();
+      if (
+        low.includes('exper') ||
+        low.includes('senior') ||
+        low.includes('pro')
+      ) {
+        val = 5;
+      } else if (low.includes('avanz') || low.includes('advanced')) {
+        val = 4;
+      } else if (low.includes('inter') || low.includes('mid')) {
+        val = 3;
+      } else if (
+        low.includes('inic') ||
+        low.includes('bas') ||
+        low.includes('junior')
+      ) {
+        val = 1;
+      } else {
+        // fallback: try parse float again
+        const maybe = parseFloat(s);
+        val = Number.isNaN(maybe) ? 0 : maybe;
+      }
+    }
+  }
+
+  // Clamp to 0..5
+  val = Math.max(0, Math.min(5, Number(val)));
+
+  // Level labels
+  let level = 'Básico';
+  if (val >= 4.5) level = 'Experto';
+  else if (val >= 3.5) level = 'Avanzado';
+  else if (val >= 2.5) level = 'Intermedio';
+
+  // Percentage mapping: map 0..5 => 20..95 (avoid full 100 to keep visual border)
+  let percentage = Math.round((val / 5) * 100);
+  if (percentage >= 95) percentage = 95;
+  if (percentage <= 20) percentage = 20;
+
+  return { level, percentage };
 };
 
 /**
