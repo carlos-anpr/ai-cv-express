@@ -51,6 +51,40 @@ class LocalDatabase {
 
       console.log('✅ CV guardado con ID:', id);
 
+      // Re-vincular candidaturas que se crearon antes de que el CV tuviera ID numérico
+      try {
+        const orphanApps = await db.jobApplications
+          .where('resumeDocumentId')
+          .equals(documentId)
+          .toArray();
+
+        if (orphanApps && orphanApps.length > 0) {
+          console.log(
+            `🔁 Re-vinculando ${orphanApps.length} candidaturas al nuevo resume ID ${id}`
+          );
+          for (const app of orphanApps) {
+            try {
+              await db.jobApplications.update(app.id, {
+                resumeId: id,
+                // eliminar la referencia temporal
+                resumeDocumentId: undefined,
+              });
+            } catch (err) {
+              console.warn(
+                '⚠️ No se pudo re-vincular candidatura ID:',
+                app.id,
+                err
+              );
+            }
+          }
+        }
+      } catch (linkErr) {
+        console.warn(
+          '⚠️ Error re-vinculando candidaturas al crear CV:',
+          linkErr
+        );
+      }
+
       // Actualizar contador de usuario
       await this.updateUserStats(data.userEmail);
 
@@ -664,9 +698,38 @@ class LocalDatabase {
     try {
       console.log('📝 Creando nueva candidatura:', data);
 
+      // Normalizar resumeId: si recibimos un UUID (documentId), resolver al id numérico
+      let numericResumeId = data.resumeId;
+      if (
+        typeof numericResumeId === 'string' &&
+        numericResumeId.includes('-')
+      ) {
+        const resumeRecord = await db.resumes
+          .where('documentId')
+          .equals(numericResumeId)
+          .first();
+        if (resumeRecord && resumeRecord.id !== undefined) {
+          numericResumeId = resumeRecord.id;
+          console.log(
+            '🔁 Resume UUID resuelto a ID numérico:',
+            numericResumeId
+          );
+        } else {
+          // Si no encontramos el CV guardado todavía, no bloqueamos la creación.
+          // Guardaremos la candidatura vinculándola al documentId en el campo resumeDocumentId
+          console.warn(
+            '⚠️ No se encontró CV con documentId proporcionado (se guardará referencia por documentId):',
+            data.resumeId
+          );
+          // marcar para almacenar la referencia al documentId más abajo
+          data._resumeDocumentIdFallback = numericResumeId;
+          numericResumeId = undefined;
+        }
+      }
+
       // Validar datos requeridos
       if (
-        !data.resumeId ||
+        numericResumeId === undefined ||
         !data.userEmail ||
         !data.companyName ||
         !data.jobTitle
@@ -677,7 +740,9 @@ class LocalDatabase {
       }
 
       const jobApplicationData = {
-        resumeId: data.resumeId,
+        // Guardamos el resumeId como número cuando esté disponible; si no, usaremos resumeDocumentId
+        resumeId:
+          numericResumeId !== undefined ? parseInt(numericResumeId) : undefined,
         userEmail: data.userEmail,
         companyName: data.companyName.trim(),
         jobTitle: data.jobTitle.trim(),
@@ -694,6 +759,11 @@ class LocalDatabase {
         status: data.status || 'draft',
         notes: data.notes?.trim() || '',
       };
+
+      // Si tuvimos que caer al documentId porque el CV no estaba guardado, añadirlo
+      if (data._resumeDocumentIdFallback) {
+        jobApplicationData.resumeDocumentId = data._resumeDocumentIdFallback;
+      }
 
       const id = await db.jobApplications.add(jobApplicationData);
       console.log('✅ Candidatura creada con ID:', id);
@@ -740,8 +810,25 @@ class LocalDatabase {
         .and((item) => item.userEmail === userEmail)
         .toArray();
 
+      // Si no encontramos aplicaciones y recibimos un resumeId que podría ser un documentId
+      let finalApplications = applications;
+      if (
+        (applications.length === 0 || applications === undefined) &&
+        typeof resumeId === 'string' &&
+        resumeId.includes('-')
+      ) {
+        console.log(
+          '🔁 No se encontraron candidaturas por resumeId numérico, intentando buscar por resumeDocumentId...'
+        );
+        finalApplications = await db.jobApplications
+          .where('resumeDocumentId')
+          .equals(resumeId)
+          .and((item) => item.userEmail === userEmail)
+          .toArray();
+      }
+
       // Ordenar por fecha de actualización (más reciente primero)
-      const sortedApplications = applications.sort(
+      const sortedApplications = (finalApplications || applications).sort(
         (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
       );
 

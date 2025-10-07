@@ -5,29 +5,159 @@
 @custom-variant dark (&:is(.dark *));
 
 @media print {
+  /* --- Configuración General de la Página --- */
   @page {
-    size: auto;
-    margin: 0;
+    size: A4;
+    margin: 15mm; /* Margen unificado para la página */
   }
 
-  div,
-  p,
-  table {
-    page-break-inside: avoid;
-  }
-
+  html,
   body {
     margin: 0;
     padding: 0;
-    box-shadow: none;
+    width: 100%;
+    height: auto;
+    background: white !important;
+    /* Do not force text color here so theme/inline colors are preserved */
+    color: inherit;
+    font-family: 'Arial', sans-serif;
+    font-size: 11pt;
+    line-height: 1.3;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
-  #no-print {
-    display: none;
-  }
-
+  /* --- Contenedor Principal del Currículum --- */
   #print-area {
-    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-shadow: none !important;
+    background: white !important;
+    page-break-after: auto;
+    page-break-before: auto;
+  }
+
+  /* --- Control de Saltos de Página --- */
+  /* Evita que los bloques principales se corten entre páginas */
+  .my-6,
+  .my-5,
+  .skill-item,
+  .skill-category,
+  div[class*='border-t-primary'],
+  div[class*='border-t'],
+  .experience-item,
+  .education-item {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Mantiene los títulos y subtítulos con el contenido siguiente */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    break-after: avoid !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Evita que las listas se corten */
+  ul,
+  ol {
+    page-break-inside: avoid !important;
+  }
+
+  /* --- Prevención de la Primera Página en Blanco --- */
+  /* Elimina cualquier margen o padding superior en el primer bloque del CV */
+  #print-area > div > div:first-child,
+  #print-area > *:first-child {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  /* --- Limpieza de la Interfaz --- */
+  /* Oculta botones y elementos de UI que no deben imprimirse */
+  #no-print,
+  button,
+  .btn,
+  .no-print,
+  [data-no-print] {
+    display: none !important;
+  }
+
+  /* Elimina sombras y otros efectos visuales */
+  *,
+  *::before,
+  *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    outline: none !important;
+  }
+
+  /* --- Ajustes específicos para la barra superior (header) en impresión --- */
+  header,
+  header * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Reducir altura y grosor de la barra superior para impresión */
+  header.sticky,
+  header {
+    position: static !important; /* quitar sticky para que no ocupe espacio extra */
+    top: auto !important;
+    width: 100% !important;
+    background: transparent !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  /* Reducir grosor de la línea inferior (border-b) */
+  header.border-b,
+  header[class*='border-b'],
+  header .border-b,
+  header [class*='border-b'] {
+    border-bottom-width: 1px !important;
+    border-bottom-style: solid !important;
+    /* Do not force a color so the theme / inline styles control it */
+  }
+
+  /* --- Forzar reducción de la barra superior generada por border-t-[20px] --- */
+  /* Aplica solo dentro del área de impresión para no cambiar la UI en pantalla */
+  #print-area [class*='border-t-'] {
+    border-top-width: 6px !important; /* un poco más gruesa en impresión */
+    border-top-style: solid !important;
+    /* Do not override border-color so inline/theme color is preserved */
+  }
+
+  /* Reducir padding grande (p-14) en impresión para evitar que la caja ocupe mucho espacio */
+  #print-area [class*='p-14'] {
+    padding: 12px !important; /* un poco más de padding para equilibrio visual */
+  }
+
+  /* Quitar sombras que pueden alterar el recorte en PDF */
+  #print-area [class*='shadow-'] {
+    box-shadow: none !important;
+  }
+
+  /* Regla concreta para el primer bloque si tiene border-t y padding grande */
+  #print-area > div[class*='border-t-'][class*='p-14'] {
+    border-top-width: 6px !important;
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+    box-shadow: none !important;
+  }
+
+  /* Asegurar que las líneas <hr> impriman finas */
+  #print-area hr,
+  #print-area hr[class*='border-'] {
+    border-width: 1px !important;
+    height: 1px !important;
+    margin-top: 6px !important;
+    margin-bottom: 6px !important;
   }
 }
 

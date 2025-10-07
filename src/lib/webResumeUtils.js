@@ -1035,6 +1035,36 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
           .timeline-tags { gap:.4rem; }
           .tag { font-size:.7rem; padding:.3rem .6rem; }
         }
+        /* --- Print tweaks: preserve theme color and adjust heavy borders/padding --- */
+        @media print {
+          :root { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          /* Make any element using Tailwind-like "border-t-[...]" use theme primary color and moderate thickness */
+          [class*="border-t-"] {
+            border-top-width: 6px !important;
+            border-top-style: solid !important;
+            border-top-color: var(--color-primary) !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          /* Reduce large paddings used for screen previews to more compact values for print */
+          [class*="p-14"], .p-14 {
+            padding: 12px !important;
+          }
+
+          /* Ensure hr and other divider lines use theme color */
+          hr, hr[class*="border-"] {
+            border-color: var(--color-primary) !important;
+            border-width: 1px !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+
+          /* Avoid box-shadows in print */
+          [class*="shadow-"] {
+            box-shadow: none !important;
+          }
+        }
     </style>
     <!-- Theme variables (placed last to win cascade) -->
     <style id="theme-vars">

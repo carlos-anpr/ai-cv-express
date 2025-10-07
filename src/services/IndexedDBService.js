@@ -35,7 +35,20 @@ export class ResumeDatabase extends Dexie {
       coverLetters:
         '++id, resumeId, userEmail, companyName, jobTitle, jobDetails, content, jobApplicationId, style, length, createdAt, updatedAt',
       jobApplications:
-        '++id, resumeId, userEmail, companyName, jobTitle, jobDescription, requirements, responsibilities, companyWebsite, contactPerson, contactEmail, contactPhone, jobUrl, applicationDate, status, notes, createdAt, updatedAt',
+        '++id, resumeId, resumeDocumentId, userEmail, companyName, jobTitle, jobDescription, requirements, responsibilities, companyWebsite, contactPerson, contactEmail, contactPhone, jobUrl, applicationDate, status, notes, createdAt, updatedAt',
+      interviewSimulations:
+        '++id, jobApplicationId, resumeId, userEmail, candidateLevel, questions, createdAt, updatedAt',
+    });
+
+    // Versión 4: Añadir índice resumeDocumentId explícito para consultas por documentId
+    this.version(4).stores({
+      resumes:
+        '++id, documentId, userEmail, createdAt, updatedAt, title, firstName, lastName',
+      userData: '++id, userEmail, preferences, lastLogin, totalResumes',
+      coverLetters:
+        '++id, resumeId, userEmail, companyName, jobTitle, jobDetails, content, jobApplicationId, style, length, createdAt, updatedAt',
+      jobApplications:
+        '++id, resumeId, resumeDocumentId, userEmail, companyName, jobTitle, jobDescription, requirements, responsibilities, companyWebsite, contactPerson, contactEmail, contactPhone, jobUrl, applicationDate, status, notes, createdAt, updatedAt',
       interviewSimulations:
         '++id, jobApplicationId, resumeId, userEmail, candidateLevel, questions, createdAt, updatedAt',
     });
