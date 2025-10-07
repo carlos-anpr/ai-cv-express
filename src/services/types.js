@@ -136,6 +136,8 @@ export const formatJobApplicationForDB = (data) => {
     responsibilities: data.responsibilities?.trim() || '',
     companyWebsite: data.companyWebsite?.trim() || '',
     contactPerson: data.contactPerson?.trim() || '',
+    interviewDate: data.interviewDate || '',
+    interviewLink: data.interviewLink?.trim() || '',
     applicationDate:
       data.applicationDate || new Date().toISOString().split('T')[0],
     status: data.status || 'draft',

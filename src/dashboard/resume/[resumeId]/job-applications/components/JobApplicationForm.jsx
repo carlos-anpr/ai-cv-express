@@ -27,6 +27,7 @@ import {
   Mail,
   Globe,
   Phone,
+  ExternalLink,
 } from 'lucide-react';
 import { JOB_APPLICATION_STATUS } from '@/services/types';
 
@@ -364,6 +365,42 @@ const JobApplicationForm = ({
                   )}
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+          {/* Nueva fila: fecha de entrevista y enlace de entrevista */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="interviewDate">Fecha de Entrevista</Label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  id="interviewDate"
+                  type="date"
+                  value={formData.interviewDate || ''}
+                  onChange={(e) =>
+                    handleInputChange('interviewDate', e.target.value)
+                  }
+                  placeholder="Fecha de la entrevista"
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="interviewLink">Enlace de Entrevista</Label>
+              <div className="relative">
+                <ExternalLink className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  id="interviewLink"
+                  type="url"
+                  value={formData.interviewLink || ''}
+                  onChange={(e) =>
+                    handleInputChange('interviewLink', e.target.value)
+                  }
+                  placeholder="https://meet.google.com/... or teams link"
+                  className="pl-10"
+                />
+              </div>
             </div>
           </div>
 

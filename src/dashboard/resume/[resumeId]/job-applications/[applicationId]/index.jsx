@@ -344,6 +344,27 @@ function JobApplicationDetail() {
                   </a>
                 </div>
               )}
+              {application.interviewDate && (
+                <div className="flex items-center gap-3">
+                  <Calendar className="w-4 h-4 text-gray-500" />
+                  <span className="text-sm">
+                    Entrevista: {formatDate(application.interviewDate)}
+                  </span>
+                </div>
+              )}
+              {application.interviewLink && (
+                <div className="flex items-center gap-3">
+                  <ExternalLink className="w-4 h-4 text-gray-500" />
+                  <a
+                    href={application.interviewLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    Unirse a la entrevista
+                  </a>
+                </div>
+              )}
               {!application.contactPerson &&
                 !application.contactEmail &&
                 !application.contactPhone &&
