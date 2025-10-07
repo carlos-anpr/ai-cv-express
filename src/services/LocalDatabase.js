@@ -754,6 +754,9 @@ class LocalDatabase {
         contactEmail: data.contactEmail?.trim() || '',
         contactPhone: data.contactPhone?.trim() || '',
         jobUrl: data.jobUrl?.trim() || '',
+        // Interview fields
+        interviewDate: data.interviewDate || null,
+        interviewLink: data.interviewLink?.trim() || '',
         applicationDate:
           data.applicationDate || new Date().toISOString().split('T')[0],
         status: data.status || 'draft',
@@ -934,6 +937,10 @@ class LocalDatabase {
         updatedFields.contactPhone = updateData.contactPhone.trim();
       if (updateData.jobUrl !== undefined)
         updatedFields.jobUrl = updateData.jobUrl.trim();
+      if (updateData.interviewDate !== undefined)
+        updatedFields.interviewDate = updateData.interviewDate;
+      if (updateData.interviewLink !== undefined)
+        updatedFields.interviewLink = updateData.interviewLink?.trim();
       if (updateData.applicationDate !== undefined)
         updatedFields.applicationDate = updateData.applicationDate;
       if (updateData.status !== undefined)
@@ -1353,3 +1360,103 @@ LocalDatabase.prototype.GetWebPageConfig = async function (resumeId) {
 // Exportar tanto la clase como la instancia
 export { LocalDatabase };
 export default localDB;
+
+// -----------------------------------------------------------------------------
+// Métodos añadidos para soporte de Calendario / Entrevistas
+// -----------------------------------------------------------------------------
+
+/**
+ * Obtener todas las entrevistas de un usuario
+ */
+LocalDatabase.prototype.GetAllInterviews = async function (userEmail) {
+  await this.ensureDatabaseReady();
+  try {
+    const applications = await db.jobApplications
+      .where('userEmail')
+      .equals(userEmail)
+      .filter((app) => app.interviewDate != null && app.interviewDate !== '')
+      .toArray();
+
+    console.log(`Entrevistas encontradas: ${applications.length}`);
+
+    return {
+      success: true,
+      data: applications,
+    };
+  } catch (error) {
+    console.error('Error al obtener entrevistas:', error);
+    throw new Error('Error al obtener entrevistas: ' + error.message);
+  }
+};
+
+/**
+ * Obtener entrevistas de un mes específico
+ */
+LocalDatabase.prototype.GetInterviewsByMonth = async function (
+  userEmail,
+  year,
+  month
+) {
+  await this.ensureDatabaseReady();
+  try {
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    const applications = await db.jobApplications
+      .where('userEmail')
+      .equals(userEmail)
+      .filter((app) => {
+        if (!app.interviewDate) return false;
+        const interviewDate = new Date(app.interviewDate);
+        return interviewDate >= startDate && interviewDate <= endDate;
+      })
+      .toArray();
+
+    return {
+      success: true,
+      data: applications,
+      count: applications.length,
+    };
+  } catch (error) {
+    console.error('Error al obtener entrevistas del mes:', error);
+    throw new Error('Error al obtener entrevistas del mes: ' + error.message);
+  }
+};
+
+/**
+ * Obtener entrevistas pendientes (futuras)
+ */
+LocalDatabase.prototype.GetUpcomingInterviews = async function (
+  userEmail,
+  limit = 10
+) {
+  await this.ensureDatabaseReady();
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const applications = await db.jobApplications
+      .where('userEmail')
+      .equals(userEmail)
+      .filter((app) => {
+        if (!app.interviewDate) return false;
+        const interviewDate = new Date(app.interviewDate);
+        return interviewDate >= today;
+      })
+      .toArray();
+
+    // Ordenar por fecha ascendente y limitar
+    const sorted = applications
+      .sort((a, b) => new Date(a.interviewDate) - new Date(b.interviewDate))
+      .slice(0, limit);
+
+    return {
+      success: true,
+      data: sorted,
+    };
+  } catch (error) {
+    console.error('Error al obtener entrevistas próximas:', error);
+    throw new Error('Error al obtener entrevistas próximas: ' + error.message);
+  }
+};

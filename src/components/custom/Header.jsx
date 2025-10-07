@@ -74,6 +74,25 @@ function Header() {
                   Panel
                 </Button>
               </Link>
+              <Link to="/dashboard/interviews">
+                <Button
+                  variant="ghost"
+                  className="text-sm font-medium flex items-center gap-2"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M7 10H17V12H7zM7 6H17V8H7zM7 14H13V16H7z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  Entrevistas
+                </Button>
+              </Link>
               <UserButton />
             </>
           ) : (
@@ -136,6 +155,28 @@ function Header() {
                   >
                     <Button variant="ghost" className="w-full justify-start">
                       Panel
+                    </Button>
+                  </Link>
+                  <Link
+                    to="/dashboard/interviews"
+                    onClick={() => setMobileMenuOpen(false)}
+                  >
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-start flex items-center gap-2"
+                    >
+                      <svg
+                        className="w-4 h-4"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M7 10H17V12H7zM7 6H17V8H7zM7 14H13V16H7z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                      Entrevistas
                     </Button>
                   </Link>
                   <div className="px-3 py-2">

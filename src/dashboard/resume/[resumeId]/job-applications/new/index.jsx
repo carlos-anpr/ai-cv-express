@@ -76,6 +76,8 @@ function NewJobApplication() {
         jobDescription: formData.jobDescription?.trim(),
         location: formData.location?.trim(),
         salary: formData.salary ? parseFloat(formData.salary) : null,
+        interviewDate: formData.interviewDate || null,
+        interviewLink: formData.interviewLink?.trim() || '',
         applicationDate: formData.applicationDate,
         status: formData.status,
         notes: formData.notes?.trim(),

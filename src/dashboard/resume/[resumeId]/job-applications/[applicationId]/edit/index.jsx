@@ -35,6 +35,8 @@ function EditJobApplication() {
     requirements: '',
     benefits: '',
     workMode: 'presencial',
+    interviewDate: '',
+    interviewLink: '',
   });
 
   const [loading, setLoading] = useState(true);
@@ -79,6 +81,8 @@ function EditJobApplication() {
             requirements: app.requirements || '',
             benefits: app.benefits || '',
             workMode: app.workMode || 'presencial',
+            interviewDate: app.interviewDate || '',
+            interviewLink: app.interviewLink || '',
           });
         } else {
           toast.error('No se pudo cargar la candidatura');
@@ -140,6 +144,8 @@ function EditJobApplication() {
         jobDescription: formData.jobDescription?.trim(),
         location: formData.location?.trim(),
         salary: formData.salary ? parseFloat(formData.salary) : null,
+        interviewDate: formData.interviewDate || null,
+        interviewLink: formData.interviewLink?.trim() || '',
         applicationDate: formData.applicationDate,
         status: formData.status,
         notes: formData.notes?.trim(),
