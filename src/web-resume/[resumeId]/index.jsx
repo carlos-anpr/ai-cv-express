@@ -26,11 +26,7 @@ function PublicWebResume() {
           resume?.webPageConfig?.theme ??
           null;
         const themeToUse = rawTheme?.colors || rawTheme || null;
-        console.debug &&
-          console.debug('[PUBLIC PAGE] theme resolution', {
-            resolvedRawTheme: rawTheme,
-            hasThemeColor: !!resume?.themeColor,
-          });
+        // public page theme resolved
         const html = await generateResumeHTML(resume, themeToUse);
         setHtmlContent(html + `\n<!-- theme=${JSON.stringify(themeToUse)} -->`);
       } catch (err) {

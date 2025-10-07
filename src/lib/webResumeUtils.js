@@ -42,27 +42,12 @@ function saveSkillCacheToSession() {
 }
 
 function getSkillCache(key) {
-  try {
-    const has = skillCache.has(key);
-    console.debug && console.debug('[SKILL CACHE] get', { key, has });
-  } catch (err) {
-    console.debug && console.debug('[SKILL CACHE] get error', err);
-  }
   return skillCache.get(key) || null;
 }
 
 function setSkillCache(key, value) {
   if (!key) return;
   if (!Array.isArray(value) || value.length === 0) return;
-  try {
-    console.debug &&
-      console.debug('[SKILL CACHE] set', {
-        key,
-        size: Array.isArray(value) ? value.length : 0,
-      });
-  } catch (err) {
-    console.debug && console.debug('[SKILL CACHE] set error', err);
-  }
   skillCache.set(key, value);
   try {
     saveSkillCacheToSession();
@@ -134,13 +119,9 @@ const findBestMatchIcon = async (category) => {
       return icon;
     }
   }
-
-  return ICON_LIBRARY['default'];
+  // fallback
+  return ICON_LIBRARY.default;
 };
-
-/**
- * Esquema de colores según perfil
- */
 const getColorScheme = (jobTitle) => {
   const title = (jobTitle || '').toLowerCase();
 
@@ -648,18 +629,7 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
     rawTheme?.colors || rawTheme,
     resumeInfo?.jobTitle
   );
-  try {
-    console.debug &&
-      console.debug('[GENERATE HTML] theme resolved', {
-        rawThemeInput,
-        rawTheme: rawTheme,
-        normalized,
-        jobTitle: resumeInfo?.jobTitle,
-      });
-  } catch (e) {
-    console.debug &&
-      console.debug('[GENERATE HTML] theme resolve log error', e);
-  }
+  // theme resolved; normalized palette available
   const primaryColor = normalized.primary;
   const secondaryColor = normalized.secondary;
   const accentColor = normalized.accent;
@@ -844,19 +814,7 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
   // If there are items to fetch, call the batch prompt once
   if (toFetch.length > 0) {
     const batchResults = await categorizeSkillsBatch(toFetch, jobTitleTarget);
-    try {
-      console.debug &&
-        console.debug('[AI BATCH] results', {
-          toFetchCount: toFetch.length,
-          jobTitleTarget,
-          sample0: toFetch[0],
-          batchResultsPreview: Array.isArray(batchResults)
-            ? batchResults.slice(0, 3)
-            : batchResults,
-        });
-    } catch (e) {
-      console.debug && console.debug('[AI BATCH] preview error', e);
-    }
+    // AI batch results processed
     batchResults.forEach((cats, j) => {
       const idx = toFetchIdx[j];
       const key = keys[idx];
@@ -889,9 +847,7 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
   <meta name="x-theme-hash" content="${themeHash}" />
   <meta name="x-build-ts" content="${Date.now()}" />
-  <script>try{console.debug && console.debug('[THEME APPLY]', {primaryColor: '${primaryColor}', secondaryColor: '${secondaryColor}', accentColor: '${accentColor}', rawTheme: ${JSON.stringify(
-    rawThemeInput
-  )}});}catch(e){}
+  <script>try{/* theme applied */}catch(e){}
   </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1308,23 +1264,13 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
     </script>
         <script>
           try {
-            // Informational: print applied theme var
-            console.log('[THEME APPLIED]', getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim());
+            // Informational: theme applied
           } catch (e) { /* noop */ }
         </script>
 </body>
 </html>
   `.trim();
-  try {
-    console.debug &&
-      console.debug('[GENERATE HTML] returning html', {
-        length: htmlOut.length,
-        themeHash,
-        themePreview: { primaryColor, secondaryColor, accentColor },
-      });
-  } catch (e) {
-    console.debug && console.debug('[GENERATE HTML] return log error', e);
-  }
+  // returning generated html
 
   // Production: no verbose HTML dump. Errors will still surface via console.error/console.warn.
 

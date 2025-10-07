@@ -16,11 +16,6 @@ import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { generateResumeHTML } from '@/lib/webResumeUtils';
 
-/**
- * WebPagePreview Component
- * Preview interactivo del CV como página web con diseño profesional
- * Sistema OPTIMIZADO: Matching instantáneo + IA selectiva
- */
 const WebPagePreview = ({ resumeInfo }) => {
   const [viewMode, setViewMode] = useState('desktop');
   const [htmlContent, setHtmlContent] = useState('');
@@ -28,60 +23,28 @@ const WebPagePreview = ({ resumeInfo }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const iframeRef = useRef(null);
 
-  // Tema fijo azul (modern) - declarado dentro del efecto que genera el HTML
-  // Generar HTML de forma ASÍNCRONA con sistema optimizado
   useEffect(() => {
     const generateHTML = async () => {
-      console.log('🔄 WebPagePreview: Regenerando HTML...', {
-        hasResumeInfo: !!resumeInfo,
-        firstName: resumeInfo?.firstName,
-      });
-
-      if (!resumeInfo) {
-        console.warn('⚠️ resumeInfo es null o undefined');
-        return;
-      }
-
+      if (!resumeInfo) return;
       setIsGenerating(true);
       try {
-        // Prefer explicit user-selected hex `themeColor` when present, then legacy `theme`, then `webPageConfig.theme` presets
         const rawTheme =
           resumeInfo?.themeColor ??
           resumeInfo?.theme ??
           resumeInfo?.webPageConfig?.theme ??
           null;
-        // Accept object {primary,..}, string '#xxxxxx' or { colors: {...} }
         const themeToUse = rawTheme?.colors || rawTheme || null;
-        console.debug &&
-          console.debug('[PREVIEW] theme resolution precedence', {
-            resolvedRawTheme: rawTheme,
-            fromThemeColor: !!resumeInfo?.themeColor,
-            fromTheme: !!resumeInfo?.theme,
-            fromWebPageConfig: !!resumeInfo?.webPageConfig?.theme,
-          });
-        console.debug &&
-          console.debug(
-            '[PREVIEW] generating HTML with themeToUse',
-            themeToUse
-          );
         const html = await generateResumeHTML(resumeInfo, themeToUse);
-        console.debug &&
-          console.debug('[PREVIEW] generated html length', html?.length);
-        // Append a small theme comment to force srcDoc changes even if HTML body is similar
         const themeIdentifier =
           typeof themeToUse === 'string'
             ? themeToUse
             : JSON.stringify(themeToUse);
         setHtmlContent(html + `\n<!-- theme:${themeIdentifier} -->`);
-        console.debug &&
-          console.debug(
-            '[PREVIEW] htmlContent set, themeIdentifier',
-            themeIdentifier
-          );
-        console.log('✅ HTML generado correctamente');
       } catch (error) {
-        console.error('❌ Error generando HTML:', error);
-        toast.error('Error al generar la página web: ' + error.message);
+        console.error('Error generando HTML:', error);
+        toast.error(
+          'Error al generar la página web: ' + (error?.message || error)
+        );
       } finally {
         setIsGenerating(false);
       }
@@ -102,28 +65,6 @@ const WebPagePreview = ({ resumeInfo }) => {
     resumeInfo?.theme,
   ]);
 
-  // iframe onLoad: attempt to inspect content and theme-vars
-  const handleIframeLoad = () => {
-    try {
-      const iframe = iframeRef.current;
-      if (!iframe) return;
-      const doc = iframe.contentDocument || iframe.contentWindow?.document;
-      if (!doc) {
-        console.debug && console.debug('[PREVIEW] iframe has no document yet');
-        return;
-      }
-      const themeVars = doc.getElementById('theme-vars');
-      console.debug &&
-        console.debug('[PREVIEW] iframe loaded head title', doc.title, {
-          themeVarsExists: !!themeVars,
-          themeVarsInner: themeVars ? themeVars.innerText.slice(0, 200) : null,
-        });
-    } catch (e) {
-      console.debug && console.debug('[PREVIEW] iframe load inspect error', e);
-    }
-  };
-
-  // Dimensiones responsive del iframe
   const getIframeScale = () => {
     switch (viewMode) {
       case 'mobile':
@@ -137,7 +78,6 @@ const WebPagePreview = ({ resumeInfo }) => {
 
   const dimensions = getIframeScale();
 
-  // Copiar HTML al portapapeles
   const handleCopyHTML = async () => {
     try {
       await navigator.clipboard.writeText(htmlContent);
@@ -149,7 +89,6 @@ const WebPagePreview = ({ resumeInfo }) => {
     }
   };
 
-  // Descargar como archivo HTML
   const handleDownloadHTML = () => {
     if (!htmlContent) {
       toast.error('No hay contenido para descargar');
@@ -170,19 +109,16 @@ const WebPagePreview = ({ resumeInfo }) => {
     toast.success('Página web descargada');
   };
 
-  // Abrir en nueva ventana
   const handleOpenInNewWindow = () => {
     if (!htmlContent) {
       toast.error('No hay contenido para mostrar');
       return;
     }
-
     const win = window.open('', '_blank');
     win.document.write(htmlContent);
     win.document.close();
   };
 
-  // Mostrar mensaje si no hay contenido
   if (!resumeInfo) {
     return (
       <div className="flex items-center justify-center min-h-[500px] bg-muted/30 rounded-lg border border-border">
@@ -196,7 +132,6 @@ const WebPagePreview = ({ resumeInfo }) => {
     );
   }
 
-  // Mostrar spinner mientras genera con sistema optimizado
   if (isGenerating || !htmlContent) {
     return (
       <div className="flex items-center justify-center min-h-[500px] bg-muted/30 rounded-lg border border-border">
@@ -215,9 +150,7 @@ const WebPagePreview = ({ resumeInfo }) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 h-full">
-      {/* COLUMNA IZQUIERDA: Panel de Controles */}
       <aside className="space-y-4">
-        {/* Card: Header Info */}
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="pb-4">
             <div className="flex items-center gap-3">
@@ -234,7 +167,6 @@ const WebPagePreview = ({ resumeInfo }) => {
           </CardHeader>
         </Card>
 
-        {/* Card: Selector de Dispositivo */}
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -287,7 +219,6 @@ const WebPagePreview = ({ resumeInfo }) => {
           </CardContent>
         </Card>
 
-        {/* Card: Acciones de Exportar */}
         <Card className="border-border/50 shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium">Exportar</CardTitle>
@@ -328,7 +259,6 @@ const WebPagePreview = ({ resumeInfo }) => {
           </CardContent>
         </Card>
 
-        {/* Card: Información */}
         <Card className="border-border/50 shadow-sm bg-muted/30">
           <CardContent className="pt-4">
             <div className="flex items-start gap-2 mb-3">
@@ -345,7 +275,6 @@ const WebPagePreview = ({ resumeInfo }) => {
         </Card>
       </aside>
 
-      {/* COLUMNA DERECHA: Preview del CV */}
       <div className="relative">
         <div className="sticky top-4">
           <Card className="border-border/50 shadow-sm overflow-hidden">
@@ -362,7 +291,6 @@ const WebPagePreview = ({ resumeInfo }) => {
                 >
                   <iframe
                     ref={iframeRef}
-                    onLoad={handleIframeLoad}
                     srcDoc={htmlContent}
                     className="w-full border-0"
                     style={{

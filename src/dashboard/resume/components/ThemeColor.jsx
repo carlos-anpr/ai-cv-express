@@ -67,15 +67,7 @@ function ThemeColor() {
       });
 
       console.log('✅ Color de tema actualizado:', response);
-      console.debug &&
-        console.debug('[ThemeColor] UpdateResumeDetail returned', {
-          responsePreview: response?.data
-            ? {
-                themeColor: response.data.themeColor,
-                webPageConfig: response.data.webPageConfig,
-              }
-            : null,
-        });
+      // theme update persisted
       toast.success('Color de tema actualizado');
       setIsOpen(false);
     } catch (error) {
