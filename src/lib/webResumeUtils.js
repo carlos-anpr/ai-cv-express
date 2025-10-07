@@ -340,16 +340,18 @@ const getRatingData = (rating) => {
   // Clamp to 0..5
   val = Math.max(0, Math.min(5, Number(val)));
 
-  // Level labels
-  let level = 'Básico';
+  // Level labels (five distinct categories for 1..5 stars)
+  // 0..1.49 -> Principiante (1), 1.5..2.49 -> Básico (2), 2.5..3.49 -> Intermedio (3), 3.5..4.49 -> Avanzado (4), 4.5+ -> Experto (5)
+  let level = 'Principiante';
   if (val >= 4.5) level = 'Experto';
   else if (val >= 3.5) level = 'Avanzado';
   else if (val >= 2.5) level = 'Intermedio';
+  else if (val >= 1.5) level = 'Básico';
 
-  // Percentage mapping: map 0..5 => 20..95 (avoid full 100 to keep visual border)
+  // Percentage mapping: map 0..5 => 10..100 linearly (so 1->20%, 2->40%, etc.)
+  // We'll map exactly: percentage = round((val/5)*100), but ensure a reasonable min so bars are visible
   let percentage = Math.round((val / 5) * 100);
-  if (percentage >= 95) percentage = 95;
-  if (percentage <= 20) percentage = 20;
+  if (percentage < 10) percentage = 10;
 
   return { level, percentage };
 };
@@ -1057,12 +1059,13 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
     <nav class="nav" id="nav">
         <div class="nav-container">
             <div class="nav-logo">${initials}</div>
-            <ul class="nav-menu">
-                <li><a href="#inicio" class="nav-link active">Inicio</a></li>
-                <li><a href="#experiencia" class="nav-link">Experiencia</a></li>
-                <li><a href="#habilidades" class="nav-link">Habilidades</a></li>
-                <li><a href="#educacion" class="nav-link">Educación</a></li>
-            </ul>
+      <ul class="nav-menu">
+        <li><a href="#inicio" class="nav-link active">Inicio</a></li>
+        <li><a href="#experiencia" class="nav-link">Experiencia</a></li>
+        <li><a href="#habilidades" class="nav-link">Habilidades</a></li>
+        <li><a href="#educacion" class="nav-link">Educación</a></li>
+        <li><a href="#idiomas" class="nav-link">Idiomas</a></li>
+      </ul>
         </div>
     </nav>
 
@@ -1282,28 +1285,71 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
     </footer>
 
     <script>
-        // Smooth scroll
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    const navHeight = document.querySelector('.nav').offsetHeight;
-                    const targetPosition = target.offsetTop - navHeight;
-                    window.scrollTo({ top: targetPosition, behavior: 'smooth' });
-                }
-            });
-        });
+    // Smooth scroll
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        // immediate active toggle for UX
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        this.classList.add('active');
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          const navHeight = document.querySelector('.nav').offsetHeight;
+          const targetPosition = target.offsetTop - navHeight;
+          window.scrollTo({ top: targetPosition, behavior: 'smooth' });
+        }
+      });
+    });
 
-        // Active nav link
-        window.addEventListener('scroll', () => {
-            const nav = document.getElementById('nav');
-            if (window.scrollY > 50) {
-                nav.classList.add('scrolled');
-            } else {
-                nav.classList.remove('scrolled');
-            }
-        });
+    // Active nav link and scrolled state
+    (function () {
+      const nav = document.getElementById('nav');
+      const links = Array.from(document.querySelectorAll('.nav-link'));
+      const sections = links
+        .map(l => {
+          try {
+            const href = l.getAttribute('href');
+            if (!href || !href.startsWith('#')) return null;
+            const el = document.querySelector(href);
+            return el ? { link: l, el } : null;
+          } catch { return null; }
+        })
+        .filter(Boolean);
+
+      function updateActive() {
+        const scrollY = window.scrollY;
+        const navHeight = nav ? nav.offsetHeight : 0;
+        // find the section closest to top but not below
+        let current = sections[0];
+        for (const s of sections) {
+          const top = s.el.offsetTop - navHeight - 10;
+          if (scrollY >= top) current = s;
+        }
+        links.forEach(l => l.classList.remove('active'));
+        if (current && current.link) current.link.classList.add('active');
+
+        if (scrollY > 50) nav.classList.add('scrolled'); else nav.classList.remove('scrolled');
+      }
+
+  // update on scroll and on load
+  window.addEventListener('scroll', updateActive);
+  window.addEventListener('load', updateActive);
+  // update when hash changes (back/forward or manual fragment)
+  window.addEventListener('hashchange', updateActive);
+
+      // Also update after smooth scroll programmatic calls (fallback)
+      const originalScrollTo = window.scrollTo;
+      window.scrollTo = function (opts) {
+        if (typeof opts === 'object' && opts.behavior === 'smooth') {
+          // call original, then schedule update
+          originalScrollTo.call(window, opts);
+          setTimeout(updateActive, 250);
+        } else {
+          originalScrollTo.apply(window, arguments);
+          setTimeout(updateActive, 10);
+        }
+      };
+    })();
 
         // Animate skills
         const observerOptions = { threshold: 0.5 };

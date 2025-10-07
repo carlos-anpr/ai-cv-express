@@ -178,10 +178,25 @@ class LocalDatabase {
   async UpdateResumeDetail(documentId, updateData) {
     await this.ensureDatabaseReady();
     try {
-      const existingResume = await db.resumes
-        .where('documentId')
-        .equals(documentId)
-        .first();
+      // Soportar tanto documentId (UUID) como el id numérico (clave primaria)
+      let existingResume = null;
+
+      // Si parece un número, intentar por ID numérico (clave primaria)
+      if (
+        !isNaN(documentId) &&
+        documentId !== null &&
+        documentId !== undefined
+      ) {
+        existingResume = await db.resumes.get(parseInt(documentId));
+      }
+
+      // Si no encontramos por ID numérico, intentar por documentId (UUID)
+      if (!existingResume) {
+        existingResume = await db.resumes
+          .where('documentId')
+          .equals(documentId)
+          .first();
+      }
 
       if (!existingResume) {
         throw new Error('CV no encontrado para actualizar');
@@ -205,13 +220,22 @@ class LocalDatabase {
       }
 
       // Actualizar campos (Dexie hook se encarga de updatedAt y version)
-      await db.resumes
-        .where('documentId')
-        .equals(documentId)
-        .modify(processedData);
+      // Si tenemos el id numérico, usar update por clave primaria, sino usar modify por documentId
+      if (existingResume.id !== undefined && existingResume.id !== null) {
+        await db.resumes.update(existingResume.id, processedData);
+      } else {
+        await db.resumes
+          .where('documentId')
+          .equals(documentId)
+          .modify(processedData);
+      }
 
       // Obtener registro actualizado para retornar
-      const updatedResume = await this.GetResumeById(documentId);
+      const updatedResume = await this.GetResumeById(
+        existingResume.id !== undefined && existingResume.id !== null
+          ? existingResume.id
+          : documentId
+      );
       // resume updated
       return updatedResume;
     } catch (error) {

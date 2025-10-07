@@ -464,8 +464,11 @@ const Step4Results = ({ generatedData, onStartOver }) => {
         });
       }
 
-      // Navegar al editor usando el ID numérico
-      navigate(`/dashboard/resume/${savedResume.data.id}/edit`);
+      // Navegar al editor: preferir documentId (UUID) para consistencia entre APIs;
+      // si no existe, caer en el id numérico que devuelve IndexedDB
+      const resumeRouteId =
+        savedResume?.data?.documentId || savedResume?.data?.id;
+      navigate(`/dashboard/resume/${resumeRouteId}/edit`);
     } catch (error) {
       console.error('Error saving resume:', error);
       toast.error('Error al guardar el CV. Intenta de nuevo.');
