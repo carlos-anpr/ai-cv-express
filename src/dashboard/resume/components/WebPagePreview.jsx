@@ -28,15 +28,7 @@ const WebPagePreview = ({ resumeInfo }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const iframeRef = useRef(null);
 
-  // Tema fijo azul (modern)
-  const fixedTheme = {
-    id: 'modern',
-    name: 'Modern',
-    primary: '#3b82f6',
-    secondary: '#8b5cf6',
-    gradient: 'from-blue-600 to-purple-600',
-  };
-
+  // Tema fijo azul (modern) - declarado dentro del efecto que genera el HTML
   // Generar HTML de forma ASÍNCRONA con sistema optimizado
   useEffect(() => {
     const generateHTML = async () => {
@@ -52,8 +44,40 @@ const WebPagePreview = ({ resumeInfo }) => {
 
       setIsGenerating(true);
       try {
-        const html = await generateResumeHTML(resumeInfo, fixedTheme);
-        setHtmlContent(html);
+        // Prefer explicit user-selected hex `themeColor` when present, then legacy `theme`, then `webPageConfig.theme` presets
+        const rawTheme =
+          resumeInfo?.themeColor ??
+          resumeInfo?.theme ??
+          resumeInfo?.webPageConfig?.theme ??
+          null;
+        // Accept object {primary,..}, string '#xxxxxx' or { colors: {...} }
+        const themeToUse = rawTheme?.colors || rawTheme || null;
+        console.debug &&
+          console.debug('[PREVIEW] theme resolution precedence', {
+            resolvedRawTheme: rawTheme,
+            fromThemeColor: !!resumeInfo?.themeColor,
+            fromTheme: !!resumeInfo?.theme,
+            fromWebPageConfig: !!resumeInfo?.webPageConfig?.theme,
+          });
+        console.debug &&
+          console.debug(
+            '[PREVIEW] generating HTML with themeToUse',
+            themeToUse
+          );
+        const html = await generateResumeHTML(resumeInfo, themeToUse);
+        console.debug &&
+          console.debug('[PREVIEW] generated html length', html?.length);
+        // Append a small theme comment to force srcDoc changes even if HTML body is similar
+        const themeIdentifier =
+          typeof themeToUse === 'string'
+            ? themeToUse
+            : JSON.stringify(themeToUse);
+        setHtmlContent(html + `\n<!-- theme:${themeIdentifier} -->`);
+        console.debug &&
+          console.debug(
+            '[PREVIEW] htmlContent set, themeIdentifier',
+            themeIdentifier
+          );
         console.log('✅ HTML generado correctamente');
       } catch (error) {
         console.error('❌ Error generando HTML:', error);
@@ -74,7 +98,30 @@ const WebPagePreview = ({ resumeInfo }) => {
     resumeInfo?.education,
     resumeInfo?.skills,
     resumeInfo?.themeColor,
+    resumeInfo?.webPageConfig?.theme,
+    resumeInfo?.theme,
   ]);
+
+  // iframe onLoad: attempt to inspect content and theme-vars
+  const handleIframeLoad = () => {
+    try {
+      const iframe = iframeRef.current;
+      if (!iframe) return;
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!doc) {
+        console.debug && console.debug('[PREVIEW] iframe has no document yet');
+        return;
+      }
+      const themeVars = doc.getElementById('theme-vars');
+      console.debug &&
+        console.debug('[PREVIEW] iframe loaded head title', doc.title, {
+          themeVarsExists: !!themeVars,
+          themeVarsInner: themeVars ? themeVars.innerText.slice(0, 200) : null,
+        });
+    } catch (e) {
+      console.debug && console.debug('[PREVIEW] iframe load inspect error', e);
+    }
+  };
 
   // Dimensiones responsive del iframe
   const getIframeScale = () => {
@@ -315,6 +362,7 @@ const WebPagePreview = ({ resumeInfo }) => {
                 >
                   <iframe
                     ref={iframeRef}
+                    onLoad={handleIframeLoad}
                     srcDoc={htmlContent}
                     className="w-full border-0"
                     style={{

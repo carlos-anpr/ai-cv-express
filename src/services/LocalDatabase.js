@@ -212,6 +212,17 @@ class LocalDatabase {
 
       // Obtener registro actualizado para retornar
       const updatedResume = await this.GetResumeById(documentId);
+      console.debug &&
+        console.debug('[LocalDatabase] UpdateResumeDetail persisted', {
+          documentId,
+          processedData,
+          updatedResumePreview: updatedResume?.data
+            ? {
+                themeColor: updatedResume.data.themeColor,
+                webPageConfig: updatedResume.data.webPageConfig,
+              }
+            : null,
+        });
       return updatedResume;
     } catch (error) {
       console.error('Error updating resume:', error);
@@ -1214,8 +1225,27 @@ LocalDatabase.prototype.SaveWebPageConfig = async function (resumeId, config) {
   try {
     // Reutilizar UpdateResumeDetail para persistir webPageConfig dentro del registro
     const payload = { webPageConfig: config };
+    console.debug &&
+      console.debug('[LocalDatabase] SaveWebPageConfig called', {
+        resumeId,
+        payloadPreview: {
+          webPageConfig: {
+            theme: config?.theme,
+            themeColor: config?.themeColor,
+          },
+        },
+      });
     const updated = await this.UpdateResumeDetail(resumeId, payload);
     console.log('✅ Configuración web guardada localmente:', updated);
+    console.debug &&
+      console.debug('[LocalDatabase] SaveWebPageConfig result preview', {
+        updatedPreview: updated?.data
+          ? {
+              themeColor: updated.data.themeColor,
+              webPageConfig: updated.data.webPageConfig,
+            }
+          : null,
+      });
     return updated;
   } catch (error) {
     console.error('❌ Error guardando configuración web:', error);

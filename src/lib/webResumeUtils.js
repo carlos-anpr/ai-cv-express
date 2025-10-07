@@ -42,12 +42,27 @@ function saveSkillCacheToSession() {
 }
 
 function getSkillCache(key) {
+  try {
+    const has = skillCache.has(key);
+    console.debug && console.debug('[SKILL CACHE] get', { key, has });
+  } catch (err) {
+    console.debug && console.debug('[SKILL CACHE] get error', err);
+  }
   return skillCache.get(key) || null;
 }
 
 function setSkillCache(key, value) {
   if (!key) return;
   if (!Array.isArray(value) || value.length === 0) return;
+  try {
+    console.debug &&
+      console.debug('[SKILL CACHE] set', {
+        key,
+        size: Array.isArray(value) ? value.length : 0,
+      });
+  } catch (err) {
+    console.debug && console.debug('[SKILL CACHE] set error', err);
+  }
   skillCache.set(key, value);
   try {
     saveSkillCacheToSession();
@@ -145,6 +160,121 @@ const getColorScheme = (jobTitle) => {
 
   return { primary: '#6366f1', secondary: '#8b5cf6', accent: '#06b6d4' };
 };
+
+/**
+ * Normaliza la entrada de tema del usuario en una paleta { primary, secondary, accent }
+ */
+function normalizeTheme(inputTheme, jobTitle) {
+  // Support theme objects that wrap colors under `.colors`
+  if (
+    inputTheme?.colors &&
+    (inputTheme.colors.primary || inputTheme.colors.hex)
+  ) {
+    return normalizeTheme(inputTheme.colors, jobTitle);
+  }
+
+  // If a plain string is provided, treat it as a hex base
+  if (inputTheme && typeof inputTheme === 'string') {
+    inputTheme = { hex: inputTheme };
+  }
+  // If input is an object but uses alternate key names, normalize them to primary/secondary/accent
+  if (inputTheme && typeof inputTheme === 'object') {
+    const pick = (obj, ...keys) => {
+      for (const k of keys) {
+        if (obj[k]) return obj[k];
+      }
+      return undefined;
+    };
+
+    const maybePrimary = pick(
+      inputTheme,
+      'primary',
+      'primaryColor',
+      'primary_color',
+      'main',
+      'colorPrimary',
+      'color'
+    );
+    const maybeSecondary = pick(
+      inputTheme,
+      'secondary',
+      'secondaryColor',
+      'secondary_color',
+      'colorSecondary'
+    );
+    const maybeAccent = pick(
+      inputTheme,
+      'accent',
+      'accentColor',
+      'accent_color',
+      'colorAccent'
+    );
+
+    // If the object didn't already provide the canonical keys but had variants, rebuild
+    if (!inputTheme.primary && maybePrimary) {
+      inputTheme = {
+        primary: maybePrimary,
+        secondary: maybeSecondary || maybePrimary,
+        accent: maybeAccent || maybePrimary,
+        // preserve original colors sub-object if present
+        ...inputTheme,
+      };
+    }
+  }
+  const fallbackByTitle = getColorScheme(jobTitle);
+  if (!inputTheme || typeof inputTheme !== 'object') return fallbackByTitle;
+
+  // Caso 1: paleta completa
+  if (inputTheme.primary && inputTheme.secondary && inputTheme.accent) {
+    return {
+      primary: String(inputTheme.primary),
+      secondary: String(inputTheme.secondary),
+      accent: String(inputTheme.accent),
+    };
+  }
+
+  // Caso 2: un solo color base (primary) -> derivar secundarios
+  const base =
+    inputTheme.hex || inputTheme.primary || inputTheme.color || inputTheme.base;
+  if (base) {
+    const lighten = (hex, p = 0.15) => {
+      try {
+        const n = String(hex).replace('#', '');
+        const bigint = parseInt(n, 16);
+        let r = (bigint >> 16) & 255,
+          g = (bigint >> 8) & 255,
+          b = bigint & 255;
+        r = Math.min(255, Math.round(r + (255 - r) * p));
+        g = Math.min(255, Math.round(g + (255 - g) * p));
+        b = Math.min(255, Math.round(b + (255 - b) * p));
+        return `#${[r, g, b]
+          .map((x) => x.toString(16).padStart(2, '0'))
+          .join('')}`;
+      } catch {
+        return fallbackByTitle.secondary;
+      }
+    };
+    const saturate = (hex) => String(hex);
+    const primary = String(base);
+    const secondary = lighten(primary, 0.18);
+    const accent = lighten(primary, 0.3);
+    return { primary, secondary: saturate(secondary), accent };
+  }
+
+  // Caso 3: solo nombre de tema -> mapea a colores
+  if (inputTheme.name) {
+    const name = String(inputTheme.name).toLowerCase();
+    const presets = {
+      ocean: { primary: '#0ea5e9', secondary: '#6366f1', accent: '#22d3ee' },
+      forest: { primary: '#16a34a', secondary: '#065f46', accent: '#22c55e' },
+      sunset: { primary: '#f97316', secondary: '#ef4444', accent: '#f59e0b' },
+      orchid: { primary: '#8b5cf6', secondary: '#6366f1', accent: '#06b6d4' },
+    };
+    return presets[name] || fallbackByTitle;
+  }
+
+  return fallbackByTitle;
+}
 
 /**
  * Títulos personalizados según perfil
@@ -449,7 +579,7 @@ function renderExperienceSkillTags(categories) {
 /**
  * Genera el HTML PROFESIONAL Y ELEGANTE del CV
  */
-export const generateResumeHTML = async (resumeInfo) => {
+export const generateResumeHTML = async (resumeInfo, theme) => {
   const {
     firstName = '',
     lastName = '',
@@ -469,13 +599,134 @@ export const generateResumeHTML = async (resumeInfo) => {
     lastName?.charAt(0) || ''
   }`.toUpperCase();
 
-  const colorScheme = getColorScheme(jobTitle);
-  const primaryColor = colorScheme.primary;
-  const secondaryColor = colorScheme.secondary;
-  const accentColor = colorScheme.accent;
+  // 1) Resolve rawThemeInput from props or resumeInfo (caller preferred)
+  const rawThemeInput =
+    theme ??
+    resumeInfo?.webPageConfig?.theme ??
+    resumeInfo?.theme ??
+    resumeInfo?.themeColor ??
+    null;
+
+  // 2) Accept a plain hex string directly (e.g. "#92400e") by converting to { hex }
+  const rawTheme =
+    typeof rawThemeInput === 'string' ? { hex: rawThemeInput } : rawThemeInput;
+
+  // If no theme was provided, warn loudly. In development we throw to force callers
+  // to pass a resolved theme; in production we keep a console.error but continue
+  // using the fallback color palette derived from the job title.
+  if (!rawTheme) {
+    try {
+      console.error(
+        '[THEME] No theme provided to generateResumeHTML; falling back to colors derived from jobTitle.',
+        { jobTitle, resumeInfo }
+      );
+    } catch {
+      // ignore console errors
+    }
+
+    // Detect development-like environments: NODE_ENV=development or running on localhost
+    const isDev =
+      (typeof globalThis !== 'undefined' &&
+        globalThis.process &&
+        globalThis.process.env &&
+        globalThis.process.env.NODE_ENV === 'development') ||
+      (typeof window !== 'undefined' &&
+        window.location &&
+        (window.location.hostname === 'localhost' ||
+          window.location.hostname === '127.0.0.1'));
+
+    if (isDev) {
+      // Throw a noisy error in dev to make it obvious that callers should pass a theme
+      throw new Error(
+        '[THEME] generateResumeHTML was called without a theme. Pass a theme object (e.g. { primary, secondary, accent }) or set resumeInfo.webPageConfig.theme. This error is thrown in development to surface incorrect usage.'
+      );
+    }
+  }
+
+  // Normalize accepting { colors: { primary... } } or direct palette
+  const normalized = normalizeTheme(
+    rawTheme?.colors || rawTheme,
+    resumeInfo?.jobTitle
+  );
+  try {
+    console.debug &&
+      console.debug('[GENERATE HTML] theme resolved', {
+        rawThemeInput,
+        rawTheme: rawTheme,
+        normalized,
+        jobTitle: resumeInfo?.jobTitle,
+      });
+  } catch (e) {
+    console.debug &&
+      console.debug('[GENERATE HTML] theme resolve log error', e);
+  }
+  const primaryColor = normalized.primary;
+  const secondaryColor = normalized.secondary;
+  const accentColor = normalized.accent;
+
+  // For debug in the generated HTML we keep rawThemeInput (the original input before normalization)
+
+  // helper: return 'r, g, b' string for CSS rgba() vars
+  function hexToRgbString(hex) {
+    try {
+      const c = String(hex || '#6366f1')
+        .replace('#', '')
+        .padStart(6, '0');
+      const bigint = parseInt(c, 16);
+      const r = (bigint >> 16) & 255;
+      const g = (bigint >> 8) & 255;
+      const b = bigint & 255;
+      return `${r}, ${g}, ${b}`;
+    } catch {
+      return '99, 102, 241';
+    }
+  }
+
+  // Helpers para conversión y mezcla de colores (hex)
+  const hexToRgb = (hex) => {
+    try {
+      const h = String(hex).replace('#', '').padStart(6, '0');
+      const bigint = parseInt(h, 16);
+      return {
+        r: (bigint >> 16) & 255,
+        g: (bigint >> 8) & 255,
+        b: bigint & 255,
+      };
+    } catch {
+      return { r: 0, g: 0, b: 0 };
+    }
+  };
+
+  const mixHex = (hexA, hexB, weightB = 0.2) => {
+    const a = hexToRgb(hexA);
+    const b = hexToRgb(hexB);
+    const w = Number(weightB) || 0.2;
+    const r = Math.round(a.r * (1 - w) + b.r * w);
+    const g = Math.round(a.g * (1 - w) + b.g * w);
+    const bl = Math.round(a.b * (1 - w) + b.b * w);
+    return `#${[r, g, bl]
+      .map((x) => x.toString(16).padStart(2, '0'))
+      .join('')}`;
+  };
+  // Derived CSS color values handled via CSS variables (rgba fallbacks defined in :root)
+  const colorTextHex = '#1e293b';
+  const footerGradStart = mixHex(colorTextHex, primaryColor, 0.2);
+  const footerGradEnd = mixHex('#334155', secondaryColor, 0.2);
 
   const sectionTitles = getSectionTitles(jobTitle);
   const groupedSkills = groupSkillsByCategory(skills);
+
+  // theme hash to force HTML differences when theme changes
+  const themeHash =
+    typeof btoa === 'function'
+      ? btoa(
+          unescape(
+            encodeURIComponent(
+              `${primaryColor}|${secondaryColor}|${accentColor}`
+            )
+          )
+        )
+      : `${primaryColor}|${secondaryColor}|${accentColor}`;
 
   // Mapear iconos
   const groupedSkillsWithIcons = await Promise.all(
@@ -560,6 +811,7 @@ export const generateResumeHTML = async (resumeInfo) => {
   // Prepare arrays
   const baseTexts = [];
   const keys = [];
+  const themeKey = `${primaryColor}|${secondaryColor}|${accentColor}`;
   for (const exp of experience || []) {
     const baseTextRaw = [
       exp?.title,
@@ -570,7 +822,7 @@ export const generateResumeHTML = async (resumeInfo) => {
       .join('. ');
     const baseText = stripHtml(baseTextRaw);
     baseTexts.push(baseText);
-    keys.push(`${jobTitleTarget}::${baseText}`);
+    keys.push(`${themeKey}::${jobTitleTarget}::${baseText}`);
   }
 
   // Check cache and collect missing
@@ -592,6 +844,19 @@ export const generateResumeHTML = async (resumeInfo) => {
   // If there are items to fetch, call the batch prompt once
   if (toFetch.length > 0) {
     const batchResults = await categorizeSkillsBatch(toFetch, jobTitleTarget);
+    try {
+      console.debug &&
+        console.debug('[AI BATCH] results', {
+          toFetchCount: toFetch.length,
+          jobTitleTarget,
+          sample0: toFetch[0],
+          batchResultsPreview: Array.isArray(batchResults)
+            ? batchResults.slice(0, 3)
+            : batchResults,
+        });
+    } catch (e) {
+      console.debug && console.debug('[AI BATCH] preview error', e);
+    }
     batchResults.forEach((cats, j) => {
       const idx = toFetchIdx[j];
       const key = keys[idx];
@@ -622,25 +887,40 @@ export const generateResumeHTML = async (resumeInfo) => {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta name="x-theme-hash" content="${themeHash}" />
+  <meta name="x-build-ts" content="${Date.now()}" />
+  <script>try{console.debug && console.debug('[THEME APPLY]', {primaryColor: '${primaryColor}', secondaryColor: '${secondaryColor}', accentColor: '${accentColor}', rawTheme: ${JSON.stringify(
+    rawThemeInput
+  )}});}catch(e){}
+  </script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        :root {
-            --color-primary: ${primaryColor};
-            --color-secondary: ${secondaryColor};
-            --color-accent: ${accentColor};
-            --color-bg: #fafafa;
-            --color-surface: #ffffff;
-            --color-text: #1e293b;
-            --color-text-light: #64748b;
-            --color-text-lighter: #94a3b8;
-            --color-border: #e2e8f0;
-        }
+    :root {
+      --color-primary: ${primaryColor};
+      --color-primary-rgb: ${hexToRgbString(primaryColor)};
+      --color-secondary: ${secondaryColor};
+      --color-secondary-rgb: ${hexToRgbString(secondaryColor)};
+      --color-accent: ${accentColor};
+      --color-accent-rgb: ${hexToRgbString(accentColor)};
+      --color-primary-8: rgba(var(--color-primary-rgb), 0.08);
+      --color-primary-12: rgba(var(--color-primary-rgb), 0.12);
+      --color-primary-20: rgba(var(--color-primary-rgb), 0.20);
+      --color-primary-40: rgba(var(--color-primary-rgb), 0.40);
+      --color-secondary-12: rgba(var(--color-secondary-rgb), 0.12);
+      --color-accent-15: rgba(var(--color-accent-rgb), 0.15);
+      --color-bg: #fafafa;
+      --color-surface: #ffffff;
+      --color-text: #1e293b;
+      --color-text-light: #64748b;
+      --color-text-lighter: #94a3b8;
+      --color-border: #e2e8f0;
+    }
         body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--color-bg); color: var(--color-text); line-height: 1.6; font-size: 15px; overflow-x: hidden; }
         /* Navigation */
         .nav { position: fixed; top:0; left:0; right:0; background: rgba(255,255,255,.95); backdrop-filter: blur(10px); border-bottom: 1px solid var(--color-border); z-index:1000; transition: all .3s ease; }
         .nav.scrolled { box-shadow: 0 4px 6px -1px rgba(0,0,0,.1); }
         .nav-container { max-width:1200px; margin:0 auto; padding:0 2rem; display:flex; justify-content:space-between; align-items:center; height:70px; }
-        .nav-logo { font-family:'Playfair Display', serif; font-size:1.25rem; font-weight:700; background: linear-gradient(135deg,var(--color-primary),var(--color-secondary)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .nav-logo { font-family:'Playfair Display', serif; font-size:1.25rem; font-weight:700; background: linear-gradient(135deg,var(--color-primary),var(--color-secondary)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
         .nav-menu { display:flex; gap:2rem; list-style:none; }
         .nav-link { text-decoration:none; color:var(--color-text-light); font-weight:500; font-size:.9rem; transition:all .3s ease; position:relative; padding:.25rem 0; }
         .nav-link::after { content:''; position:absolute; bottom:0; left:0; width:0; height:2px; background: linear-gradient(90deg,var(--color-primary),var(--color-accent)); transition:width .3s ease; }
@@ -649,12 +929,12 @@ export const generateResumeHTML = async (resumeInfo) => {
         /* Container */
         .container { max-width:1200px; margin:0 auto; padding:0 2rem; }
         /* Hero */
-        .hero { padding: calc(70px + 4rem) 2rem 4rem; background: linear-gradient(135deg,#f8fafc 0%,#f1f5f9 50%,#e0e7ff 100%); position:relative; overflow:hidden; }
-        .hero::before { content:''; position:absolute; top:-50%; right:-20%; width:600px; height:600px; background: radial-gradient(circle, rgba(99,102,241,.1) 0%, transparent 70%); border-radius:50%; animation: float 20s ease-in-out infinite; }
+  .hero { padding: calc(70px + 4rem) 2rem 4rem; background: linear-gradient(135deg,var(--color-primary-8) 0%, var(--color-secondary-12) 50%, rgba(0,0,0,0.02) 100%); position:relative; overflow:hidden; }
+  .hero::before { content:''; position:absolute; top:-50%; right:-20%; width:600px; height:600px; background: radial-gradient(circle, var(--color-primary-8) 0%, transparent 70%); border-radius:50%; animation: float 20s ease-in-out infinite; }
         @keyframes float { 0%,100%{transform:translate(0,0) scale(1);} 50%{transform:translate(30px,30px) scale(1.1);} }
         .hero-content { position:relative; z-index:1; max-width:800px; margin:0 auto; text-align:center; animation: fadeInUp .8s ease-out; }
         @keyframes fadeInUp { from{opacity:0; transform: translateY(30px);} to{opacity:1; transform: translateY(0);} }
-        .hero-badge { display:inline-flex; align-items:center; gap:.5rem; padding:.5rem 1rem; background: linear-gradient(135deg, rgba(99,102,241,.1), rgba(139,92,246,.1)); border:1px solid rgba(99,102,241,.2); border-radius:2rem; font-size:.85rem; font-weight:500; color:var(--color-primary); margin-bottom:1.5rem; }
+  .hero-badge { display:inline-flex; align-items:center; gap:.5rem; padding:.5rem 1rem; background: linear-gradient(135deg, var(--color-primary-8), var(--color-secondary-12)); border:1px solid var(--color-primary-20); border-radius:2rem; font-size:.85rem; font-weight:500; color:var(--color-primary); margin-bottom:1.5rem; }
         .hero-badge::before { content:''; width:8px; height:8px; background: var(--color-accent); border-radius:50%; animation: pulse 2s ease-in-out infinite; }
         @keyframes pulse { 0%,100%{opacity:1; transform: scale(1);} 50%{opacity:.5; transform: scale(1.2);} }
         .hero-title { font-family:'Playfair Display', serif; font-size:3.5rem; font-weight:700; line-height:1.2; margin-bottom:1.5rem; background: linear-gradient(135deg, var(--color-text) 0%, var(--color-primary) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
@@ -667,45 +947,45 @@ export const generateResumeHTML = async (resumeInfo) => {
         /* Contact Info */
         .contact-info { display:flex; justify-content:center; gap:2rem; flex-wrap:wrap; margin-top:2rem; }
         .contact-item { display:flex; align-items:center; gap:.5rem; color:var(--color-text-light); text-decoration:none; font-size:.9rem; transition:all .3s ease; padding:.5rem 1rem; border-radius:.75rem; }
-        .contact-item:hover { color:var(--color-primary); background: rgba(99,102,241,.05); transform: translateY(-2px); }
+  .contact-item:hover { color:var(--color-primary); background: var(--color-primary-8); transform: translateY(-2px); }
         .contact-icon { width:18px; height:18px; stroke: currentColor; stroke-width:2; fill:none; }
         /* Section */
         section { padding:4rem 0; }
         .section-header { text-align:center; margin-bottom:3rem; }
         .section-title { font-family:'Playfair Display', serif; font-size:2.5rem; font-weight:700; margin-bottom:1rem; position:relative; display:inline-block; }
-        .section-title::after { content:''; position:absolute; bottom:-.5rem; left:50%; transform: translateX(-50%); width:60px; height:3px; background: linear-gradient(90deg,var(--color-primary),var(--color-accent)); border-radius:2px; }
+  .section-title::after { content:''; position:absolute; bottom:-.5rem; left:50%; transform: translateX(-50%); width:60px; height:3px; background: linear-gradient(90deg,var(--color-primary),var(--color-accent)); border-radius:2px; }
         .section-subtitle { color:var(--color-text-light); font-size:1rem; margin-top:1.5rem; }
         /* Timeline */
         .timeline { position:relative; max-width:900px; margin:0 auto; }
         .timeline-item { position:relative; padding-left:3rem; padding-bottom:3rem; }
         .timeline-item:last-child { padding-bottom:0; }
-        .timeline-item::before { content:''; position:absolute; left:0; top:0; bottom:-3rem; width:2px; background: linear-gradient(180deg,var(--color-primary) 0%, var(--color-accent) 100%); opacity:.3; }
+  .timeline-item::before { content:''; position:absolute; left:0; top:0; bottom:-3rem; width:2px; background: linear-gradient(180deg,var(--color-primary) 0%, var(--color-accent) 100%); opacity:.3; }
         .timeline-item:last-child::before { background: linear-gradient(180deg, var(--color-primary) 0%, transparent 100%); }
-        .timeline-dot { position:absolute; left:-6px; top:.5rem; width:14px; height:14px; background: linear-gradient(135deg,var(--color-primary),var(--color-accent)); border:3px solid var(--color-surface); border-radius:50%; box-shadow:0 0 0 4px rgba(99,102,241,.1); transition:all .3s ease; }
-        .timeline-item:hover .timeline-dot { transform: scale(1.3); box-shadow:0 0 0 6px rgba(99,102,241,.15); }
+  .timeline-dot { position:absolute; left:-6px; top:.5rem; width:14px; height:14px; background: linear-gradient(135deg,var(--color-primary),var(--color-accent)); border:3px solid var(--color-surface); border-radius:50%; box-shadow:0 0 0 4px var(--color-primary-8); transition:all .3s ease; }
+  .timeline-item:hover .timeline-dot { transform: scale(1.3); box-shadow:0 0 0 6px var(--color-primary-12); }
         .timeline-content { background: var(--color-surface); padding:2rem; border-radius:1rem; box-shadow:0 1px 2px 0 rgba(0,0,0,.05); transition:all .3s ease; border:1px solid var(--color-border); }
-        .timeline-item:hover .timeline-content { box-shadow:0 10px 15px -3px rgba(0,0,0,.1); transform: translateX(4px); border-color: rgba(99,102,241,.2); }
+  .timeline-item:hover .timeline-content { box-shadow:0 10px 15px -3px rgba(0,0,0,.1); transform: translateX(4px); border-color: var(--color-primary-20); }
         .timeline-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem; flex-wrap:wrap; gap:1rem; }
         .timeline-title { font-size:1.15rem; font-weight:600; color:var(--color-text); margin-bottom:.25rem; }
-        .timeline-company { font-size:.95rem; color:var(--color-primary); font-weight:500; }
-        .timeline-date { font-size:.85rem; color:var(--color-text-lighter); font-weight:500; padding:.25rem .75rem; background: rgba(99,102,241,.05); border-radius:.5rem; }
+  .timeline-company { font-size:.95rem; color:var(--color-primary); font-weight:500; }
+  .timeline-date { font-size:.85rem; color:var(--color-text-lighter); font-weight:500; padding:.25rem .75rem; background: var(--color-primary-8); border-radius:.5rem; }
         .timeline-description { color:var(--color-text-light); line-height:1.7; margin-bottom:1rem; }
         .timeline-tags { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1rem; padding-top:1rem; border-top:1px solid var(--color-border); }
-      .tag { display:inline-block; font-size:.75rem; font-weight:500; padding:.35rem .75rem; background: linear-gradient(135deg, rgba(99,102,241,.08), rgba(139,92,246,.08)); color: var(--color-primary); border: 1px solid rgba(99,102,241,.2); border-radius:.5rem; transition: all .2s ease; line-height:1.4; }
-        .tag:hover { background: linear-gradient(135deg, rgba(99,102,241,.15), rgba(139,92,246,.15)); border-color: rgba(99,102,241,.4); transform: translateY(-1px); }
+      .tag { display:inline-block; font-size:.75rem; font-weight:500; padding:.35rem .75rem; background: linear-gradient(135deg, var(--color-primary-8), var(--color-secondary-12)); color: var(--color-primary); border: 1px solid var(--color-primary-20); border-radius:.5rem; transition: all .2s ease; line-height:1.4; }
+  .tag:hover { background: linear-gradient(135deg, var(--color-primary-12), var(--color-secondary-12)); border-color: var(--color-primary-40); transform: translateY(-1px); }
         /* Skills Grid */
         .skills-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(280px,1fr)); gap:2rem; max-width:1000px; margin:0 auto; }
         .skill-category { background: var(--color-surface); padding:2rem; border-radius:1rem; box-shadow:0 1px 2px 0 rgba(0,0,0,.05); transition:all .3s ease; border:1px solid var(--color-border); }
-        .skill-category:hover { box-shadow:0 10px 15px -3px rgba(0,0,0,.1); transform: translateY(-4px); border-color: rgba(99,102,241,.2); }
+  .skill-category:hover { box-shadow:0 10px 15px -3px rgba(0,0,0,.1); transform: translateY(-4px); border-color: var(--color-primary-20); }
         .skill-category-title { font-size:1.1rem; font-weight:600; margin-bottom:1.5rem; color:var(--color-text); display:flex; align-items:center; gap:.5rem; }
-        .skill-category-icon { width:24px; height:24px; stroke: var(--color-primary); stroke-width:2; fill:none; }
+  .skill-category-icon { width:24px; height:24px; stroke: var(--color-primary); stroke-width:2; fill:none; }
         .skill-item { margin-bottom:1.5rem; }
         .skill-item:last-child { margin-bottom:0; }
         .skill-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:.5rem; }
         .skill-name { font-size:.9rem; font-weight:500; color:var(--color-text); }
         .skill-level { font-size:.8rem; color:var(--color-text-lighter); font-weight:500; }
         .skill-bar { height:6px; background: var(--color-border); border-radius:3px; overflow:hidden; }
-        .skill-progress { height:100%; background: linear-gradient(90deg,var(--color-primary),var(--color-accent)); border-radius:3px; transition: width 1s ease-out; }
+  .skill-progress { height:100%; background: linear-gradient(90deg,var(--color-primary),var(--color-accent)); border-radius:3px; transition: width 1s ease-out; }
   /* Languages grid */
   .languages-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:1rem; max-width:1000px; margin:0 auto; }
   .language-card { background: var(--color-surface); padding:1rem; border-radius:.75rem; border:1px solid var(--color-border); box-shadow:0 1px 2px rgba(0,0,0,.04); }
@@ -714,12 +994,12 @@ export const generateResumeHTML = async (resumeInfo) => {
         /* Education */
         .education-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px,1fr)); gap:2rem; max-width:900px; margin:0 auto; }
         .education-card { background: var(--color-surface); padding:2rem; border-radius:1rem; box-shadow:0 1px 2px 0 rgba(0,0,0,.05); transition:all .3s ease; border:1px solid var(--color-border); }
-        .education-card:hover { box-shadow:0 10px 15px -3px rgba(0,0,0,.1); transform: translateY(-4px); border-color: rgba(99,102,241,.2); }
+  .education-card:hover { box-shadow:0 10px 15px -3px rgba(0,0,0,.1); transform: translateY(-4px); border-color: var(--color-primary-20); }
         .education-title { font-size:1.1rem; font-weight:600; color:var(--color-text); margin-bottom:.5rem; }
         .education-institution { font-size:.95rem; color:var(--color-primary); font-weight:500; margin-bottom:.5rem; }
         .education-date { font-size:.85rem; color:var(--color-text-lighter); font-weight:500; }
         /* Footer */
-        footer { background: linear-gradient(135deg,#1e293b 0%, #334155 100%); color:#e2e8f0; padding:3rem 0; text-align:center; }
+  footer { background: linear-gradient(135deg, ${footerGradStart}, ${footerGradEnd}); color:#e2e8f0; padding:3rem 0; text-align:center; }
         .footer-content { max-width:800px; margin:0 auto; }
         .footer-text { color:#cbd5e1; margin-bottom:2rem; }
         /* Responsive */
@@ -734,6 +1014,23 @@ export const generateResumeHTML = async (resumeInfo) => {
           .timeline-tags { gap:.4rem; }
           .tag { font-size:.7rem; padding:.3rem .6rem; }
         }
+    </style>
+    <!-- Theme variables (placed last to win cascade) -->
+    <style id="theme-vars">
+      :root {
+        --color-primary: ${primaryColor};
+        --color-secondary: ${secondaryColor};
+        --color-accent: ${accentColor};
+        --color-primary-rgb: ${hexToRgbString(primaryColor)};
+        --color-secondary-rgb: ${hexToRgbString(secondaryColor)};
+        --color-accent-rgb: ${hexToRgbString(accentColor)};
+        --color-primary-8: rgba(var(--color-primary-rgb), 0.08);
+        --color-primary-12: rgba(var(--color-primary-rgb), 0.12);
+        --color-primary-20: rgba(var(--color-primary-rgb), 0.20);
+        --color-primary-40: rgba(var(--color-primary-rgb), 0.40);
+        --color-secondary-12: rgba(var(--color-secondary-rgb), 0.12);
+        --color-accent-15: rgba(var(--color-accent-rgb), 0.15);
+      }
     </style>
 </head>
 <body>
@@ -918,9 +1215,6 @@ export const generateResumeHTML = async (resumeInfo) => {
     `
         : ''
     }
-
-  ${languagesSection}
-
     ${
       education && education.length > 0
         ? `
@@ -957,7 +1251,9 @@ export const generateResumeHTML = async (resumeInfo) => {
         : ''
     }
 
-    <!-- Footer -->
+  ${languagesSection}
+
+  <!-- Footer -->
     <footer>
         <div class="container">
             <div class="footer-content">
@@ -1010,9 +1306,25 @@ export const generateResumeHTML = async (resumeInfo) => {
             observer.observe(category);
         });
     </script>
+        <script>
+          try {
+            // Informational: print applied theme var
+            console.log('[THEME APPLIED]', getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim());
+          } catch (e) { /* noop */ }
+        </script>
 </body>
 </html>
   `.trim();
+  try {
+    console.debug &&
+      console.debug('[GENERATE HTML] returning html', {
+        length: htmlOut.length,
+        themeHash,
+        themePreview: { primaryColor, secondaryColor, accentColor },
+      });
+  } catch (e) {
+    console.debug && console.debug('[GENERATE HTML] return log error', e);
+  }
 
   // Production: no verbose HTML dump. Errors will still surface via console.error/console.warn.
 

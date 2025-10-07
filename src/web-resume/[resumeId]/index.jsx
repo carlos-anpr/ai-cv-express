@@ -19,8 +19,20 @@ function PublicWebResume() {
       try {
         const response = await LocalDatabase.GetResumeById(resumeId);
         const resume = response.data;
-        const html = generateResumeHTML(resume, resume.webPageConfig?.theme);
-        setHtmlContent(html);
+        // Prefer stored hex color `themeColor` when available (user selection) before presets
+        const rawTheme =
+          resume?.themeColor ??
+          resume?.theme ??
+          resume?.webPageConfig?.theme ??
+          null;
+        const themeToUse = rawTheme?.colors || rawTheme || null;
+        console.debug &&
+          console.debug('[PUBLIC PAGE] theme resolution', {
+            resolvedRawTheme: rawTheme,
+            hasThemeColor: !!resume?.themeColor,
+          });
+        const html = await generateResumeHTML(resume, themeToUse);
+        setHtmlContent(html + `\n<!-- theme=${JSON.stringify(themeToUse)} -->`);
       } catch (err) {
         console.error('Error cargando CV:', err);
         setError('No se pudo cargar el CV');
