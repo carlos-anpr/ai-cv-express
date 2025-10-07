@@ -2,25 +2,18 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
   Plus,
-  Calendar,
-  Briefcase,
   Search,
-  Filter,
-  MessageSquare,
+  Briefcase,
   FileText,
+  MessageSquare,
+  ArrowLeft,
+  Filter,
 } from 'lucide-react';
 import JobApplicationCard from './components/JobApplicationCard';
-import StatusBadge from './components/StatusBadge';
 import LocalDatabase from '@/services/LocalDatabase';
 import { toast } from 'sonner';
 
@@ -28,6 +21,7 @@ function JobApplications() {
   const { resumeId } = useParams();
   const navigate = useNavigate();
   const { user } = useUser();
+
   const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,8 +33,6 @@ function JobApplications() {
   const loadCoverLetterStats = React.useCallback(async (apps) => {
     try {
       let coverLetterCount = 0;
-
-      // Verificar cada candidatura para ver si tiene carta
       for (const app of apps) {
         const coverLetterResponse =
           await LocalDatabase.GetCoverLetterByApplication(app.id);
@@ -48,13 +40,9 @@ function JobApplications() {
           coverLetterCount++;
         }
       }
-
-      console.log(
-        `📊 Cartas encontradas: ${coverLetterCount} de ${apps.length} candidaturas`
-      );
       setCoverLetterStats(coverLetterCount);
     } catch (error) {
-      console.error('❌ Error cargando estadísticas de cartas:', error);
+      console.error('Error cargando estadísticas de cartas:', error);
       setCoverLetterStats(0);
     }
   }, []);
@@ -68,26 +56,14 @@ function JobApplications() {
         resumeId,
         user.primaryEmailAddress.emailAddress
       );
-      console.log('✅ Candidaturas cargadas:', response.data);
+
       const apps = response.data || [];
-
-      // Debug: ver el estado de coverLetterGenerated en cada candidatura
-      console.log('🔍 Estado coverLetterGenerated por candidatura:');
-      apps.forEach((app, index) => {
-        console.log(
-          `  ${index + 1}. ${app.companyName} - coverLetterGenerated: ${
-            app.coverLetterGenerated
-          }`
-        );
-      });
-
       setApplications(apps);
       setFilteredApplications(apps);
 
-      // Cargar estadísticas de cartas de presentación
       await loadCoverLetterStats(apps);
     } catch (error) {
-      console.error('❌ Error cargando candidaturas:', error);
+      console.error('Error cargando candidaturas:', error);
       toast.error('Error al cargar las candidaturas');
     } finally {
       setLoading(false);
@@ -99,7 +75,7 @@ function JobApplications() {
       const response = await LocalDatabase.GetResumeById(resumeId);
       setResumeInfo(response.data);
     } catch (error) {
-      console.error('❌ Error cargando información del CV:', error);
+      console.error('Error cargando información del CV:', error);
     }
   }, [resumeId]);
 
@@ -134,9 +110,9 @@ function JobApplications() {
   const handleDeleteApplication = async (applicationId) => {
     try {
       await LocalDatabase.DeleteJobApplication(applicationId);
-      loadApplications();
+      await loadApplications();
     } catch (error) {
-      console.error('❌ Error eliminando candidatura:', error);
+      console.error('Error eliminando candidatura:', error);
       throw error;
     }
   };
@@ -147,186 +123,226 @@ function JobApplications() {
         status: newStatus,
         updatedAt: new Date().toISOString(),
       });
-      loadApplications();
+      await loadApplications();
     } catch (error) {
-      console.error('❌ Error actualizando estado:', error);
+      console.error('Error actualizando estado:', error);
       throw error;
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-screen bg-white">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Cargando candidaturas...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-200 border-t-black mx-auto"></div>
+          <p className="mt-4 text-gray-600 text-sm">Cargando candidaturas...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Candidaturas</h1>
-          <p className="text-gray-600 mt-2">
-            {resumeInfo?.firstName && resumeInfo?.lastName
-              ? `CV de ${resumeInfo.firstName} ${resumeInfo.lastName}`
-              : 'Gestiona tus candidaturas de trabajo'}
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <Button
-            onClick={() => navigate('/dashboard')}
-            variant="outline"
-            className="border-gray-300 hover:bg-gray-100"
-          >
-            Volver al Dashboard
-          </Button>
-          <Button
-            onClick={() =>
-              navigate(`/dashboard/resume/${resumeId}/job-applications/new`)
-            }
-            className="bg-black hover:bg-black/90 text-white"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nueva Candidatura
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-white">
+      {/* Header Minimalista */}
+      <div className="border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+            {/* Título */}
+            <div className="flex-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/dashboard')}
+                className="text-gray-600 hover:text-black -ml-3 mb-4"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Volver al dashboard
+              </Button>
 
-      {/* Filtros y búsqueda */}
-      {applications.length > 0 && (
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Buscar por empresa, puesto o ubicación..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant={statusFilter === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter('all')}
-            >
-              Todas
-            </Button>
-            <Button
-              variant={statusFilter === 'draft' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter('draft')}
-            >
-              Borradores
-            </Button>
-            <Button
-              variant={statusFilter === 'applied' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter('applied')}
-            >
-              Enviadas
-            </Button>
-            <Button
-              variant={statusFilter === 'interview' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setStatusFilter('interview')}
-            >
-              Entrevistas
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Estadísticas rápidas */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <Briefcase className="w-8 h-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-2xl font-bold">{applications.length}</p>
-                <p className="text-gray-600 text-sm">Total Candidaturas</p>
-              </div>
+              <h1 className="text-3xl font-bold text-black mb-2">
+                Mis Candidaturas
+              </h1>
+              <p className="text-gray-600">
+                {resumeInfo?.firstName && resumeInfo?.lastName
+                  ? `CV de ${resumeInfo.firstName} ${resumeInfo.lastName}`
+                  : 'Gestiona y realiza seguimiento de tus candidaturas'}
+              </p>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <Calendar className="w-8 h-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-2xl font-bold">
+
+            {/* Botón Nueva Candidatura */}
+            <Button
+              onClick={() =>
+                navigate(`/dashboard/resume/${resumeId}/job-applications/new`)
+              }
+              className="bg-black text-white hover:bg-gray-900 px-6 py-2.5 rounded-lg shadow-sm hover:shadow transition-all"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Nueva Candidatura
+            </Button>
+          </div>
+
+          {/* Estadísticas Minimalistas */}
+          {applications.length > 0 && (
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
+              <div className="bg-gray-50 rounded-lg p-5 border border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                    Total
+                  </span>
+                  <Briefcase className="w-4 h-4 text-gray-400" />
+                </div>
+                <p className="text-2xl font-bold text-black">
+                  {applications.length}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-5 border border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                    Enviadas
+                  </span>
+                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                </div>
+                <p className="text-2xl font-bold text-black">
                   {
                     applications.filter((app) => app.status === 'applied')
                       .length
                   }
                 </p>
-                <p className="text-gray-600 text-sm">Enviadas</p>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <MessageSquare className="w-8 h-8 text-yellow-600" />
-              <div className="ml-4">
-                <p className="text-2xl font-bold">
+
+              <div className="bg-gray-50 rounded-lg p-5 border border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                    Entrevistas
+                  </span>
+                  <MessageSquare className="w-4 h-4 text-gray-400" />
+                </div>
+                <p className="text-2xl font-bold text-black">
                   {
                     applications.filter((app) => app.status === 'interview')
                       .length
                   }
                 </p>
-                <p className="text-gray-600 text-sm">Entrevistas</p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-5 border border-gray-100">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+                    Con Carta
+                  </span>
+                  <FileText className="w-4 h-4 text-gray-400" />
+                </div>
+                <p className="text-2xl font-bold text-black">
+                  {coverLetterStats}
+                </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center">
-              <FileText className="w-8 h-8 text-purple-600" />
-              <div className="ml-4">
-                <p className="text-2xl font-bold">{coverLetterStats}</p>
-                <p className="text-gray-600 text-sm">Con Carta</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       </div>
 
-      {/* Lista de candidaturas */}
-      {filteredApplications.length === 0 && applications.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Briefcase className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+      {/* Contenido Principal */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Filtros Minimalistas */}
+        {applications.length > 0 && (
+          <div className="mb-8">
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Búsqueda */}
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Input
+                  placeholder="Buscar por empresa, puesto o ubicación..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-11 h-11 border-gray-200 focus:border-black focus:ring-1 focus:ring-black rounded-lg bg-white"
+                />
+              </div>
+
+              {/* Filtros Estado */}
+              <div className="flex gap-2">
+                <Button
+                  variant={statusFilter === 'all' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('all')}
+                  className={
+                    statusFilter === 'all'
+                      ? 'bg-black text-white hover:bg-gray-900 border-0'
+                      : 'border-gray-200 text-gray-700 hover:bg-gray-50 bg-white'
+                  }
+                >
+                  Todas
+                </Button>
+                <Button
+                  variant={statusFilter === 'draft' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('draft')}
+                  className={
+                    statusFilter === 'draft'
+                      ? 'bg-black text-white hover:bg-gray-900 border-0'
+                      : 'border-gray-200 text-gray-700 hover:bg-gray-50 bg-white'
+                  }
+                >
+                  Borradores
+                </Button>
+                <Button
+                  variant={statusFilter === 'applied' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('applied')}
+                  className={
+                    statusFilter === 'applied'
+                      ? 'bg-black text-white hover:bg-gray-900 border-0'
+                      : 'border-gray-200 text-gray-700 hover:bg-gray-50 bg-white'
+                  }
+                >
+                  Enviadas
+                </Button>
+                <Button
+                  variant={statusFilter === 'interview' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter('interview')}
+                  className={
+                    statusFilter === 'interview'
+                      ? 'bg-black text-white hover:bg-gray-900 border-0'
+                      : 'border-gray-200 text-gray-700 hover:bg-gray-50 bg-white'
+                  }
+                >
+                  Entrevistas
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Lista de Candidaturas */}
+        {filteredApplications.length === 0 && applications.length === 0 ? (
+          // Estado Vacío Minimalista
+          <div className="text-center py-20">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-50 rounded-full mb-6">
+              <Briefcase className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-black mb-3">
               No tienes candidaturas aún
             </h3>
-            <p className="text-gray-600 mb-6">
-              Comienza creando tu primera candidatura para un puesto de trabajo
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              Crea tu primera candidatura y comienza a realizar seguimiento
+              profesional
             </p>
             <Button
               onClick={() =>
                 navigate(`/dashboard/resume/${resumeId}/job-applications/new`)
               }
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-black text-white hover:bg-gray-900 px-6 py-2.5 rounded-lg"
             >
               <Plus className="w-4 h-4 mr-2" />
               Crear Primera Candidatura
             </Button>
-          </CardContent>
-        </Card>
-      ) : filteredApplications.length === 0 ? (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <Filter className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+          </div>
+        ) : filteredApplications.length === 0 ? (
+          // No hay resultados
+          <div className="text-center py-20">
+            <Filter className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-black mb-2">
               No se encontraron candidaturas
             </h3>
             <p className="text-gray-600 mb-6">
@@ -338,24 +354,26 @@ function JobApplications() {
                 setSearchTerm('');
                 setStatusFilter('all');
               }}
+              className="border-gray-200 bg-white"
             >
               Limpiar filtros
             </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredApplications.map((application) => (
-            <JobApplicationCard
-              key={application.id}
-              application={application}
-              resumeId={resumeId}
-              onDelete={handleDeleteApplication}
-              onStatusChange={handleStatusChange}
-            />
-          ))}
-        </div>
-      )}
+          </div>
+        ) : (
+          // Grid de Cards
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredApplications.map((application) => (
+              <JobApplicationCard
+                key={application.id}
+                application={application}
+                resumeId={resumeId}
+                onDelete={handleDeleteApplication}
+                onStatusChange={handleStatusChange}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

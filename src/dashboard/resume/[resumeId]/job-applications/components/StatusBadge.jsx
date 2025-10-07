@@ -1,49 +1,37 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { getStatusLabel, getStatusColor } from '@/services/types';
-import {
-  Clock,
-  Send,
-  MessageCircle,
-  XCircle,
-  CheckCircle,
-  FileText,
-} from 'lucide-react';
+import { getStatusLabel } from '@/services/types';
 
-const StatusBadge = ({ status, showIcon = false, size = 'default' }) => {
-  const getStatusIcon = (status) => {
-    const iconProps = { className: 'w-3 h-3' };
+const StatusBadge = ({ status, size = 'default' }) => {
+  const getStatusStyle = (status) => {
     switch (status) {
       case 'draft':
-        return <Clock {...iconProps} />;
+        return 'bg-gray-100 text-gray-700 border-gray-200';
       case 'applied':
-        return <Send {...iconProps} />;
+        return 'bg-gray-900 text-white border-gray-900';
       case 'interview':
-        return <MessageCircle {...iconProps} />;
+        return 'bg-black text-white border-black';
       case 'rejected':
-        return <XCircle {...iconProps} />;
+        return 'bg-gray-100 text-gray-600 border-gray-200';
       case 'accepted':
-        return <CheckCircle {...iconProps} />;
+        return 'bg-black text-white border-black';
       default:
-        return <FileText {...iconProps} />;
+        return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
 
   const sizeClasses = {
-    sm: 'text-xs px-2 py-0.5',
-    default: 'text-sm px-2.5 py-0.5',
-    lg: 'text-base px-3 py-1',
+    sm: 'text-xs px-2.5 py-1',
+    default: 'text-sm px-3 py-1.5',
+    lg: 'text-base px-4 py-2',
   };
 
   return (
     <Badge
-      className={`${getStatusColor(
-        status
-      )} text-white font-medium inline-flex items-center gap-1 ${
+      className={`${getStatusStyle(status)} border ${
         sizeClasses[size]
-      }`}
+      } inline-flex items-center gap-1.5 rounded-md font-medium`}
     >
-      {showIcon && getStatusIcon(status)}
       {getStatusLabel(status)}
     </Badge>
   );
