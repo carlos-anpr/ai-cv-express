@@ -90,60 +90,87 @@ function DatabaseStats() {
   if (loading || stats.resumes === 0) return null;
 
   return (
-    <div className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div className="p-4 rounded-lg bg-secondary/30 border border-border">
+    <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+      {/* CVs */}
+      <div className="group relative p-4 transition-all duration-300 border rounded-xl border-border bg-background hover:border-black/20 hover:shadow-md">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-blue-100">
-            <FileText className="w-4 h-4 text-blue-600" />
+          <div className="inline-flex items-center justify-center p-2 rounded-lg bg-secondary transition-colors group-hover:bg-black/5">
+            <FileText className="w-4 h-4 text-foreground" strokeWidth={1.5} />
           </div>
           <div>
-            <p className="text-2xl font-bold">{stats.resumes}</p>
+            <p className="text-2xl font-bold tracking-tight">{stats.resumes}</p>
             <p className="text-xs text-muted-foreground">CVs</p>
           </div>
         </div>
       </div>
 
-      <div className="p-4 rounded-lg bg-secondary/30 border border-border">
+      {/* Candidaturas */}
+      <div className="group relative p-4 transition-all duration-300 border rounded-xl border-border bg-background hover:border-black/20 hover:shadow-md">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-green-100">
-            <Briefcase className="w-4 h-4 text-green-600" />
+          <div className="inline-flex items-center justify-center p-2 rounded-lg bg-secondary transition-colors group-hover:bg-black/5">
+            <Briefcase className="w-4 h-4 text-foreground" strokeWidth={1.5} />
           </div>
           <div>
-            <p className="text-2xl font-bold">{stats.applications}</p>
+            <p className="text-2xl font-bold tracking-tight">
+              {stats.applications}
+            </p>
             <p className="text-xs text-muted-foreground">Candidaturas</p>
           </div>
         </div>
       </div>
 
-      <div className="p-4 rounded-lg bg-secondary/30 border border-border">
+      {/* Cartas */}
+      <div className="group relative p-4 transition-all duration-300 border rounded-xl border-border bg-background hover:border-black/20 hover:shadow-md">
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-purple-100">
-            <Mail className="w-4 h-4 text-purple-600" />
+          <div className="inline-flex items-center justify-center p-2 rounded-lg bg-secondary transition-colors group-hover:bg-black/5">
+            <Mail className="w-4 h-4 text-foreground" strokeWidth={1.5} />
           </div>
           <div>
-            <p className="text-2xl font-bold">{stats.coverLetters}</p>
+            <p className="text-2xl font-bold tracking-tight">
+              {stats.coverLetters}
+            </p>
             <p className="text-xs text-muted-foreground">Cartas</p>
           </div>
         </div>
       </div>
 
-      <div className="p-4 rounded-lg bg-secondary/30 border border-border">
+      {/* Base de datos */}
+      <div
+        className={`group relative p-4 transition-all duration-300 border rounded-xl border-border bg-background hover:shadow-md ${
+          stats.orphanData > 0
+            ? 'hover:border-orange-300'
+            : 'hover:border-black/20'
+        }`}
+      >
         <div className="flex items-center gap-3">
           <div
-            className={`p-2 rounded-lg ${
-              stats.orphanData > 0 ? 'bg-orange-100' : 'bg-gray-100'
+            className={`inline-flex items-center justify-center p-2 rounded-lg transition-colors ${
+              stats.orphanData > 0
+                ? 'bg-orange-50 group-hover:bg-orange-100'
+                : 'bg-secondary group-hover:bg-black/5'
             }`}
           >
             {stats.orphanData > 0 ? (
-              <AlertCircle className="w-4 h-4 text-orange-600" />
+              <AlertCircle
+                className="w-4 h-4 text-orange-600"
+                strokeWidth={1.5}
+              />
             ) : (
-              <Database className="w-4 h-4 text-gray-600" />
+              <Database className="w-4 h-4 text-foreground" strokeWidth={1.5} />
             )}
           </div>
           <div>
-            <p className="text-2xl font-bold">{stats.orphanData}</p>
-            <p className="text-xs text-muted-foreground">
-              {stats.orphanData > 0 ? 'Datos huérfanos' : 'Base limpia'}
+            <p className="text-2xl font-bold tracking-tight">
+              {stats.orphanData}
+            </p>
+            <p
+              className={`text-xs ${
+                stats.orphanData > 0
+                  ? 'text-orange-600'
+                  : 'text-muted-foreground'
+              }`}
+            >
+              {stats.orphanData > 0 ? 'Huérfanos' : 'Limpia'}
             </p>
           </div>
         </div>
