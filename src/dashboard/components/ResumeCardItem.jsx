@@ -48,6 +48,7 @@ function ResumeCardItem({ resume, refreshData }) {
     coverLetters: 0,
   });
   const [loadingStats, setLoadingStats] = useState(true);
+  const [nextInterview, setNextInterview] = useState(null);
 
   // Cargar estadísticas del CV
   useEffect(() => {
@@ -81,6 +82,24 @@ function ResumeCardItem({ resume, refreshData }) {
           }
         }
 
+        // Buscar la próxima entrevista (fecha más cercana en el futuro)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const upcomingInterviews = applications
+          .filter((app) => {
+            if (!app.interviewDate) return false;
+            const interviewDate = new Date(app.interviewDate);
+            return interviewDate >= today;
+          })
+          .sort(
+            (a, b) => new Date(a.interviewDate) - new Date(b.interviewDate)
+          );
+
+        if (upcomingInterviews.length > 0) {
+          setNextInterview(upcomingInterviews[0]);
+        }
+
         setStats({
           applications: applications.length,
           coverLetters: coverLettersCount,
@@ -88,6 +107,7 @@ function ResumeCardItem({ resume, refreshData }) {
       } catch (error) {
         console.error('Error cargando estadísticas:', error);
         setStats({ applications: 0, coverLetters: 0 });
+        setNextInterview(null);
       } finally {
         setLoadingStats(false);
       }
@@ -255,10 +275,27 @@ function ResumeCardItem({ resume, refreshData }) {
               <User className="h-4 w-4 text-gray-400 flex-shrink-0" />
               <span className="font-medium truncate">{fullName}</span>
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
               <Calendar className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
               <span>Actualizado {formatDate(resume.updatedAt)}</span>
             </div>
+
+            {/* Próxima Entrevista */}
+            {!loadingStats && nextInterview && (
+              <div
+                className="flex items-center gap-2 text-xs font-semibold mt-2 px-2 py-1.5 rounded-md border"
+                style={{
+                  backgroundColor: `${resume?.themeColor || '#3b82f6'}10`,
+                  borderColor: `${resume?.themeColor || '#3b82f6'}30`,
+                  color: resume?.themeColor || '#3b82f6',
+                }}
+              >
+                <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="truncate">
+                  Entrevista: {formatDate(nextInterview.interviewDate)}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Estadísticas */}
