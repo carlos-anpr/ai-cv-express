@@ -7,8 +7,8 @@ import {
   normalizeProfileData,
 } from '../src/services/prompts/expressProfileParser.js';
 
-const apiKey = 'TU_API_KEY_REDACTADA';
-const modelName = 'gemini-2.5-flash';
+const apiKey = '';
+const modelName = '';
 
 if (!apiKey || !modelName) {
   console.error('Missing environment variables required to call the AI.');
