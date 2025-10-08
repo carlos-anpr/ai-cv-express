@@ -282,8 +282,14 @@ function ResumeCardItem({ resume, refreshData }) {
 
             {/* Próxima Entrevista */}
             {!loadingStats && nextInterview && (
-              <div
-                className="flex items-center gap-2 text-xs font-semibold mt-2 px-2 py-1.5 rounded-md border"
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigation(
+                    `/dashboard/resume/${resume.documentId}/job-applications/${nextInterview.id}`
+                  );
+                }}
+                className="flex items-center gap-2 text-xs font-semibold mt-2 px-2 py-1.5 rounded-md border hover:shadow-sm transition-all cursor-pointer w-full"
                 style={{
                   backgroundColor: `${resume?.themeColor || '#3b82f6'}10`,
                   borderColor: `${resume?.themeColor || '#3b82f6'}30`,
@@ -294,75 +300,59 @@ function ResumeCardItem({ resume, refreshData }) {
                 <span className="truncate">
                   Entrevista: {formatDate(nextInterview.interviewDate)}
                 </span>
-              </div>
+              </button>
             )}
-          </div>
 
-          {/* Estadísticas */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* Candidaturas */}
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                navigation(
-                  '/dashboard/resume/' + resume.documentId + '/job-applications'
-                );
-              }}
-              className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-lg p-3 border border-blue-100 hover:from-blue-100 hover:to-blue-200/50 transition-all duration-200 hover:shadow-md cursor-pointer text-left"
-            >
-              <div className="flex items-center gap-1.5 mb-1">
-                <div
-                  className="p-1.5 rounded-md flex-shrink-0"
-                  style={{
-                    backgroundColor: resume?.themeColor || '#3b82f6',
-                    opacity: 0.1,
-                  }}
-                >
-                  <Briefcase
-                    className="h-3.5 w-3.5"
-                    style={{ color: resume?.themeColor || '#3b82f6' }}
-                  />
-                </div>
-                <span className="text-[11px] font-medium text-gray-600 truncate">
-                  Aplicaciones
+            {/* Estadísticas compactas */}
+            {!loadingStats && stats.applications > 0 && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigation(
+                    '/dashboard/resume/' +
+                      resume.documentId +
+                      '/job-applications'
+                  );
+                }}
+                className="flex items-center gap-2 text-xs font-semibold mt-2 px-2 py-1.5 rounded-md border hover:shadow-sm transition-all cursor-pointer w-full"
+                style={{
+                  backgroundColor: `${resume?.themeColor || '#3b82f6'}10`,
+                  borderColor: `${resume?.themeColor || '#3b82f6'}30`,
+                  color: resume?.themeColor || '#3b82f6',
+                }}
+              >
+                <Briefcase className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="truncate">
+                  {stats.applications}{' '}
+                  {stats.applications === 1 ? 'Candidatura' : 'Candidaturas'}
                 </span>
-              </div>
-              <p className="text-xl font-bold text-gray-900 ml-1">
-                {loadingStats ? '...' : stats.applications}
-              </p>
-            </button>
+              </button>
+            )}
 
-            {/* Cartas de Presentación */}
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                navigation(
-                  '/dashboard/resume/' + resume.documentId + '/job-applications'
-                );
-              }}
-              className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-lg p-3 border border-purple-100 hover:from-purple-100 hover:to-purple-200/50 transition-all duration-200 hover:shadow-md cursor-pointer text-left"
-            >
-              <div className="flex items-center gap-1.5 mb-1">
-                <div
-                  className="p-1.5 rounded-md flex-shrink-0"
-                  style={{
-                    backgroundColor: resume?.themeColor || '#3b82f6',
-                    opacity: 0.1,
-                  }}
-                >
-                  <FileText
-                    className="h-3.5 w-3.5"
-                    style={{ color: resume?.themeColor || '#3b82f6' }}
-                  />
-                </div>
-                <span className="text-[11px] font-medium text-gray-600 truncate">
-                  Cartas
+            {!loadingStats && stats.coverLetters > 0 && (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigation(
+                    '/dashboard/resume/' +
+                      resume.documentId +
+                      '/job-applications'
+                  );
+                }}
+                className="flex items-center gap-2 text-xs font-semibold mt-2 px-2 py-1.5 rounded-md border hover:shadow-sm transition-all cursor-pointer w-full"
+                style={{
+                  backgroundColor: `${resume?.themeColor || '#3b82f6'}10`,
+                  borderColor: `${resume?.themeColor || '#3b82f6'}30`,
+                  color: resume?.themeColor || '#3b82f6',
+                }}
+              >
+                <FileText className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="truncate">
+                  {stats.coverLetters}{' '}
+                  {stats.coverLetters === 1 ? 'Carta' : 'Cartas'}
                 </span>
-              </div>
-              <p className="text-xl font-bold text-gray-900 ml-1">
-                {loadingStats ? '...' : stats.coverLetters}
-              </p>
-            </button>
+              </button>
+            )}
           </div>
         </Link>
 
