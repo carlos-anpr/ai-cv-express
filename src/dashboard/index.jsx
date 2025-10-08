@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import AddResume from './components/AddResume';
 import AddExpressCard from './components/AddExpressCard';
+import DatabaseStats from './components/DatabaseStats';
 import { useUser } from '@clerk/clerk-react';
 import LocalDatabase from '../services/LocalDatabase';
 import ResumeCardItem from './components/ResumeCardItem';
@@ -44,14 +45,38 @@ function Dashboard() {
   return (
     <div className="p-10 md:px-20 lg:px-32">
       {/* Header simplificado */}
-      <div className="mb-10">
-        <h2 className="font-bold text-3xl text-gray-900 mb-2">
-          Mis Currículums
-        </h2>
-        <p className="text-gray-600 mt-1">
-          Comienza a crear tu currículum con IA para tu próximo trabajo
-        </p>
+      <div className="mb-10 flex items-start justify-between gap-4">
+        <div>
+          <h2 className="font-bold text-3xl text-gray-900 mb-2">
+            Mis Currículums
+          </h2>
+          <p className="text-gray-600 mt-1">
+            Comienza a crear tu currículum con IA para tu próximo trabajo
+          </p>
+        </div>
+        <a
+          href="/dashboard/backup"
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border rounded-lg border-border bg-background hover:bg-secondary transition-colors"
+        >
+          <svg
+            className="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"
+            />
+          </svg>
+          Copias de Seguridad
+        </a>
       </div>
+
+      {/* Estadísticas de la base de datos */}
+      <DatabaseStats />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mt-10">
         {/* Express Generation Card - Destacada */}

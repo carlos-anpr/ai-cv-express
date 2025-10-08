@@ -18,6 +18,7 @@ import MyResume from './my-resume/[resumeId]/view';
 import PublicWebResume from './web-resume/[resumeId]';
 import PublicResumePDF from './public-resume/[shareToken]';
 import InterviewsPage from './dashboard/interviews';
+import DatabaseBackup from './dashboard/components/DatabaseBackup';
 import { initializeDatabase } from './services/IndexedDBService';
 import './index.css';
 
@@ -71,6 +72,10 @@ const router = createBrowserRouter([
       {
         path: '/dashboard/interviews',
         element: <InterviewsPage />,
+      },
+      {
+        path: '/dashboard/backup',
+        element: <DatabaseBackup />,
       },
     ],
   },
