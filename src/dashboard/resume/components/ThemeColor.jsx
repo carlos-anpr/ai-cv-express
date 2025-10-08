@@ -45,9 +45,39 @@ function ThemeColor() {
     '#ec4899', // Rosa corporativo
   ];
 
+  // Añadimos 3 filas más (15 colores) con tonos profesionales, sobrios y actuales.
+  // No son colores fosforitos ni chillones — buscan ser llamativos pero discretos para un CV.
+  const extendedColors = [
+    // Row 5: dark/navy/steel
+    '#0f172a', // Charcoal very dark
+    '#0b2447', // Deep navy
+    '#12263a', // Steel navy
+    '#203864', // Soft indigo/steel
+    '#264653', // Muted teal-steel
+
+    // Row 6: muted teals/olives
+    '#2a6f6f', // Muted teal
+    '#31524b', // Olive-teal
+    '#16697a', // Deep teal
+    '#5a3e2b', // Bronze brown
+    '#7a4a2e', // Warm brown
+
+    // Row 7: warm neutrals and muted accents
+    '#9b6b47', // Sandy brown
+    '#6b1f1f', // Deep burgundy
+    '#4a2f4a', // Plum muted
+    '#7b8794', // Muted blue-gray
+    '#b08968', // Muted gold / tan
+  ];
+
+  const allColors = colors.concat(extendedColors);
+
   const [isOpen, setIsOpen] = useState(false);
   const { resumeInfo, setResumeInfo } = useContext(ResumeInfoContext);
-  const [selectedColor, setSelectedColor] = useState();
+  // Inicializamos la selección con el color guardado en el contexto (si existe)
+  const [selectedColor, setSelectedColor] = useState(
+    resumeInfo?.themeColor || allColors[0]
+  );
   const { resumeId } = useParams();
   const onColorSelect = async (color) => {
     setSelectedColor(color);
@@ -91,7 +121,7 @@ function ThemeColor() {
         <div className="absolute z-50 p-4 bg-white border rounded shadow">
           <h2 className="mb-2 text-sm font-bold">Select Theme Color</h2>
           <div className="grid grid-cols-5 gap-3">
-            {colors.map((item, index) => (
+            {allColors.map((item, index) => (
               <div
                 key={index}
                 onClick={() => onColorSelect(item)}
