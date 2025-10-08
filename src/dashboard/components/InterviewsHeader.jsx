@@ -1,18 +1,21 @@
 import React from 'react';
-import { Calendar } from 'lucide-react';
+import { Calendar, TrendingUp, Clock, CheckCircle2 } from 'lucide-react';
 
-function InterviewsHeader({ interviews = [] }) {
+function InterviewsHeader({ interviews = [], selectedMonth }) {
   const today = new Date();
-  const currentMonth = today.getMonth();
-  const currentYear = today.getFullYear();
+  const displayMonth = selectedMonth || today;
+  const currentMonth = displayMonth.getMonth();
+  const currentYear = displayMonth.getFullYear();
 
+  const startOfMonth = new Date(currentYear, currentMonth, 1);
   const endOfMonth = new Date(currentYear, currentMonth + 1, 0);
 
-  const monthInterviewsCount = interviews.filter((interview) => {
+  // Entrevistas del mes seleccionado
+  const monthInterviews = interviews.filter((interview) => {
     try {
       const interviewDate = new Date(interview.interviewDate);
       return (
-        interviewDate >= today &&
+        interviewDate >= startOfMonth &&
         interviewDate <= endOfMonth &&
         interviewDate.getMonth() === currentMonth &&
         interviewDate.getFullYear() === currentYear
@@ -20,33 +23,80 @@ function InterviewsHeader({ interviews = [] }) {
     } catch {
       return false;
     }
+  });
+
+  const pendingCount = monthInterviews.filter((interview) => {
+    const interviewDate = new Date(interview.interviewDate);
+    return interviewDate >= today;
   }).length;
 
-  const monthName = today.toLocaleDateString('es-ES', { month: 'long' });
+  // Total de entrevistas próximas (todas las futuras)
+  const upcomingTotal = interviews.filter((interview) => {
+    try {
+      const interviewDate = new Date(interview.interviewDate);
+      return interviewDate >= today;
+    } catch {
+      return false;
+    }
+  }).length;
+
+  const monthName = displayMonth.toLocaleDateString('es-ES', {
+    month: 'long',
+    year: 'numeric',
+  });
 
   return (
-    <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg p-6 mb-6">
-      <div className="flex items-center justify-between">
+    <div className="bg-background border border-border rounded-xl p-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Título compacto */}
         <div>
-          <h2 className="text-3xl font-bold mb-2">Entrevistas Programadas</h2>
-          <p className="text-blue-100">
+          <h1 className="text-2xl font-bold tracking-tight">
+            Entrevistas Programadas
+          </h1>
+          <p className="text-sm text-muted-foreground">
             Gestiona y prepara tus próximas entrevistas
           </p>
         </div>
 
-        <div className="text-right">
-          <div className="flex items-center gap-2 justify-end mb-1">
-            <Calendar className="w-5 h-5" />
-            <span className="text-blue-100 capitalize">
-              Este mes ({monthName})
-            </span>
+        {/* Stats Cards Compactas */}
+        <div className="flex flex-wrap gap-3">
+          {/* Este mes */}
+          <div className="group relative px-4 py-2.5 rounded-lg border border-border bg-secondary/50 hover:bg-secondary transition-all duration-300 hover:scale-105 hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 rounded-lg bg-black/5 group-hover:bg-black/10 transition-colors">
+                <Calendar className="w-4 h-4 text-foreground" strokeWidth={2} />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-medium capitalize">
+                  {monthName}
+                </p>
+                <div className="flex items-baseline gap-1.5">
+                  <p className="text-2xl font-bold">{monthInterviews.length}</p>
+                  <span className="text-xs text-muted-foreground">
+                    ({pendingCount} pend.)
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div className="text-5xl font-bold">{monthInterviewsCount}</div>
-          <p className="text-blue-100 text-sm mt-1">
-            {monthInterviewsCount === 1
-              ? 'entrevista por hacer'
-              : 'entrevistas por hacer'}
-          </p>
+
+          {/* Total próximas */}
+          <div className="group relative px-4 py-2.5 rounded-lg border border-border bg-secondary/50 hover:bg-secondary transition-all duration-300 hover:scale-105 hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="p-1.5 rounded-lg bg-black/5 group-hover:bg-black/10 transition-colors">
+                <TrendingUp
+                  className="w-4 h-4 text-foreground"
+                  strokeWidth={2}
+                />
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground font-medium">
+                  Total Próximas
+                </p>
+                <p className="text-2xl font-bold">{upcomingTotal}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

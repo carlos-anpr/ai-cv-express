@@ -7,7 +7,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Building, Calendar, MapPin, Video } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Building, Calendar, MapPin, Video, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 function InterviewDayModal({ isOpen, onClose, interviews, date }) {
@@ -29,10 +30,12 @@ function InterviewDayModal({ isOpen, onClose, interviews, date }) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5" />
+          <DialogTitle className="flex items-center gap-2 text-2xl">
+            <div className="p-2 rounded-lg bg-black/5">
+              <Calendar className="w-5 h-5" />
+            </div>
             Entrevistas del{' '}
             {date?.toLocaleDateString('es-ES', {
               day: 'numeric',
@@ -46,47 +49,54 @@ function InterviewDayModal({ isOpen, onClose, interviews, date }) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-3 mt-4">
+        <div className="space-y-3 mt-4 max-h-[500px] overflow-y-auto pr-2">
           {interviews?.map((interview) => (
             <div
               key={interview.id}
               onClick={() => handleSelectInterview(interview)}
-              className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+              className="group relative p-5 border border-border rounded-xl hover:bg-secondary hover:border-black/20 cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
             >
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h4 className="font-semibold text-gray-900">
+              <div className="flex items-start justify-between mb-3">
+                <div className="flex-1 pr-3">
+                  <h4 className="font-semibold text-foreground text-lg group-hover:text-black transition-colors">
                     {interview.jobTitle}
                   </h4>
-                  <p className="text-sm text-gray-600 flex items-center gap-1 mt-1">
-                    <Building className="w-3.5 h-3.5" />
+                  <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-1">
+                    <Building className="w-4 h-4" />
                     {interview.companyName}
                   </p>
                 </div>
-                <span className="text-sm font-medium text-blue-600">
+                <Badge className="bg-black hover:bg-black/90 flex items-center gap-1.5 flex-shrink-0">
+                  <Clock className="w-3.5 h-3.5" />
                   {formatTime(interview.interviewDate)}
-                </span>
+                </Badge>
               </div>
 
-              {interview.location && (
-                <p className="text-sm text-gray-600 flex items-center gap-1 mb-2">
-                  <MapPin className="w-3.5 h-3.5" />
-                  {interview.location}
-                </p>
-              )}
+              <div className="space-y-2">
+                {interview.location && (
+                  <p className="text-sm text-muted-foreground flex items-center gap-2">
+                    <MapPin className="w-4 h-4" />
+                    {interview.location}
+                  </p>
+                )}
 
-              {interview.interviewLink && (
-                <div className="flex items-center gap-1 text-sm text-blue-600">
-                  <Video className="w-3.5 h-3.5" />
-                  <span>Videollamada programada</span>
-                </div>
-              )}
+                {interview.interviewLink && (
+                  <div className="flex items-center gap-2 text-sm text-black font-medium">
+                    <Video className="w-4 h-4" />
+                    <span>Videollamada programada</span>
+                  </div>
+                )}
+              </div>
             </div>
           ))}
         </div>
 
-        <div className="flex justify-end mt-4">
-          <Button variant="outline" onClick={onClose}>
+        <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-border">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            className="hover:bg-black hover:text-white transition-all"
+          >
             Cerrar
           </Button>
         </div>

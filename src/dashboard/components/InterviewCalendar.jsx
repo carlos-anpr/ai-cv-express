@@ -92,7 +92,7 @@ function InterviewCalendar({ interviews = [], onMonthChange }) {
 
     // Días vacíos al inicio
     for (let i = 0; i < adjustedFirstDay; i++) {
-      days.push(<div key={`empty-${i}`} className="p-2 h-24" />);
+      days.push(<div key={`empty-${i}`} className="p-1.5 h-20" />);
     }
 
     // Días del mes
@@ -105,36 +105,40 @@ function InterviewCalendar({ interviews = [], onMonthChange }) {
         <div
           key={day}
           className={`
-            p-2 h-24 border border-gray-200 rounded-lg transition-all
+            group relative p-1.5 h-20 border rounded-lg transition-all duration-300
             ${
               hasInterviews
-                ? 'bg-blue-50 hover:bg-blue-100 cursor-pointer'
-                : 'bg-white'
+                ? 'bg-secondary/30 border-border hover:bg-secondary hover:border-black/20 hover:shadow-md cursor-pointer hover:scale-105'
+                : 'bg-background border-border'
             }
-            ${isToday ? 'ring-2 ring-blue-500' : ''}
+            ${isToday ? 'ring-2 ring-black' : ''}
           `}
           onClick={() => hasInterviews && handleDayClick(day)}
         >
           <div
-            className={`text-sm font-medium ${
-              isToday ? 'text-blue-600' : 'text-gray-900'
+            className={`text-xs font-semibold ${
+              isToday
+                ? 'text-foreground'
+                : hasInterviews
+                ? 'text-foreground group-hover:text-black'
+                : 'text-muted-foreground'
             }`}
           >
             {day}
           </div>
           {hasInterviews && (
-            <div className="mt-1 space-y-1">
+            <div className="mt-0.5 space-y-0.5">
               {interviewsByDay[day].slice(0, 2).map((interview, idx) => (
                 <div
                   key={idx}
-                  className="text-xs p-1 bg-blue-600 text-white rounded truncate"
+                  className="text-[10px] p-1 bg-black text-white rounded transition-all group-hover:bg-black/90 truncate"
                   title={`${interview.companyName} - ${interview.jobTitle}`}
                 >
                   {interview.companyName}
                 </div>
               ))}
               {interviewsByDay[day].length > 2 && (
-                <div className="text-xs text-blue-600 font-medium">
+                <div className="text-[10px] text-foreground font-semibold">
                   +{interviewsByDay[day].length - 2} más
                 </div>
               )}
@@ -148,33 +152,49 @@ function InterviewCalendar({ interviews = [], onMonthChange }) {
   };
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-2xl">
+    <div>
+      {/* Calendario */}
+      <Card className="border-border">
+        <CardHeader className="border-b border-border py-3 px-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <CardTitle className="text-xl font-bold">
               {MONTHS[month]} {year}
             </CardTitle>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={goToToday}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={goToToday}
+                className="hover:bg-black hover:text-white transition-all h-8 text-xs"
+              >
                 Hoy
               </Button>
-              <Button variant="outline" size="icon" onClick={goToPreviousMonth}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goToPreviousMonth}
+                className="hover:bg-black hover:text-white transition-all h-8 w-8"
+              >
                 <ChevronLeft className="w-4 h-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={goToNextMonth}>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goToNextMonth}
+                className="hover:bg-black hover:text-white transition-all h-8 w-8"
+              >
                 <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4">
           {/* Días de la semana */}
-          <div className="grid grid-cols-7 gap-2 mb-2">
+          <div className="grid grid-cols-7 gap-1.5 mb-2">
             {DAYS.map((day) => (
               <div
                 key={day}
-                className="text-center text-sm font-medium text-gray-600 p-2"
+                className="text-center text-xs font-semibold text-muted-foreground p-1"
               >
                 {day}
               </div>
@@ -182,7 +202,7 @@ function InterviewCalendar({ interviews = [], onMonthChange }) {
           </div>
 
           {/* Días del mes */}
-          <div className="grid grid-cols-7 gap-2">{renderCalendarDays()}</div>
+          <div className="grid grid-cols-7 gap-1.5">{renderCalendarDays()}</div>
         </CardContent>
       </Card>
 
@@ -192,7 +212,7 @@ function InterviewCalendar({ interviews = [], onMonthChange }) {
         interviews={selectedDayInterviews}
         date={selectedDate}
       />
-    </>
+    </div>
   );
 }
 
