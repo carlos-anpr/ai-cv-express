@@ -803,31 +803,44 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
   `
       : '';
 
-  // Estadísticas (parseo seguro año)
-  const yearsExp =
-    experience?.length > 0
-      ? Math.max(
-          ...experience
-            .map((exp) => {
-              const parseYear = (val) => {
-                try {
-                  if (!val) return 0;
-                  const parts = String(val).split('-');
-                  const y = parseInt(parts[0], 10);
-                  return Number.isFinite(y) ? y : 0;
-                } catch {
-                  return 0;
-                }
-              };
-              const start = parseYear(exp.startDate);
-              const end = exp.currentlyWorking
-                ? new Date().getFullYear()
-                : parseYear(exp.endDate);
-              return end - start;
-            })
-            .filter((y) => y > 0)
-        )
-      : 0;
+  // Estadísticas (parseo seguro año) - Calcula experiencia TOTAL sumando periodos
+  const calculateTotalExperience = () => {
+    if (!experience || experience.length === 0) return 0;
+
+    const parseYear = (val) => {
+      try {
+        if (!val) return 0;
+        const parts = String(val).split('-');
+        const y = parseInt(parts[0], 10);
+        return Number.isFinite(y) &&
+          y >= 1970 &&
+          y <= new Date().getFullYear() + 1
+          ? y
+          : 0;
+      } catch {
+        return 0;
+      }
+    };
+
+    const totalYears = experience
+      .map((exp) => {
+        const start = parseYear(exp.startDate);
+        const end = exp.currentlyWorking
+          ? new Date().getFullYear()
+          : parseYear(exp.endDate);
+
+        // Si las fechas son válidas y end >= start, calcular diferencia
+        if (start > 0 && end > 0 && end >= start) {
+          return end - start;
+        }
+        return 0;
+      })
+      .reduce((acc, years) => acc + years, 0);
+
+    return totalYears;
+  };
+
+  const yearsExp = calculateTotalExperience();
 
   const projectsCount = experience?.length * 4 || 5;
   const techCount = skills?.length || 0;
@@ -1146,10 +1159,18 @@ export const generateResumeHTML = async (resumeInfo, theme) => {
             </div>
 
             <div class="hero-stats">
-                <div class="stat">
+                ${
+                  // Mostrar años de experiencia solo si es razonable (entre 1 y 50 años)
+                  yearsExp > 0 && yearsExp <= 50
+                    ? `<div class="stat">
                     <span class="stat-value">${yearsExp}+</span>
                     <span class="stat-label">Años de experiencia</span>
-                </div>
+                </div>`
+                    : `<div class="stat">
+                    <span class="stat-value">${experience?.length || 0}</span>
+                    <span class="stat-label">Posiciones</span>
+                </div>`
+                }
                 <div class="stat">
                     <span class="stat-value">${projectsCount}+</span>
                     <span class="stat-label">Proyectos completados</span>
