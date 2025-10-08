@@ -21,7 +21,11 @@ export default function PublicResumePDF() {
       try {
         setLoading(true);
         setError(null);
-        const response = await LocalDatabase.GetResumeByShareToken(shareToken);
+        // Pasar trackView=true para registrar la visualización
+        const response = await LocalDatabase.GetResumeByShareToken(
+          shareToken,
+          true
+        );
         if (!response?.data) throw new Error('CV no encontrado');
         if (!mounted) return;
         setResumeInfo(response.data);

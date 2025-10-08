@@ -392,7 +392,7 @@ class LocalDatabase {
   }
 
   // READ - Obtener CV por shareToken (para compartir públicamente en cliente local)
-  async GetResumeByShareToken(shareToken) {
+  async GetResumeByShareToken(shareToken, trackView = false) {
     await this.ensureDatabaseReady();
     try {
       if (!shareToken) throw new Error('shareToken inválido');
@@ -419,6 +419,16 @@ class LocalDatabase {
         throw new Error('CV no encontrado para este token');
       }
 
+      // Registrar visualización si se solicita
+      if (trackView) {
+        try {
+          await this.TrackShareView(shareToken, resume.id);
+        } catch (trackError) {
+          console.warn('Error tracking view:', trackError);
+          // No lanzar error para no interrumpir la carga del CV
+        }
+      }
+
       const processedResume = {
         ...resume,
         experience: this.safeJsonParse(resume.experience, []),
@@ -430,6 +440,75 @@ class LocalDatabase {
       return { data: processedResume };
     } catch (error) {
       console.error('Error GetResumeByShareToken:', error);
+      throw error;
+    }
+  }
+
+  // CREATE - Registrar visualización de enlace compartido
+  async TrackShareView(shareToken, resumeId) {
+    await this.ensureDatabaseReady();
+    try {
+      const viewData = {
+        shareToken,
+        resumeId,
+        viewedAt: new Date(),
+        userAgent: navigator.userAgent || 'Unknown',
+        referrer: document.referrer || 'Direct',
+        // Podrías añadir geolocalización con una API externa aquí
+        country: null,
+        city: null,
+      };
+
+      await db.shareViews.add(viewData);
+      console.log('✅ Visualización registrada:', viewData);
+    } catch (error) {
+      console.error('Error tracking share view:', error);
+      throw error;
+    }
+  }
+
+  // READ - Obtener estadísticas de visualizaciones para un CV
+  async GetShareStats(resumeId) {
+    await this.ensureDatabaseReady();
+    try {
+      // Obtener el resume para verificar que existe
+      const resume = await db.resumes.get(parseInt(resumeId));
+      if (!resume) {
+        throw new Error('CV no encontrado');
+      }
+
+      // Obtener todas las visualizaciones
+      const views = await db.shareViews
+        .where('resumeId')
+        .equals(parseInt(resumeId))
+        .toArray();
+
+      // Calcular estadísticas
+      const totalViews = views.length;
+      const uniqueUserAgents = [...new Set(views.map((v) => v.userAgent))]
+        .length;
+      const viewsByDate = views.reduce((acc, view) => {
+        const date = new Date(view.viewedAt).toLocaleDateString();
+        acc[date] = (acc[date] || 0) + 1;
+        return acc;
+      }, {});
+
+      const lastView =
+        views.length > 0
+          ? new Date(Math.max(...views.map((v) => new Date(v.viewedAt))))
+          : null;
+
+      return {
+        totalViews,
+        uniqueVisitors: uniqueUserAgents,
+        viewsByDate,
+        lastView,
+        recentViews: views
+          .sort((a, b) => new Date(b.viewedAt) - new Date(a.viewedAt))
+          .slice(0, 10), // Últimas 10 visualizaciones
+      };
+    } catch (error) {
+      console.error('Error getting share stats:', error);
       throw error;
     }
   }

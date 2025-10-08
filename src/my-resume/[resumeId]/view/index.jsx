@@ -20,6 +20,9 @@ import {
   Loader2,
   ExternalLink,
   Globe,
+  Eye,
+  Users,
+  TrendingUp,
 } from 'lucide-react';
 import { RWebShare } from 'react-web-share';
 
@@ -60,6 +63,8 @@ function ResumeView() {
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [copied, setCopied] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareStats, setShareStats] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(false);
 
   useEffect(() => {
     // Si resumeInfo ya tiene shareToken, cargarlo
@@ -67,6 +72,25 @@ function ResumeView() {
       setShareToken(resumeInfo.shareToken);
     }
   }, [resumeInfo]);
+
+  // Cargar estadísticas cuando se abre el diálogo y hay shareToken
+  useEffect(() => {
+    const loadStats = async () => {
+      if (shareDialogOpen && shareToken && resumeId) {
+        setLoadingStats(true);
+        try {
+          const stats = await LocalDatabase.GetShareStats(resumeId);
+          setShareStats(stats);
+        } catch (error) {
+          console.error('Error cargando estadísticas:', error);
+        } finally {
+          setLoadingStats(false);
+        }
+      }
+    };
+
+    loadStats();
+  }, [shareDialogOpen, shareToken, resumeId]);
 
   const generateShareLink = async () => {
     setIsGeneratingLink(true);
@@ -181,6 +205,72 @@ function ResumeView() {
                     </div>
                   ) : (
                     <div className="space-y-3">
+                      {/* Estadísticas de visualizaciones */}
+                      {shareStats && shareStats.totalViews > 0 && (
+                        <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-4 space-y-3">
+                          <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                            <TrendingUp className="w-4 h-4 text-blue-600" />
+                            Estadísticas del enlace
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-3">
+                            <div className="bg-white rounded-lg p-3 text-center">
+                              <div className="flex items-center justify-center gap-1 mb-1">
+                                <Eye className="w-3 h-3 text-blue-600" />
+                              </div>
+                              <div className="text-2xl font-bold text-gray-900">
+                                {shareStats.totalViews}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                Visualizaciones
+                              </div>
+                            </div>
+
+                            <div className="bg-white rounded-lg p-3 text-center">
+                              <div className="flex items-center justify-center gap-1 mb-1">
+                                <Users className="w-3 h-3 text-purple-600" />
+                              </div>
+                              <div className="text-2xl font-bold text-gray-900">
+                                {shareStats.uniqueVisitors}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                Visitantes únicos
+                              </div>
+                            </div>
+
+                            <div className="bg-white rounded-lg p-3 text-center">
+                              <div className="flex items-center justify-center gap-1 mb-1">
+                                <Globe className="w-3 h-3 text-green-600" />
+                              </div>
+                              <div className="text-2xl font-bold text-gray-900">
+                                {Object.keys(shareStats.viewsByDate).length}
+                              </div>
+                              <div className="text-xs text-gray-600">
+                                Días activos
+                              </div>
+                            </div>
+                          </div>
+
+                          {shareStats.lastView && (
+                            <div className="text-xs text-gray-600 text-center pt-2 border-t">
+                              Última visualización:{' '}
+                              {new Date(shareStats.lastView).toLocaleString(
+                                'es-ES'
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {loadingStats && (
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                          <Loader2 className="w-4 h-4 animate-spin mx-auto text-gray-400" />
+                          <p className="text-xs text-gray-600 mt-2">
+                            Cargando estadísticas...
+                          </p>
+                        </div>
+                      )}
+
                       <div className="flex items-center gap-2">
                         <input
                           type="text"
