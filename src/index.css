@@ -418,3 +418,16 @@ button[data-slot='button']:active {
   box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow),
     var(--tw-shadow, 0 0 #0000);
 }
+
+/* Helpers used by the public PDF generator to avoid html2canvas parsing errors */
+.pdf-safe-colors * {
+  /* Ensure computed colors are used; browser will compute CSS variables into rgb values */
+  color-scheme: only light;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.pdf-safe-colors {
+  /* Remove heavy visual effects that may contain modern color functions */
+  box-shadow: none !important;
+}

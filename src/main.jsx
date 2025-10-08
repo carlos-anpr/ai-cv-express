@@ -16,6 +16,7 @@ import CoverLetterApplication from './dashboard/resume/[resumeId]/job-applicatio
 import InterviewSimulation from './dashboard/resume/[resumeId]/job-applications/[applicationId]/interview-simulation';
 import MyResume from './my-resume/[resumeId]/view';
 import PublicWebResume from './web-resume/[resumeId]';
+import PublicResumePDF from './public-resume/[shareToken]';
 import InterviewsPage from './dashboard/interviews';
 import { initializeDatabase } from './services/IndexedDBService';
 import './index.css';
@@ -89,6 +90,10 @@ const router = createBrowserRouter([
   {
     path: '/web-resume/:resumeId',
     element: <PublicWebResume />,
+  },
+  {
+    path: '/share/:shareToken',
+    element: <PublicResumePDF />,
   },
 ]);
 

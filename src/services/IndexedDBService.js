@@ -53,6 +53,20 @@ export class ResumeDatabase extends Dexie {
         '++id, jobApplicationId, resumeId, userEmail, candidateLevel, questions, createdAt, updatedAt',
     });
 
+    // Versión 5: Añadir índice 'shareToken' en resumes para permitir consultas por token de compartición
+    // (esto evita errores cuando se usa db.resumes.where('shareToken').equals(token))
+    this.version(5).stores({
+      resumes:
+        '++id, documentId, userEmail, createdAt, updatedAt, title, firstName, lastName, shareToken',
+      userData: '++id, userEmail, preferences, lastLogin, totalResumes',
+      coverLetters:
+        '++id, resumeId, userEmail, companyName, jobTitle, jobDetails, content, jobApplicationId, style, length, createdAt, updatedAt',
+      jobApplications:
+        '++id, resumeId, resumeDocumentId, userEmail, companyName, jobTitle, jobDescription, requirements, responsibilities, companyWebsite, contactPerson, contactEmail, contactPhone, jobUrl, applicationDate, status, notes, createdAt, updatedAt',
+      interviewSimulations:
+        '++id, jobApplicationId, resumeId, userEmail, candidateLevel, questions, createdAt, updatedAt',
+    });
+
     // Hooks para auto-generar timestamps
     this.resumes.hook('creating', function (primKey, obj) {
       obj.createdAt = new Date();

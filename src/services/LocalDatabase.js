@@ -391,6 +391,49 @@ class LocalDatabase {
     }
   }
 
+  // READ - Obtener CV por shareToken (para compartir públicamente en cliente local)
+  async GetResumeByShareToken(shareToken) {
+    await this.ensureDatabaseReady();
+    try {
+      if (!shareToken) throw new Error('shareToken inválido');
+
+      // Intentar buscar por campo shareToken en la tabla de resumes (requiere índice)
+      let resume = null;
+      try {
+        resume = await db.resumes
+          .where('shareToken')
+          .equals(shareToken)
+          .first();
+      } catch (dexieErr) {
+        // Si Dexie falla (por ejemplo, porque no existe índice 'shareToken'),
+        // caemos a una estrategia de respaldo: leer todos los resumes y buscar manualmente.
+        console.warn(
+          'GetResumeByShareToken: query by index failed, falling back to scan:',
+          dexieErr
+        );
+        const all = await db.resumes.toArray();
+        resume = all.find((r) => r && r.shareToken === shareToken);
+      }
+
+      if (!resume) {
+        throw new Error('CV no encontrado para este token');
+      }
+
+      const processedResume = {
+        ...resume,
+        experience: this.safeJsonParse(resume.experience, []),
+        education: this.safeJsonParse(resume.education, []),
+        skills: this.safeJsonParse(resume.skills, []),
+        languages: this.safeJsonParse(resume.languages, []),
+      };
+
+      return { data: processedResume };
+    } catch (error) {
+      console.error('Error GetResumeByShareToken:', error);
+      throw error;
+    }
+  }
+
   // UTILITY - Exportar datos para backup
   async ExportUserData(userEmail) {
     try {
