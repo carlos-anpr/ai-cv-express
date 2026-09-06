@@ -1,8 +1,17 @@
-#scripts
-scripts/
+# Env - las claves reales SOLO viven en .env local, nunca versionado
+# (.env.example es la plantilla sin secretos y SI se versiona)
+.env
+.env*.local
+*.local
 
-# backups
+# CVs generados (datos personales: nombre, email, telefono)
+CV/
+
+# backups locales (pueden contener datos personales)
 backups/
+
+# Bundles de backup de git (pueden contener historia antigua)
+*.bundle
 
 # Logs
 logs
@@ -13,13 +22,12 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Estado local de herramientas (Playwright MCP)
+.playwright-mcp/
+
 node_modules
 dist
 dist-ssr
-*.local
-
-.env*.local
-.env
 
 # Editor directories and files
 .vscode/*
