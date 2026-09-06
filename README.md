@@ -1,4 +1,19 @@
-# CV Builder — tu currículum listo en 5 minutos con IA
+<div align="center">
+
+# **CV Builder**
+
+### *Tu currículum listo en 5 minutos con IA*
+
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev)
+[![Vite](https://img.shields.io/badge/Vite-6.x-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vite.dev)
+[![Tailwind](https://img.shields.io/badge/Tailwind-CSS%204-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Google Gemini](https://img.shields.io/badge/Google-Gemini-8E75B2?style=flat-square&logo=googlegemini&logoColor=white)](https://ai.google.dev)
+[![Clerk](https://img.shields.io/badge/Clerk-auth-6C47FF?style=flat-square&logo=clerk&logoColor=white)](https://clerk.com)
+[![IndexedDB](https://img.shields.io/badge/Dexie-IndexedDB-F80692?style=flat-square)](https://dexie.org)
+
+</div>
+
+---
 
 **CV Builder te crea un currículum profesional aunque partas de una hoja en blanco.**
 Describes tu experiencia con tus palabras, pegas la oferta de trabajo que te gusta
