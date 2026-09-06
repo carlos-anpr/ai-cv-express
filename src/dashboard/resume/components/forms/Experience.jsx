@@ -36,7 +36,6 @@ function Experience() {
     const newEntries = experinceList.slice();
     const { name, value } = event.target;
     newEntries[index][name] = value;
-    console.log(newEntries);
     setExperinceList(newEntries);
   };
 
@@ -91,11 +90,9 @@ function Experience() {
           return rest;
         }) || [];
 
-      const response = await LocalDatabase.UpdateResumeDetail(params.resumeId, {
+      await LocalDatabase.UpdateResumeDetail(params.resumeId, {
         experience: cleanExperience,
       });
-
-      console.log('✅ Experiencia actualizada:', response);
       toast.success('Experiencia actualizada correctamente');
     } catch (error) {
       console.error('❌ Error actualizando experiencia:', error);

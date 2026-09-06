@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ResumeInfoContext } from '@/context/ResumeInfoContext';
 import { LoaderCircle } from 'lucide-react';
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useContext, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import LocalDatabase from '../../../../services/LocalDatabase';
 import { toast } from 'sonner';
@@ -13,15 +13,9 @@ function PersonalDetail({ enableNext }) {
 
   const [formData, setFormData] = useState();
   const [loading, setLoading] = useState(false);
-  useEffect(() => {
-    console.log('---', resumeInfo);
-  }, [resumeInfo]);
-
   const handleInputChange = (e) => {
     enableNext(false);
     const { name, value } = e.target;
-
-    console.log(name, value);
 
     setFormData({
       ...formData,
@@ -44,11 +38,7 @@ function PersonalDetail({ enableNext }) {
     setLoading(true);
 
     try {
-      const response = await LocalDatabase.UpdateResumeDetail(
-        params.resumeId,
-        formData
-      );
-      console.log('✅ Detalles personales actualizados:', response);
+      await LocalDatabase.UpdateResumeDetail(params.resumeId, formData);
       enableNext(true);
       toast.success('Detalles actualizados correctamente');
     } catch (error) {

@@ -28,6 +28,8 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 
+const MAX_BACKUP_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+
 function DatabaseBackup() {
   const { user } = useUser();
   const [isExporting, setIsExporting] = useState(false);
@@ -69,6 +71,14 @@ function DatabaseBackup() {
   const handleFileSelect = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
+
+    if (file.size > MAX_BACKUP_FILE_SIZE_BYTES) {
+      toast.error('Archivo demasiado grande', {
+        description: 'El backup no puede superar 5 MB.',
+      });
+      event.target.value = '';
+      return;
+    }
 
     try {
       setIsImporting(true);

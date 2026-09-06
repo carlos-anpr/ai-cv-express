@@ -6,16 +6,17 @@
 
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const apiKey = import.meta.env.VITE_GOOGLE_GEMINI_AI_API_KEY;
+const apiKey = import.meta.env.VITE_GOOGLE_GEMINI_AI_API_KEY?.trim();
+if (!apiKey) {
+  throw new Error('Falta configurar VITE_GOOGLE_GEMINI_AI_API_KEY en el .env');
+}
+
 const genAI = new GoogleGenerativeAI(apiKey);
 
-const geminiModel = import.meta.env.VITE_GOOGLE_GEMINI_MODEL;
-if (!geminiModel) {
-  console.error(
-    '[AIModal] Falta configurar VITE_GOOGLE_GEMINI_MODEL en el .env'
-  );
-  throw new Error('Falta configurar VITE_GOOGLE_GEMINI_MODEL en el .env');
-}
+const geminiModel =
+  import.meta.env.VITE_GOOGLE_GEMINI_MODEL?.trim() ||
+  'gemini-flash-lite-latest';
+
 const model = genAI.getGenerativeModel({
   model: geminiModel,
 });

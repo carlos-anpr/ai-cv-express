@@ -148,13 +148,16 @@ function CoverLetterApplication() {
         savedLetter = await LocalDatabase.CreateCoverLetter(coverLetterData);
 
         // Marcar la candidatura como que tiene carta generada
-        await LocalDatabase.UpdateJobApplication(applicationId, {
-          coverLetterGenerated: true,
-          updatedAt: new Date().toISOString(),
-        });
+        await LocalDatabase.UpdateJobApplication(
+          applicationId,
+          {
+            coverLetterGenerated: true,
+            updatedAt: new Date().toISOString(),
+          },
+          user.primaryEmailAddress.emailAddress
+        );
       }
 
-      console.log('📄 Carta guardada:', savedLetter.data);
       setCoverLetter(savedLetter.data);
       setEditedContent(aiResponse);
 
@@ -229,10 +232,14 @@ function CoverLetterApplication() {
       await LocalDatabase.DeleteCoverLetter(coverLetter.id);
 
       // Actualizar el estado de la candidatura para marcar que no tiene carta
-      await LocalDatabase.UpdateJobApplication(applicationId, {
-        coverLetterGenerated: false,
-        updatedAt: new Date().toISOString(),
-      });
+      await LocalDatabase.UpdateJobApplication(
+        applicationId,
+        {
+          coverLetterGenerated: false,
+          updatedAt: new Date().toISOString(),
+        },
+        user.primaryEmailAddress.emailAddress
+      );
 
       // Limpiar el estado local
       setCoverLetter(null);

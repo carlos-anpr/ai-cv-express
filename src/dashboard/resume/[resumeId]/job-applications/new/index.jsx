@@ -102,8 +102,6 @@ function NewJobApplication() {
       const response = await LocalDatabase.CreateJobApplication(
         applicationData
       );
-      console.log('✅ Candidatura creada:', response.data);
-
       toast.success('Candidatura creada correctamente');
       navigate(
         `/dashboard/resume/${resumeId}/job-applications/${response.data.id}`
@@ -130,7 +128,7 @@ function NewJobApplication() {
   const determineCandidateLevel = () => {
     // Lógica simple para determinar el nivel del candidato
     // Basado en la experiencia del CV y la descripción del trabajo
-    if (!resumeInfo?.experience) return 'entry';
+    if (!resumeInfo?.experience) return 'junior';
 
     const experienceYears = resumeInfo.experience.length;
     const jobDescLower = formData.jobDescription.toLowerCase();
@@ -149,7 +147,7 @@ function NewJobApplication() {
       return 'mid';
     }
 
-    return 'entry';
+    return 'junior';
   };
 
   const handleGoBack = () => {

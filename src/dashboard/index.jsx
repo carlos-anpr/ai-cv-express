@@ -20,14 +20,9 @@ function Dashboard() {
 
     setLoading(true);
     try {
-      // Debug: Verificar estado de la base de datos
-      await LocalDatabase.DebugDatabaseStatus();
-      await LocalDatabase.DebugListAllResumes();
-
       const response = await LocalDatabase.GetUserResumes(
         user.primaryEmailAddress.emailAddress
       );
-      console.log('✅ CVs cargados:', response.data);
       setResumeList(response.data || []);
     } catch (error) {
       console.error('❌ Error cargando CVs:', error);

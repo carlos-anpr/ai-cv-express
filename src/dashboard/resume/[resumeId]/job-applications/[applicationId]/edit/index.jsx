@@ -170,14 +170,12 @@ function EditJobApplication() {
         return;
       }
 
-      console.log('📝 Actualizando candidatura:', updateData);
-      console.log('📱 Campo contactPhone:', updateData.contactPhone);
-
       const response = await LocalDatabase.UpdateJobApplication(
         applicationId,
-        updateData
+        updateData,
+        user.primaryEmailAddress.emailAddress
       );
-      console.log('✅ Candidatura actualizada:', response.data);
+      if (!response.success) throw new Error('No se pudo actualizar');
 
       toast.success('Candidatura actualizada correctamente');
       navigate(

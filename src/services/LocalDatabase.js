@@ -7,7 +7,6 @@ class LocalDatabase {
   async ensureDatabaseReady() {
     try {
       if (!db.isOpen()) {
-        console.log('🔄 Base de datos no abierta, inicializando...');
         await db.open();
       }
       return true;
@@ -45,11 +44,7 @@ class LocalDatabase {
         version: 1,
       };
 
-      console.log('💾 Guardando CV:', resumeData);
-
       const id = await db.resumes.add(resumeData);
-
-      console.log('✅ CV guardado con ID:', id);
 
       // Re-vincular candidaturas que se crearon antes de que el CV tuviera ID numérico
       try {
@@ -59,9 +54,6 @@ class LocalDatabase {
           .toArray();
 
         if (orphanApps && orphanApps.length > 0) {
-          console.log(
-            `🔁 Re-vinculando ${orphanApps.length} candidaturas al nuevo resume ID ${id}`
-          );
           for (const app of orphanApps) {
             try {
               await db.jobApplications.update(app.id, {
@@ -99,7 +91,6 @@ class LocalDatabase {
         },
       };
 
-      console.log('📋 CV creado exitosamente:', result);
       return result;
     } catch (error) {
       console.error('Error creating resume:', error);
@@ -111,8 +102,6 @@ class LocalDatabase {
   async GetUserResumes(userEmail) {
     await this.ensureDatabaseReady();
     try {
-      console.log('🔍 GetUserResumes - userEmail:', userEmail);
-
       // Verificar que la base de datos esté disponible
       if (!db || !db.resumes) {
         throw new Error('Base de datos no disponible');
@@ -121,8 +110,6 @@ class LocalDatabase {
         .where('userEmail')
         .equals(userEmail)
         .toArray();
-
-      console.log('📊 CVs encontrados:', resumes.length, resumes);
 
       // Ordenar por fecha de actualización (más reciente primero)
       const sortedResumes = resumes.sort(
@@ -138,7 +125,6 @@ class LocalDatabase {
         languages: this.safeJsonParse(resume.languages, []),
       }));
 
-      console.log('✅ CVs procesados:', processedResumes.length);
       return { data: processedResumes };
     } catch (error) {
       console.error('Error getting user resumes:', error);
@@ -164,27 +150,6 @@ class LocalDatabase {
         throw new Error('CV no encontrado');
       }
 
-      console.log('🔍 Resume RAW desde DB:', {
-        experience: typeof resume.experience,
-        education: typeof resume.education,
-        skills: typeof resume.skills,
-      });
-
-      console.log('📄 Valores RAW (primeros 100 chars):', {
-        experience:
-          typeof resume.experience === 'string'
-            ? resume.experience.substring(0, 100)
-            : resume.experience,
-        education:
-          typeof resume.education === 'string'
-            ? resume.education.substring(0, 100)
-            : resume.education,
-        skills:
-          typeof resume.skills === 'string'
-            ? resume.skills.substring(0, 100)
-            : resume.skills,
-      });
-
       const processedResume = {
         ...resume,
         experience: this.safeJsonParse(resume.experience, []),
@@ -192,14 +157,6 @@ class LocalDatabase {
         skills: this.safeJsonParse(resume.skills, []),
         languages: this.safeJsonParse(resume.languages, []),
       };
-
-      console.log('🔍 Resume PROCESADO:', {
-        experienceIsArray: Array.isArray(processedResume.experience),
-        experienceType: typeof processedResume.experience,
-        experienceValue: processedResume.experience,
-        educationIsArray: Array.isArray(processedResume.education),
-        skillsIsArray: Array.isArray(processedResume.skills),
-      });
 
       return { data: processedResume };
     } catch (error) {
@@ -460,7 +417,6 @@ class LocalDatabase {
       };
 
       await db.shareViews.add(viewData);
-      console.log('✅ Visualización registrada:', viewData);
     } catch (error) {
       console.error('Error tracking share view:', error);
       throw error;
@@ -624,10 +580,7 @@ class LocalDatabase {
   // UTILITY - Debug: Listar todos los CVs en la base de datos
   async DebugListAllResumes() {
     try {
-      const allResumes = await db.resumes.toArray();
-      console.log('🔍 DEBUG - Total de CVs en la DB:', allResumes.length);
-      console.log('📋 DEBUG - Todos los CVs:', allResumes);
-      return allResumes;
+      return await db.resumes.toArray();
     } catch (error) {
       console.error('❌ DEBUG - Error listando CVs:', error);
       return [];
@@ -641,16 +594,13 @@ class LocalDatabase {
       const totalResumes = await db.resumes.count();
       const totalUsers = await db.userData.count();
 
-      const status = {
+      return {
         isOpen: db.isOpen(),
         version: db.verno,
         totalResumes,
         totalUsers,
         tables: db.tables.map((t) => t.name),
       };
-
-      console.log('🔍 DEBUG - Base de datos:', status);
-      return status;
     } catch (error) {
       console.error('❌ DEBUG - Error verificando DB:', error);
       return null;
@@ -703,8 +653,6 @@ class LocalDatabase {
   async CreateCoverLetter(data) {
     await this.ensureDatabaseReady();
     try {
-      console.log('💌 Creando carta de recomendación:', data);
-
       const coverLetterData = {
         resumeId: data.resumeId,
         jobApplicationId: data.jobApplicationId,
@@ -719,7 +667,6 @@ class LocalDatabase {
       const id = await db.coverLetters.add(coverLetterData);
       const result = await db.coverLetters.get(id);
 
-      console.log('✅ Carta de recomendación creada con ID:', id);
       return {
         success: true,
         data: result,
@@ -736,12 +683,9 @@ class LocalDatabase {
   async UpdateCoverLetter(id, updates) {
     await this.ensureDatabaseReady();
     try {
-      console.log('📝 Actualizando carta de recomendación ID:', id, updates);
-
       await db.coverLetters.update(id, updates);
       const updatedCoverLetter = await db.coverLetters.get(id);
 
-      console.log('✅ Carta actualizada exitosamente');
       return {
         success: true,
         data: updatedCoverLetter,
@@ -756,15 +700,12 @@ class LocalDatabase {
   async DeleteCoverLetter(id) {
     await this.ensureDatabaseReady();
     try {
-      console.log('🗑️ Eliminando carta de recomendación ID:', id);
-
       const coverLetter = await db.coverLetters.get(id);
       if (!coverLetter) {
         throw new Error('Carta de recomendación no encontrada');
       }
 
       await db.coverLetters.delete(id);
-      console.log('✅ Carta eliminada exitosamente');
       return { success: true, message: 'Carta eliminada correctamente' };
     } catch (error) {
       console.error('❌ Error eliminando carta de recomendación:', error);
@@ -776,15 +717,12 @@ class LocalDatabase {
   async GetCoverLetterByApplication(jobApplicationId) {
     await this.ensureDatabaseReady();
     try {
-      console.log('📄 Obteniendo carta para candidatura ID:', jobApplicationId);
-
       const coverLetters = await db.coverLetters
         .where('jobApplicationId')
         .equals(parseInt(jobApplicationId))
         .toArray();
 
       if (coverLetters.length === 0) {
-        console.log('📄 No hay carta para esta candidatura');
         return {
           success: true,
           data: null,
@@ -798,7 +736,6 @@ class LocalDatabase {
       );
 
       const coverLetter = sortedCoverLetters[0];
-      console.log('✅ Carta encontrada para candidatura:', coverLetter.id);
       return {
         success: true,
         data: coverLetter,
@@ -818,8 +755,6 @@ class LocalDatabase {
   async CreateJobApplication(data) {
     await this.ensureDatabaseReady();
     try {
-      console.log('📝 Creando nueva candidatura:', data);
-
       // Normalizar resumeId: si recibimos un UUID (documentId), resolver al id numérico
       let numericResumeId = data.resumeId;
       if (
@@ -832,10 +767,6 @@ class LocalDatabase {
           .first();
         if (resumeRecord && resumeRecord.id !== undefined) {
           numericResumeId = resumeRecord.id;
-          console.log(
-            '🔁 Resume UUID resuelto a ID numérico:',
-            numericResumeId
-          );
         } else {
           // Si no encontramos el CV guardado todavía, no bloqueamos la creación.
           // Guardaremos la candidatura vinculándola al documentId en el campo resumeDocumentId
@@ -851,7 +782,7 @@ class LocalDatabase {
 
       // Validar datos requeridos
       if (
-        numericResumeId === undefined ||
+        (numericResumeId === undefined && !data._resumeDocumentIdFallback) ||
         !data.userEmail ||
         !data.companyName ||
         !data.jobTitle
@@ -869,8 +800,14 @@ class LocalDatabase {
         companyName: data.companyName.trim(),
         jobTitle: data.jobTitle.trim(),
         jobDescription: data.jobDescription?.trim() || '',
+        location: data.location?.trim() || '',
+        salary:
+          data.salary !== undefined && data.salary !== null && data.salary !== ''
+            ? Number(data.salary)
+            : null,
         requirements: data.requirements?.trim() || '',
         responsibilities: data.responsibilities?.trim() || '',
+        benefits: data.benefits?.trim() || '',
         companyWebsite: data.companyWebsite?.trim() || '',
         contactPerson: data.contactPerson?.trim() || '',
         contactEmail: data.contactEmail?.trim() || '',
@@ -882,6 +819,10 @@ class LocalDatabase {
         applicationDate:
           data.applicationDate || new Date().toISOString().split('T')[0],
         status: data.status || 'draft',
+        workMode: data.workMode || 'presencial',
+        candidateLevel: data.candidateLevel || 'junior',
+        coverLetterGenerated: Boolean(data.coverLetterGenerated),
+        interviewSimulated: Boolean(data.interviewSimulated),
         notes: data.notes?.trim() || '',
       };
 
@@ -891,7 +832,6 @@ class LocalDatabase {
       }
 
       const id = await db.jobApplications.add(jobApplicationData);
-      console.log('✅ Candidatura creada con ID:', id);
 
       // Obtener el objeto completo creado
       const createdApplication = await db.jobApplications.get(id);
@@ -910,19 +850,15 @@ class LocalDatabase {
   async GetJobApplicationsByResume(resumeId, userEmail) {
     await this.ensureDatabaseReady();
     try {
-      console.log('📚 Obteniendo candidaturas del CV:', resumeId);
-
       // Si resumeId es un UUID (string), primero buscar el CV para obtener el ID numérico
       let numericResumeId = resumeId;
       if (typeof resumeId === 'string' && resumeId.includes('-')) {
-        console.log('🔍 Detectado UUID, buscando ID numérico...');
         const resume = await db.resumes
           .where('documentId')
           .equals(resumeId)
           .first();
         if (resume) {
           numericResumeId = resume.id;
-          console.log('✅ ID numérico encontrado:', numericResumeId);
         } else {
           console.warn('⚠️ No se encontró CV con documentId:', resumeId);
           return { success: true, data: [] };
@@ -942,9 +878,6 @@ class LocalDatabase {
         typeof resumeId === 'string' &&
         resumeId.includes('-')
       ) {
-        console.log(
-          '🔁 No se encontraron candidaturas por resumeId numérico, intentando buscar por resumeDocumentId...'
-        );
         finalApplications = await db.jobApplications
           .where('resumeDocumentId')
           .equals(resumeId)
@@ -957,10 +890,6 @@ class LocalDatabase {
         (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)
       );
 
-      console.log(
-        '✅ Total candidaturas encontradas:',
-        sortedApplications.length
-      );
       return {
         success: true,
         data: sortedApplications,
@@ -975,40 +904,12 @@ class LocalDatabase {
   async GetJobApplicationById(applicationId, userEmail) {
     await this.ensureDatabaseReady();
     try {
-      console.log(
-        '🔍 Obteniendo candidatura por ID:',
-        applicationId,
-        'para usuario:',
-        userEmail
-      );
-
-      // Debug: ver todas las candidaturas existentes
-      const allApplications = await db.jobApplications.toArray();
-      console.log(
-        '📚 Todas las candidaturas en DB:',
-        allApplications.map((app) => ({
-          id: app.id,
-          userEmail: app.userEmail,
-          company: app.companyName,
-        }))
-      );
-
       let application;
       if (userEmail) {
         application = await db.jobApplications
           .where('id')
           .equals(parseInt(applicationId))
-          .and((item) => {
-            console.log(
-              '📧 Comparando emails:',
-              item.userEmail,
-              '===',
-              userEmail,
-              '?',
-              item.userEmail === userEmail
-            );
-            return item.userEmail === userEmail;
-          })
+          .and((item) => item.userEmail === userEmail)
           .first();
       } else {
         // Si no se proporciona userEmail, buscar solo por ID
@@ -1019,7 +920,6 @@ class LocalDatabase {
         throw new Error('Candidatura no encontrada');
       }
 
-      console.log('✅ Candidatura encontrada:', application.companyName);
       return {
         success: true,
         data: application,
@@ -1031,10 +931,12 @@ class LocalDatabase {
   }
 
   // UPDATE - Actualizar candidatura
-  async UpdateJobApplication(applicationId, updateData) {
+  async UpdateJobApplication(applicationId, updateData, userEmail) {
     await this.ensureDatabaseReady();
     try {
-      console.log('📝 Actualizando candidatura ID:', applicationId, updateData);
+      if (userEmail) {
+        await this.GetJobApplicationById(applicationId, userEmail);
+      }
 
       const updatedFields = {};
 
@@ -1045,10 +947,19 @@ class LocalDatabase {
         updatedFields.jobTitle = updateData.jobTitle.trim();
       if (updateData.jobDescription !== undefined)
         updatedFields.jobDescription = updateData.jobDescription.trim();
+      if (updateData.location !== undefined)
+        updatedFields.location = updateData.location?.trim() || '';
+      if (updateData.salary !== undefined)
+        updatedFields.salary =
+          updateData.salary !== null && updateData.salary !== ''
+            ? Number(updateData.salary)
+            : null;
       if (updateData.requirements !== undefined)
         updatedFields.requirements = updateData.requirements.trim();
       if (updateData.responsibilities !== undefined)
         updatedFields.responsibilities = updateData.responsibilities.trim();
+      if (updateData.benefits !== undefined)
+        updatedFields.benefits = updateData.benefits?.trim() || '';
       if (updateData.companyWebsite !== undefined)
         updatedFields.companyWebsite = updateData.companyWebsite.trim();
       if (updateData.contactPerson !== undefined)
@@ -1067,6 +978,16 @@ class LocalDatabase {
         updatedFields.applicationDate = updateData.applicationDate;
       if (updateData.status !== undefined)
         updatedFields.status = updateData.status;
+      if (updateData.workMode !== undefined)
+        updatedFields.workMode = updateData.workMode;
+      if (updateData.candidateLevel !== undefined)
+        updatedFields.candidateLevel = updateData.candidateLevel;
+      if (updateData.coverLetterGenerated !== undefined)
+        updatedFields.coverLetterGenerated = Boolean(
+          updateData.coverLetterGenerated
+        );
+      if (updateData.interviewSimulated !== undefined)
+        updatedFields.interviewSimulated = Boolean(updateData.interviewSimulated);
       if (updateData.notes !== undefined)
         updatedFields.notes = updateData.notes.trim();
 
@@ -1084,7 +1005,6 @@ class LocalDatabase {
         parseInt(applicationId)
       );
 
-      console.log('✅ Candidatura actualizada correctamente');
       return {
         success: true,
         data: updatedApplication,
@@ -1099,8 +1019,6 @@ class LocalDatabase {
   async DeleteJobApplication(applicationId, userEmail) {
     await this.ensureDatabaseReady();
     try {
-      console.log('🗑️ Eliminando candidatura ID:', applicationId);
-
       // Verificar que la candidatura pertenece al usuario
       const applicationResponse = await this.GetJobApplicationById(
         applicationId,
@@ -1125,7 +1043,6 @@ class LocalDatabase {
       // Eliminar la candidatura
       const deleted = await db.jobApplications.delete(parseInt(applicationId));
 
-      console.log('✅ Candidatura y datos asociados eliminados');
       return {
         success: true,
         data: { deleted: deleted > 0 },
@@ -1257,8 +1174,6 @@ class LocalDatabase {
   async MigrateExistingCoverLetters() {
     await this.ensureDatabaseReady();
     try {
-      console.log('🔄 Iniciando migración de cartas existentes...');
-
       // Obtener todas las cartas que no tienen jobApplicationId
       const orphanLetters = await db.coverLetters
         .where('jobApplicationId')
@@ -1266,8 +1181,6 @@ class LocalDatabase {
         .or('jobApplicationId')
         .equals(null)
         .toArray();
-
-      console.log(`📋 Encontradas ${orphanLetters.length} cartas para migrar`);
 
       let migratedCount = 0;
 
@@ -1285,27 +1198,21 @@ class LocalDatabase {
             status: 'draft',
           };
 
-          const jobAppId = await this.CreateJobApplication(jobAppData);
+          const jobApp = await this.CreateJobApplication(jobAppData);
 
           // Vincular carta a la nueva candidatura
           await db.coverLetters.update(letter.id, {
-            jobApplicationId: jobAppId,
+            jobApplicationId: jobApp.data.id,
             style: letter.style || 'formal',
             length: letter.length || 'medium',
           });
 
           migratedCount++;
-          console.log(
-            `✅ Carta migrada: ${letter.companyName} - ${letter.jobTitle}`
-          );
         } catch (error) {
           console.error(`❌ Error migrando carta ID ${letter.id}:`, error);
         }
       }
 
-      console.log(
-        `🎉 Migración completada: ${migratedCount}/${orphanLetters.length} cartas migradas`
-      );
       return { total: orphanLetters.length, migrated: migratedCount };
     } catch (error) {
       console.error('❌ Error en migración:', error);
@@ -1456,9 +1363,7 @@ LocalDatabase.prototype.SaveWebPageConfig = async function (resumeId, config) {
     // Reutilizar UpdateResumeDetail para persistir webPageConfig dentro del registro
     const payload = { webPageConfig: config };
     // SaveWebPageConfig called
-    const updated = await this.UpdateResumeDetail(resumeId, payload);
-    console.log('✅ Configuración web guardada localmente');
-    return updated;
+    return await this.UpdateResumeDetail(resumeId, payload);
   } catch (error) {
     console.error('❌ Error guardando configuración web:', error);
     throw error;
@@ -1498,8 +1403,6 @@ LocalDatabase.prototype.GetAllInterviews = async function (userEmail) {
       .equals(userEmail)
       .filter((app) => app.interviewDate != null && app.interviewDate !== '')
       .toArray();
-
-    console.log(`Entrevistas encontradas: ${applications.length}`);
 
     return {
       success: true,

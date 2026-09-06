@@ -2,6 +2,9 @@
 import { db } from './IndexedDBService.js';
 import { v4 as uuidv4 } from 'uuid';
 
+const MAX_BACKUP_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_BACKUP_RECORDS = 1000;
+
 class DatabaseBackupService {
   /**
    * Exporta la base de datos completa con limpieza
@@ -9,8 +12,6 @@ class DatabaseBackupService {
    */
   async exportDatabase(userEmail) {
     try {
-      console.log('🔄 Iniciando exportación de base de datos...');
-
       // 1. Obtener todos los CVs del usuario
       const resumes = await db.resumes
         .where('userEmail')
@@ -23,10 +24,6 @@ class DatabaseBackupService {
 
       const resumeIds = resumes.map((r) => r.id);
       const resumeDocumentIds = resumes.map((r) => r.documentId);
-
-      console.log(
-        `📊 Exportando ${resumes.length} CVs (IDs: ${resumeIds.join(', ')})`
-      );
 
       // 2. Obtener candidaturas asociadas a estos CVs
       const allApplications = await db.jobApplications
@@ -114,7 +111,6 @@ class DatabaseBackupService {
         },
       };
 
-      console.log('✅ Exportación completada:', exportData.statistics);
       return exportData;
     } catch (error) {
       console.error('❌ Error en exportación:', error);
@@ -144,7 +140,6 @@ class DatabaseBackupService {
       link.click();
       URL.revokeObjectURL(url);
 
-      console.log(`✅ Backup descargado: ${fileName}`);
       return exportData.statistics;
     } catch (error) {
       console.error('❌ Error al descargar backup:', error);
@@ -157,6 +152,13 @@ class DatabaseBackupService {
    */
   async validateBackupFile(fileContent) {
     try {
+      if (fileContent.length > MAX_BACKUP_FILE_SIZE_BYTES) {
+        return {
+          valid: false,
+          error: 'El backup es demasiado grande. Máximo permitido: 5 MB.',
+        };
+      }
+
       const data = JSON.parse(fileContent);
 
       // Validar estructura básica
@@ -178,6 +180,19 @@ class DatabaseBackupService {
         return {
           valid: false,
           error: 'No se encontraron CVs en el archivo.',
+        };
+      }
+
+      const totalRecords =
+        (data.data.resumes?.length || 0) +
+        (data.data.jobApplications?.length || 0) +
+        (data.data.coverLetters?.length || 0) +
+        (data.data.interviewSimulations?.length || 0);
+
+      if (totalRecords > MAX_BACKUP_RECORDS) {
+        return {
+          valid: false,
+          error: `El backup contiene ${totalRecords} registros. Máximo permitido: ${MAX_BACKUP_RECORDS}.`,
         };
       }
 
@@ -300,8 +315,6 @@ class DatabaseBackupService {
         overwriteExisting = false,
       } = options;
 
-      console.log('🔄 Iniciando importación...', options);
-
       const results = {
         resumes: { imported: 0, skipped: 0, errors: 0 },
         jobApplications: { imported: 0, skipped: 0, errors: 0 },
@@ -366,9 +379,6 @@ class DatabaseBackupService {
           idMapping.resumes.set(oldResumeId, newId);
           idMapping.resumes.set(oldDocumentId, newDocumentId);
 
-          console.log(
-            `✅ CV importado: ${oldResumeId} -> ${newId} (${oldDocumentId} -> ${newDocumentId})`
-          );
         } catch (error) {
           console.error('Error importando CV:', error);
           results.resumes.errors++;
@@ -440,7 +450,6 @@ class DatabaseBackupService {
           results.jobApplications.imported++;
           idMapping.jobApplications.set(oldAppId, newId);
 
-          console.log(`✅ Candidatura importada: ${oldAppId} -> ${newId}`);
         } catch (error) {
           console.error('Error importando candidatura:', error);
           results.jobApplications.errors++;
@@ -540,7 +549,6 @@ class DatabaseBackupService {
         }
       }
 
-      console.log('✅ Importación completada:', results);
       return results;
     } catch (error) {
       console.error('❌ Error en importación:', error);
@@ -553,8 +561,6 @@ class DatabaseBackupService {
    */
   async cleanOrphanData(userEmail) {
     try {
-      console.log('🧹 Iniciando limpieza de datos huérfanos...');
-
       const results = {
         orphanApplications: 0,
         orphanLetters: 0,
@@ -584,7 +590,6 @@ class DatabaseBackupService {
         if (isOrphan) {
           await db.jobApplications.delete(app.id);
           results.orphanApplications++;
-          console.log(`🗑️ Eliminada candidatura huérfana: ${app.id}`);
         }
       }
 
@@ -611,7 +616,6 @@ class DatabaseBackupService {
         if (isOrphan) {
           await db.coverLetters.delete(letter.id);
           results.orphanLetters++;
-          console.log(`🗑️ Eliminada carta huérfana: ${letter.id}`);
         }
       }
 
@@ -630,11 +634,9 @@ class DatabaseBackupService {
         if (isOrphan) {
           await db.interviewSimulations.delete(sim.id);
           results.orphanSimulations++;
-          console.log(`🗑️ Eliminada simulación huérfana: ${sim.id}`);
         }
       }
 
-      console.log('✅ Limpieza completada:', results);
       return results;
     } catch (error) {
       console.error('❌ Error en limpieza:', error);

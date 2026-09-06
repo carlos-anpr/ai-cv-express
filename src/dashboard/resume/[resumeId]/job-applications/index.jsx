@@ -109,7 +109,10 @@ function JobApplications() {
 
   const handleDeleteApplication = async (applicationId) => {
     try {
-      await LocalDatabase.DeleteJobApplication(applicationId);
+      await LocalDatabase.DeleteJobApplication(
+        applicationId,
+        user.primaryEmailAddress.emailAddress
+      );
       await loadApplications();
     } catch (error) {
       console.error('Error eliminando candidatura:', error);
@@ -119,10 +122,14 @@ function JobApplications() {
 
   const handleStatusChange = async (applicationId, newStatus) => {
     try {
-      await LocalDatabase.UpdateJobApplication(applicationId, {
-        status: newStatus,
-        updatedAt: new Date().toISOString(),
-      });
+      await LocalDatabase.UpdateJobApplication(
+        applicationId,
+        {
+          status: newStatus,
+          updatedAt: new Date().toISOString(),
+        },
+        user.primaryEmailAddress.emailAddress
+      );
       await loadApplications();
     } catch (error) {
       console.error('Error actualizando estado:', error);

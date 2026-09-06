@@ -140,23 +140,11 @@ export const db = new ResumeDatabase();
 export const initializeDatabase = async () => {
   try {
     await db.open();
-    console.log('✅ IndexedDB inicializado correctamente');
 
     // Verificar soporte del navegador
     if (!window.indexedDB) {
       throw new Error('IndexedDB no está soportado en este navegador');
     }
-
-    // Debug: Verificar que las tablas se crearon
-    console.log(
-      '📋 Tablas disponibles:',
-      db.tables.map((t) => t.name)
-    );
-    console.log('🔍 Esquema de resumes:', db.resumes.schema);
-
-    // Test básico de creación y lectura
-    const testCount = await db.resumes.count();
-    console.log('📊 CVs existentes en la DB:', testCount);
 
     return true;
   } catch (error) {
@@ -196,7 +184,6 @@ export const clearDatabase = async () => {
   try {
     await db.resumes.clear();
     await db.userData.clear();
-    console.log('🧹 Base de datos limpiada');
     return true;
   } catch (error) {
     console.error('Error limpiando la base de datos:', error);

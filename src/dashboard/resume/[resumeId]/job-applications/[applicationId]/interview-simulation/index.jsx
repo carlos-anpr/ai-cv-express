@@ -251,13 +251,6 @@ function InterviewSimulation() {
         id: uuidv4(),
       }));
 
-      console.log('✅ Datos validados:', {
-        nivel: parsedData.candidateLevel,
-        skills: parsedData.detectedSkills,
-        rol: parsedData.roleType,
-        preguntas: questionsWithIds.length,
-      });
-
       // Guardar en IndexedDB
       const simulationData = {
         jobApplicationId: parseInt(applicationId),
@@ -267,11 +260,16 @@ function InterviewSimulation() {
         questions: questionsWithIds,
       };
 
-      const simulationId = await LocalDatabase.CreateInterviewSimulation(
-        simulationData
-      );
+      await LocalDatabase.CreateInterviewSimulation(simulationData);
 
-      console.log('✅ Simulación guardada en DB con ID:', simulationId);
+      await LocalDatabase.UpdateJobApplication(
+        applicationId,
+        {
+          interviewSimulated: true,
+          updatedAt: new Date().toISOString(),
+        },
+        user.primaryEmailAddress.emailAddress
+      );
 
       // Recargar simulación desde DB
       const savedSimulation =
@@ -304,15 +302,12 @@ function InterviewSimulation() {
     try {
       setGenerating(true);
 
-      console.log('🔄 Regenerando test...');
-
       // Eliminar simulación actual
       if (simulation?.id) {
         await LocalDatabase.DeleteInterviewSimulation(
           simulation.id,
           user.primaryEmailAddress.emailAddress
         );
-        console.log('✅ Simulación anterior eliminada');
       }
 
       // Generar nuevo test
@@ -339,8 +334,15 @@ function InterviewSimulation() {
 
       setSimulation(null);
       setSelectedLevel(null);
+      await LocalDatabase.UpdateJobApplication(
+        applicationId,
+        {
+          interviewSimulated: false,
+          updatedAt: new Date().toISOString(),
+        },
+        user.primaryEmailAddress.emailAddress
+      );
       toast.success('Test eliminado correctamente');
-      console.log('✅ Test eliminado');
     } catch (error) {
       console.error('❌ Error eliminando test:', error);
       toast.error('Error al eliminar el test');
@@ -363,15 +365,12 @@ function InterviewSimulation() {
       setGenerating(true);
       setSelectedLevel(newLevel);
 
-      console.log(`🔄 Regenerando test con nivel: ${newLevel}`);
-
       // Eliminar simulación actual
       if (simulation?.id) {
         await LocalDatabase.DeleteInterviewSimulation(
           simulation.id,
           user.primaryEmailAddress.emailAddress
         );
-        console.log('✅ Simulación anterior eliminada');
       }
 
       // Generar nuevo test con el nivel seleccionado
